@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 public class DataLoadMedtronic extends DataLoadCSVFile
 {
 	private static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());
+	private static final String m_MedtronicSplitBy = ",";
 
 	@Override
 	protected DBResult makeDBResult(String[] res) 
@@ -22,6 +23,12 @@ public class DataLoadMedtronic extends DataLoadCSVFile
 	protected String loadStringName() 
 	{
 		return "Medtronic";
+	}
+	
+	@Override
+	protected String getSplitBy() 
+	{
+		return m_MedtronicSplitBy;
 	}
 
 	public static boolean isMedtronic(String fileName)
@@ -113,5 +120,7 @@ public class DataLoadMedtronic extends DataLoadCSVFile
 
 		return result;
 	}
+
+
 }
 

@@ -24,7 +24,8 @@ public class AuditLog
 	private int     m_EntriesAdded;
 	private int     m_TreatmentsAtStart;
 	private int     m_TreatmentsByNSLAtStart;
-	private int     m_ProximityEntries;
+	private int     m_ProximityMeterEntries;
+	private int     m_ProximityNSEntries;
 
 	public static final String    m_Success             = "Success";               // Audit log of successful synch
 	public static final String    m_NotSaved            = "Not Saved";             // Audit log of unsuccessful synch
@@ -52,18 +53,20 @@ public class AuditLog
 			"Entries Added", 
 			"Total Treatments at Start", 
 			"NSL Treatments at Start",
-			"Proximity Entries"
+			"Meter Dupes",
+			"NS Dupes"
 	};
 	private static int[] m_ColWidths = {250, 250, 250, 250, 250, 400, 700,
-			450, 250, 250, };
+			450, 250, 250, 250, };
 
 	private static Object[][] m_Initializer = {{"","","","","",
-		"","","","", "" }};
+		"","","","", "", "" }};
 
 
 	AuditLog(String id, String uploadID, String uploadStatus, Date uploadDate, 
 			String uploadDevice, String fileName, String dateRange, int entriesAdded, 
-			int treatmentsAtStart, int treatmentsByNSLAtStart, int proximityEntries)
+			int treatmentsAtStart, int treatmentsByNSLAtStart, int proximityEntries,
+			int proximityNSEntries)
 	{
 		m_ID                     = new String(id);
 		m_UploadID               = new String(uploadID);
@@ -76,7 +79,8 @@ public class AuditLog
 		m_EntriesAdded           = entriesAdded;
 		m_TreatmentsAtStart      = treatmentsAtStart;
 		m_TreatmentsByNSLAtStart = treatmentsByNSLAtStart;
-		m_ProximityEntries       = proximityEntries;
+		m_ProximityMeterEntries  = proximityEntries;
+		m_ProximityNSEntries     = proximityNSEntries;
 	}
 
 	public  AuditLog(DBObject rs, boolean rawData)
@@ -93,23 +97,25 @@ public class AuditLog
 		m_EntriesAdded           = CommonUtils.getFieldInt(rs,  "entriesAdded");
 		m_TreatmentsAtStart      = CommonUtils.getFieldInt(rs,  "treatmentsAtStart"); 
 		m_TreatmentsByNSLAtStart = CommonUtils.getFieldInt(rs,  "treatmentsByNSLAtStart"); 
-		m_ProximityEntries       = CommonUtils.getFieldInt(rs,  "proximityEntries"); 
+		m_ProximityMeterEntries  = CommonUtils.getFieldInt(rs,  "meterProximityEntries"); 
+		m_ProximityNSEntries     = CommonUtils.getFieldInt(rs,  "nightscoutProximityEntries"); 
 	}
 
 	public BasicDBObject createNightScoutObject()
 	{
 		BasicDBObject result = new BasicDBObject("eventType", "Nightscout Upload");
 
-		DBResult.appendToDoc(result, "uploadID",               m_UploadID);
-		DBResult.appendToDoc(result, "uploadStatus",           m_UploadStatus);
-		DBResult.appendToDoc(result, "uploadDate",             m_UploadDate);
-		DBResult.appendToDoc(result, "uploadDevice",           m_UploadDevice);
-		DBResult.appendToDoc(result, "fileName",               m_FileName);
-		DBResult.appendToDoc(result, "dateRange",              m_DateRange);
-		DBResult.appendToDoc(result, "entriesAdded",           m_EntriesAdded);
-		DBResult.appendToDoc(result, "treatmentsAtStart",      m_TreatmentsAtStart);
-		DBResult.appendToDoc(result, "treatmentsByNSLAtStart", m_TreatmentsByNSLAtStart);
-		DBResult.appendToDoc(result, "proximityEntries",       m_ProximityEntries);
+		DBResult.appendToDoc(result, "uploadID",                   m_UploadID);
+		DBResult.appendToDoc(result, "uploadStatus",               m_UploadStatus);
+		DBResult.appendToDoc(result, "uploadDate",                 m_UploadDate);
+		DBResult.appendToDoc(result, "uploadDevice",               m_UploadDevice);
+		DBResult.appendToDoc(result, "fileName",                   m_FileName);
+		DBResult.appendToDoc(result, "dateRange",                  m_DateRange);
+		DBResult.appendToDoc(result, "entriesAdded",               m_EntriesAdded);
+		DBResult.appendToDoc(result, "treatmentsAtStart",          m_TreatmentsAtStart);
+		DBResult.appendToDoc(result, "treatmentsByNSLAtStart",     m_TreatmentsByNSLAtStart);
+		DBResult.appendToDoc(result, "meterProximityEntries",      m_ProximityMeterEntries);
+		DBResult.appendToDoc(result, "nightscoutProximityEntries", m_ProximityNSEntries);
 
 		return result;
 	}
@@ -118,7 +124,7 @@ public class AuditLog
 	{
 		// m_Time used to populate event time too
 
-		int arrSize = 10;
+		int arrSize = 11;  // Just increased array with extra field for NS Proximity Entries
 
 		String[] res = new String[arrSize];
 
@@ -135,7 +141,8 @@ public class AuditLog
 		res[i++] = String.format("%d", m_EntriesAdded);
 		res[i++] = String.format("%d", m_TreatmentsAtStart);
 		res[i++] = String.format("%d", m_TreatmentsByNSLAtStart);
-		res[i++] = String.format("%d", m_ProximityEntries);
+		res[i++] = String.format("%d", m_ProximityMeterEntries);
+		res[i++] = String.format("%d", m_ProximityNSEntries);
 
 		return res;
 	}
@@ -334,17 +341,31 @@ public class AuditLog
 
 
 	/**
-	 * @return the m_ProximityEntries
+	 * @return the m_ProximityMeterEntries
 	 */
-	public synchronized int getM_ProximityEntries() {
-		return m_ProximityEntries;
+	public synchronized int getM_ProximityMeterEntries() {
+		return m_ProximityMeterEntries;
 	}
 
 	/**
-	 * @param m_ProximityEntries the m_ProximityEntries to set
+	 * @param m_ProximityMeterEntries the m_ProximityMeterEntries to set
 	 */
-	public synchronized void setM_ProximityEntries(int m_ProximityEntries) {
-		this.m_ProximityEntries = m_ProximityEntries;
+	public synchronized void setM_ProximityMeterEntries(int m_ProximityEntries) {
+		this.m_ProximityMeterEntries = m_ProximityEntries;
+	}
+
+	/**
+	 * @return the m_ProximityNSEntries
+	 */
+	public synchronized int getM_ProximityNSEntries() {
+		return m_ProximityNSEntries;
+	}
+
+	/**
+	 * @param m_ProximityNSEntries the m_ProximityNSEntries to set
+	 */
+	public synchronized void setM_ProximityNSEntries(int m_ProximityNSEntries) {
+		this.m_ProximityNSEntries = m_ProximityNSEntries;
 	}
 
 	/**

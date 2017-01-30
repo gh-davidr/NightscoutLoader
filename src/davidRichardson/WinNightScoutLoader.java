@@ -7,6 +7,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import java.awt.Font;
+import java.awt.Point;
 
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
@@ -39,6 +40,7 @@ import net.sourceforge.jdatepicker.impl.UtilDateModel;
 
 //import src.com.toedter.calendar.*;
 import java.text.DateFormat;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar; 
@@ -53,10 +55,13 @@ import java.awt.event.MouseEvent;
 import javax.swing.JComboBox;
 
 import javax.swing.JTextField;
+import javax.swing.JViewport;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -64,6 +69,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.awt.FlowLayout;
 import javax.swing.border.BevelBorder;
+import java.awt.Rectangle;
+import java.awt.Graphics;
+
+
 
 public class WinNightScoutLoader extends JFrame {
 
@@ -87,9 +96,10 @@ public class WinNightScoutLoader extends JFrame {
 	 */	
 	private WinAbout         aboutDialog;
 	private WinWhy           whyDialog;
-	private WinOptions       optionsDialog;
+	private WinSettings       SettingsDialog;
 	private WinMongoForm     mongoForm;
 	private WinAuditHistory  auditHistory;
+	//	private WinFind          find;
 	private WinAnalyzer      analyzer;
 	private ThreadHelpLauncher m_ThreadHelpLauncher = null;
 
@@ -110,8 +120,11 @@ public class WinNightScoutLoader extends JFrame {
 	// soon replace all below with core
 	private CoreNightScoutLoader  m_NightScoutLoaderCore;
 
-	// Hold the list of objects back from SQL Server
+	// Hold the list of objects back from Nightscout
 	private ArrayList <DBResult> m_MongoResults;
+
+	// Hold the list of CGM Entries back from Nightscout
+	private ArrayList <DBResultEntry> m_MongoResultEntries;
 
 	/*    Set<String> set1 = new HashSet<String>();
     set1.addAll(ls1);
@@ -122,7 +135,7 @@ public class WinNightScoutLoader extends JFrame {
     set2.removeAll(set1);
 	 */	
 
-	private String[] m_SupportedMeters = {"Roche Combo", "Medtronic", "Diasend", "OmniPod"};
+	private String[] m_SupportedMeters = {"Roche Combo", "Medtronic", "Diasend", "OmniPod", "Roche SQL Extract"};
 	//	private String[] m_SupportedMeters = {"Roche Combo", "Medtronic"};
 	private JComboBox<String> m_ComboBox;
 
@@ -131,6 +144,7 @@ public class WinNightScoutLoader extends JFrame {
 	private JTextField m_FileNameTxtFld;
 	private JLabel m_FileNameLbl;
 	private JButton m_FileSelectBtn;
+	private JLabel m_CGMEntriesLoadedLbl;
 
 	private JMenuItem m_mntmExportResults; 
 
@@ -141,6 +155,8 @@ public class WinNightScoutLoader extends JFrame {
 	private JMenuItem m_mntmDeleteLoadedTreatments;
 
 	private String    m_SaveDiffMessage = null;
+
+	private Graphics  m_EntriesGraphic  = null;
 
 	/**
 	 * Create the frame.
@@ -179,6 +195,10 @@ public class WinNightScoutLoader extends JFrame {
 
 		// test out the multi-threaded piece
 		doThreadLoadNightScout(true);
+
+		// Launch a separate thread to load the CGM entries - if configured
+		doThreadLoadNightScoutEntries(true);
+
 		// Tested Fri 4 Mar
 		// Not sure this is working correctly.
 		// Grid does not populate
@@ -235,7 +255,7 @@ public class WinNightScoutLoader extends JFrame {
 	public void bgUnitsChanged()
 	{
 		// BG Units have changed.
-		// Write to the panel and reset the analyzer options
+		// Write to the panel and reset the analyzer Settings
 
 		m_Logger.log(Level.INFO, "BG Units have changed. Resetting Analyzer Defaults.");
 		this.analyzer.resetDefaults();
@@ -248,7 +268,7 @@ public class WinNightScoutLoader extends JFrame {
 	{		
 		m_RowUpdated = -1;
 
-		setBounds(100, 50, 900, 650);
+		setBounds(100, 50, 1000, 650);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		// http://stackoverflow.com/questions/15258877/how-to-have-flowlayout-reposition-components-upon-resizing
@@ -264,9 +284,10 @@ public class WinNightScoutLoader extends JFrame {
 
 		aboutDialog = new WinAbout("Nightscout Loader " + Version.getInstance().getM_Version() + " - About");
 		whyDialog   = new WinWhy("Nightscout Loader " + Version.getInstance().getM_Version() + " - Why");
-		optionsDialog = new WinOptions(this, "Nightscout Loader " + Version.getInstance().getM_Version() + " - Options");
-		mongoForm = new WinMongoForm(this, "Nightscout Loader " + Version.getInstance().getM_Version() + " - Details");
+		SettingsDialog = new WinSettings(this, "Nightscout Loader " + Version.getInstance().getM_Version() + " - Settings");
+		mongoForm = new WinMongoForm(this, "Nightscout Loader " + Version.getInstance().getM_Version() + " - Find / Details");
 		auditHistory = new WinAuditHistory(this, "Nightscout Loader " + Version.getInstance().getM_Version() + " - Audit History");
+		//		find = new WinFind(this, "Nightscout Loader " + Version.getInstance().getM_Version() + " - Details");
 		analyzer = new WinAnalyzer(this, "Nightscout Loader " + Version.getInstance().getM_Version() + " - Analyzer");
 
 
@@ -376,6 +397,10 @@ public class WinNightScoutLoader extends JFrame {
 					{
 						PrefsNightScoutLoader.getInstance().setM_OmniPodMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
 					}
+					else if (m_ComboBox.getSelectedIndex() == 4)
+					{
+						PrefsNightScoutLoader.getInstance().setM_RocheExtractMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
+					}
 
 					m_Logger.log(Level.INFO, "You chose to open this file: " +
 							chooser.getSelectedFile().getAbsolutePath());
@@ -383,6 +408,10 @@ public class WinNightScoutLoader extends JFrame {
 			}
 		});
 		panel_3.add(m_FileSelectBtn);
+
+		m_CGMEntriesLoadedLbl = new JLabel("");
+		m_CGMEntriesLoadedLbl.setVisible(false);
+		panel_3.add(m_CGMEntriesLoadedLbl);
 
 		lbl_TimeZone = new JLabel("");
 		panel_3.add(lbl_TimeZone);
@@ -455,6 +484,14 @@ public class WinNightScoutLoader extends JFrame {
 					col = Color.YELLOW;
 				}
 
+				// Do something special here.
+				// Show the progression up down the grid with new up/down buttons by highlighting the selected row
+				else if (mongoForm.isVisible() == true && row == mongoForm.getM_RowNum())
+				{
+					col = Color.YELLOW;
+				}
+
+
 				// Check for added row
 				/*		        else if (m_StartRowAdded != -1 && row > m_StartRowAdded)
 																																								        {
@@ -466,7 +503,7 @@ public class WinNightScoutLoader extends JFrame {
 				{
 					col = Color.ORANGE;
 				}
-				
+
 				else if (isRowJustLoaded(row))
 				{
 					col = Color.GREEN;
@@ -577,14 +614,14 @@ public class WinNightScoutLoader extends JFrame {
 			@Override
 			public void mouseClicked(MouseEvent arg0) 
 			{
-				Boolean advancedOptions = PrefsNightScoutLoader.getInstance().isM_AdvancedOptions();
+				Boolean advancedSettings = PrefsNightScoutLoader.getInstance().isM_AdvancedSettings();
 				Boolean synchThreadsRunning  = m_NightScoutLoaderCore.isLoadOrDiffThreadRunning();
 				Boolean analyzeThreadsRunning = m_NightScoutLoaderCore.isAnalyzeThreadRunning();
 
-				m_Logger.log(Level.FINER, "NightScoutLoader.ActionMenuHandler: Adv: " + advancedOptions + " Sync: " + synchThreadsRunning);
+				m_Logger.log(Level.FINER, "NightScoutLoader.ActionMenuHandler: Adv: " + advancedSettings + " Sync: " + synchThreadsRunning);
 
 				// Disable the Delete menu item if Advanced option is not set.
-				m_mntmDeleteLoadedTreatments.setEnabled(advancedOptions && ((synchThreadsRunning  || analyzeThreadsRunning) ? false : true));
+				m_mntmDeleteLoadedTreatments.setEnabled(advancedSettings && ((synchThreadsRunning  || analyzeThreadsRunning) ? false : true));
 
 				// Also disable the DB access menu if threads are running
 				m_mntmSychronize.setEnabled(synchThreadsRunning ? false : true);
@@ -597,8 +634,8 @@ public class WinNightScoutLoader extends JFrame {
 			public void actionPerformed(ActionEvent arg0) 
 			{
 				// Disable the Delete menu item if Advanced option is not set.
-				Boolean advancedOptions = PrefsNightScoutLoader.getInstance().isM_AdvancedOptions();
-				m_mntmDeleteLoadedTreatments.setEnabled(advancedOptions);
+				Boolean advancedSettings = PrefsNightScoutLoader.getInstance().isM_AdvancedSettings();
+				m_mntmDeleteLoadedTreatments.setEnabled(advancedSettings);
 			}
 		});
 		menuBar.add(mnAction);
@@ -636,14 +673,24 @@ public class WinNightScoutLoader extends JFrame {
 		mnAction.add(m_mntmAnalyzeResults);
 
 		m_mntmDeleteLoadedTreatments = new JMenuItem("Delete Loaded Treatments");
-		Boolean advancedOptions = PrefsNightScoutLoader.getInstance().isM_AdvancedOptions();
-		m_mntmDeleteLoadedTreatments.setEnabled(advancedOptions);
+		Boolean advancedSettings = PrefsNightScoutLoader.getInstance().isM_AdvancedSettings();
+		m_mntmDeleteLoadedTreatments.setEnabled(advancedSettings);
 		m_mntmDeleteLoadedTreatments.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				doDeleteLoadedTreatments();
 			}
 		});
 		mnAction.add(m_mntmDeleteLoadedTreatments);
+
+		JMenuItem mntmFind = new JMenuItem("Find");
+		mntmFind.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				mongoForm.initialize(m_MongoResults, m_MongoResults.get(0), m_RowUpdated < 0 ? 0 : m_RowUpdated);
+				mongoForm.setVisible(true);
+			}
+		});
+		mnAction.add(mntmFind);
+
 
 		JMenu mnView = new JMenu("View");
 		JMenuItem mntmAuditHistory = new JMenuItem("Audit History");
@@ -658,31 +705,51 @@ public class WinNightScoutLoader extends JFrame {
 		JMenu mnTools = new JMenu("Tools");
 		menuBar.add(mnTools);
 
-		JMenuItem mntmOptions = new JMenuItem("Options");
-		mntmOptions.addActionListener(new ActionListener() {
+		JMenuItem mntmSettings = new JMenuItem("Settings");
+		mntmSettings.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				optionsDialog.setVisible(true);
+				SettingsDialog.setVisible(true);
 			}
 		});
-		mnTools.add(mntmOptions);
+		mnTools.add(mntmSettings);
 
 		JMenu mnHelp = new JMenu("Help");
 		menuBar.add(mnHelp);
 
-		JMenuItem mntmDetailedHelp = new JMenuItem("Detailed Help");
-		mntmDetailedHelp.addActionListener(new ActionListener() 
-		{
+		JMenuItem mntmOnlineHelp = new JMenuItem("Online Help");
+		mntmOnlineHelp.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) 
 			{
-				if (m_ThreadHelpLauncher == null)
+				URI onlineHelpURI = null;
+				try 
 				{
-					m_ThreadHelpLauncher = new ThreadHelpLauncher();
+					onlineHelpURI = new URI(Version.getInstance().getM_GoogleDriveHelpURI());
+				} 
+				catch (URISyntaxException e1) 
+				{
+					m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " Help: Exception caught.  Unable to construct URI from parameters. " + e1.getMessage());
 				}
-				m_ThreadHelpLauncher.addHelpRequest("/NightscoutLoader.pdf");
+				try 
+				{
+					Desktop desktop;
+					if (Desktop.isDesktopSupported() 
+							&& (desktop = Desktop.getDesktop()).isSupported(Desktop.Action.BROWSE)) 
+					{
+						desktop.browse(onlineHelpURI);
+					}
+					else
+					{
+						m_Logger.log(Level.WARNING, "<"+this.getClass().getName()+">" + " Help: Browser not supported by Desktop ");
+						JOptionPane.showMessageDialog(null, "Unable to launch browser with online help");	
+					}
+				} 
+				catch (IOException e) 
+				{
+					m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " Help: Exception caught.  Unable to launch native Email client for feedback message. " + e.getMessage());
+				}
 			}
 		});
-		mnHelp.add(mntmDetailedHelp);
-
+		mnHelp.add(mntmOnlineHelp);
 
 		JMenuItem mntmAbout = new JMenuItem("About");
 		mntmAbout.addActionListener(new ActionListener() {
@@ -728,15 +795,30 @@ public class WinNightScoutLoader extends JFrame {
 						m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " Feedback: Exception caught.  Unable to launch native Email client for feedback message. " + e.getMessage());
 					}
 				} 
-				else 
+				else
 				{
-					m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " Feedback: Exception caught.  Desktop doesn't support mailto...  ");
+					m_Logger.log(Level.WARNING, "<"+this.getClass().getName()+">" + " Help: Browser not supported by Desktop ");
+					JOptionPane.showMessageDialog(null, "Unable to launch mail client for support help.\nPlease contact nightscoutloader@gmail.com manually");	
 				}
-
 			}
 		});
 		mnHelp.add(mntmFeedback);
 
+		JMenuItem mntmDetailedHelp = new JMenuItem("Offline Help");
+		mntmDetailedHelp.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				if (m_ThreadHelpLauncher == null)
+				{
+					m_ThreadHelpLauncher = new ThreadHelpLauncher();
+				}
+				m_ThreadHelpLauncher.addHelpRequest("/NightscoutLoader.pdf");
+			}
+		});
+		mnHelp.add(mntmDetailedHelp);
+
+		
 		// When fully initialized, come back and set the timezone label
 		EventQueue.invokeLater(new 
 				Runnable()
@@ -746,6 +828,8 @@ public class WinNightScoutLoader extends JFrame {
 				checkTimeZone();
 			}
 		});
+
+		//	m_EntriesGraphic = new Graphics();
 	}
 
 	public void helperLaunched()
@@ -820,7 +904,7 @@ public class WinNightScoutLoader extends JFrame {
 						public void dataLoadComplete(Object obj, String message) 
 						{
 							Boolean initialRun = (Boolean)obj;
-							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadMongoDB().getResultsFromDB();
+							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadNightScout().getResultsFromDB();
 							//m_MongoResults = m_NightScoutLoaderCore.getM_ResultsMongoDB();
 
 							// Swing is not threadsafe, so add a request to update the grid onto the even queue
@@ -869,6 +953,65 @@ public class WinNightScoutLoader extends JFrame {
 		}
 	}
 
+
+	private void doThreadLoadNightScoutEntries(Boolean initialRun)
+	{
+		// We only attempt a CGM load if the preferences are enabled
+		if (PrefsNightScoutLoader.getInstance().getM_LoadNightscoutEntries() == true)
+		{
+			try
+			{
+				Object obj = new Boolean(initialRun);
+				m_NightScoutLoaderCore.threadLoadNightScoutEntries(
+						new ThreadDataLoad.DataLoadCompleteHander(obj) 
+						{
+
+							//		@Override
+							public void exceptionRaised(String message) 
+							{
+								m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "doThreadLoadMeterPump: Just caught an exception" + message);
+							}
+
+							//		@Override
+							public void dataLoadComplete(Object obj, String message) 
+							{
+								Boolean initialRun = (Boolean)obj;
+								m_MongoResultEntries = m_NightScoutLoaderCore.getM_DataLoadNightScoutEntries().getResultsFromDB();
+								//m_MongoResults = m_NightScoutLoaderCore.getM_ResultsMongoDB();
+
+								// Swing is not threadsafe, so add a request to update the grid onto the even queue
+								// Found this technique here:
+								// http://www.informit.com/articles/article.aspx?p=26326&seqNum=9
+								EventQueue.invokeLater(new 
+										Runnable()
+								{ 
+									public void run()
+									{ 
+										m_CGMEntriesLoadedLbl.setText("CGM : " + NumberFormat.getIntegerInstance().format(m_MongoResultEntries.size()));
+										m_CGMEntriesLoadedLbl.setVisible(true);
+										m_CGMEntriesLoadedLbl.setForeground(m_MongoResultEntries.size() == 0 ? Color.RED : Color.BLUE); // setBackground(Color.YELLOW);
+									}
+								});
+
+								EventQueue.invokeLater(new 
+										Runnable()
+								{ 
+									public void run()
+									{ 
+										//									addStatusLine();
+									}
+								});
+							}
+						});	
+			}
+
+			catch(Exception e)
+			{
+				m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " doThreadLoadNightScout: just caught an error: " + e.getMessage() + "-" + e.getLocalizedMessage());		
+			}
+		}
+	}
+
 	public void doLoadNightScout(Boolean initialRun)
 	{
 		reShapeWindowForNightScoutOnly();
@@ -907,7 +1050,7 @@ public class WinNightScoutLoader extends JFrame {
 					// Refresh grid if meter/pump load only
 					if (m_NightScoutLoaderCore.isM_MeterPumpLoadOnly() == true)
 					{
-						m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadMongoDB().getResultsFromDB();
+						m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadNightScout().getResultsFromDB();
 						m_SaveDiffMessage = message;
 
 						EventQueue.invokeLater(new 
@@ -934,94 +1077,94 @@ public class WinNightScoutLoader extends JFrame {
 		}
 
 	}
-//
-//	private void doThreadLoadMedtronic(String file)
-//	{
-//		try
-//		{
-//			// Threaded load instead
-//			m_NightScoutLoaderCore.threadLoadMedtronicMeterPump(m_FileNameTxtFld.getText(),
-//					new ThreadDataLoad.DataLoadCompleteHander(null) 
-//			{
-//				public void exceptionRaised(String message) { }
-//				public void dataLoadComplete(Object obj, String message) 
-//				{
-//					// Refresh grid if meter/pump load only
-//					if (m_NightScoutLoaderCore.isM_MeterPumpLoadOnly() == true)
-//					{
-//						m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadMongoDB().getResultsFromDB();
-//						m_SaveDiffMessage = message;
-//
-//						EventQueue.invokeLater(new 
-//								Runnable()
-//						{ 
-//							public void run()
-//							{ 
-//								// 1 kick off background analysis check
-//								// 2 refresh grid
-//								// 3 Generate a message
-//								// Do in this order since grid refresh resets the m_MeterPumpLoadOnly flag
-//								doBackgroundAnalysis();										
-//								updateGrid();
-//								JOptionPane.showMessageDialog(null, m_SaveDiffMessage);									
-//							}
-//						});
-//					}
-//
-//				}
-//			});
-//
-//		}
-//		catch (Exception e)
-//		{
-//			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "doThreadLoadMedtronic: Just caught an exception" + e.getMessage() + "-" + e.getLocalizedMessage());		
-//		}
-//
-//	}
-//
-	
-	
-//	private void doThreadLoadDiasend(String file)
-//	{
-//		try
-//		{
-//			m_NightScoutLoaderCore.threadLoadDiasendMeterPump(m_FileNameTxtFld.getText(),
-//					new ThreadDataLoad.DataLoadCompleteHander(null) 
-//			{
-//				public void exceptionRaised(String message) { }
-//				public void dataLoadComplete(Object obj, String message) 
-//				{
-//					// Refresh grid if meter/pump load only
-//					if (m_NightScoutLoaderCore.isM_MeterPumpLoadOnly() == true)
-//					{
-//						m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadMongoDB().getResultsFromDB();
-//						m_SaveDiffMessage = message;
-//
-//						EventQueue.invokeLater(new 
-//								Runnable()
-//						{ 
-//							public void run()
-//							{ 
-//								// 1 kick off background analysis check
-//								// 2 refresh grid
-//								// 3 Generate a message
-//								// Do in this order since grid refresh resets the m_MeterPumpLoadOnly flag
-//								doBackgroundAnalysis();										
-//								updateGrid();
-//								JOptionPane.showMessageDialog(null, m_SaveDiffMessage);									
-//							}
-//						});
-//					}
-//
-//				}
-//			});	
-//
-//		}
-//		catch (Exception e)
-//		{
-//			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "doThreadLoadDiasend: Just caught an exception" + e.getMessage() + "-" + e.getLocalizedMessage());		
-//		}
-//	}
+	//
+	//	private void doThreadLoadMedtronic(String file)
+	//	{
+	//		try
+	//		{
+	//			// Threaded load instead
+	//			m_NightScoutLoaderCore.threadLoadMedtronicMeterPump(m_FileNameTxtFld.getText(),
+	//					new ThreadDataLoad.DataLoadCompleteHander(null) 
+	//			{
+	//				public void exceptionRaised(String message) { }
+	//				public void dataLoadComplete(Object obj, String message) 
+	//				{
+	//					// Refresh grid if meter/pump load only
+	//					if (m_NightScoutLoaderCore.isM_MeterPumpLoadOnly() == true)
+	//					{
+	//						m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadMongoDB().getResultsFromDB();
+	//						m_SaveDiffMessage = message;
+	//
+	//						EventQueue.invokeLater(new 
+	//								Runnable()
+	//						{ 
+	//							public void run()
+	//							{ 
+	//								// 1 kick off background analysis check
+	//								// 2 refresh grid
+	//								// 3 Generate a message
+	//								// Do in this order since grid refresh resets the m_MeterPumpLoadOnly flag
+	//								doBackgroundAnalysis();										
+	//								updateGrid();
+	//								JOptionPane.showMessageDialog(null, m_SaveDiffMessage);									
+	//							}
+	//						});
+	//					}
+	//
+	//				}
+	//			});
+	//
+	//		}
+	//		catch (Exception e)
+	//		{
+	//			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "doThreadLoadMedtronic: Just caught an exception" + e.getMessage() + "-" + e.getLocalizedMessage());		
+	//		}
+	//
+	//	}
+	//
+
+
+	//	private void doThreadLoadDiasend(String file)
+	//	{
+	//		try
+	//		{
+	//			m_NightScoutLoaderCore.threadLoadDiasendMeterPump(m_FileNameTxtFld.getText(),
+	//					new ThreadDataLoad.DataLoadCompleteHander(null) 
+	//			{
+	//				public void exceptionRaised(String message) { }
+	//				public void dataLoadComplete(Object obj, String message) 
+	//				{
+	//					// Refresh grid if meter/pump load only
+	//					if (m_NightScoutLoaderCore.isM_MeterPumpLoadOnly() == true)
+	//					{
+	//						m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadMongoDB().getResultsFromDB();
+	//						m_SaveDiffMessage = message;
+	//
+	//						EventQueue.invokeLater(new 
+	//								Runnable()
+	//						{ 
+	//							public void run()
+	//							{ 
+	//								// 1 kick off background analysis check
+	//								// 2 refresh grid
+	//								// 3 Generate a message
+	//								// Do in this order since grid refresh resets the m_MeterPumpLoadOnly flag
+	//								doBackgroundAnalysis();										
+	//								updateGrid();
+	//								JOptionPane.showMessageDialog(null, m_SaveDiffMessage);									
+	//							}
+	//						});
+	//					}
+	//
+	//				}
+	//			});	
+	//
+	//		}
+	//		catch (Exception e)
+	//		{
+	//			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "doThreadLoadDiasend: Just caught an exception" + e.getMessage() + "-" + e.getLocalizedMessage());		
+	//		}
+	//	}
 
 	private void doThreadLoadFile(String file, FileChecker.FileCheckType fileType)
 	{
@@ -1044,9 +1187,9 @@ public class WinNightScoutLoader extends JFrame {
 						// Refresh grid if meter/pump load only
 						if (m_NightScoutLoaderCore.isM_MeterPumpLoadOnly() == true)
 						{
-							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadMongoDB().getResultsFromDB();
+							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadNightScout().getResultsFromDB();
 							m_SaveDiffMessage = message;
-							
+
 							EventQueue.invokeLater(new 
 									Runnable()
 							{ 
@@ -1083,7 +1226,7 @@ public class WinNightScoutLoader extends JFrame {
 						// Refresh grid if meter/pump load only
 						if (m_NightScoutLoaderCore.isM_MeterPumpLoadOnly() == true)
 						{
-							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadMongoDB().getResultsFromDB();
+							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadNightScout().getResultsFromDB();
 							m_SaveDiffMessage = message;
 
 							EventQueue.invokeLater(new 
@@ -1117,7 +1260,41 @@ public class WinNightScoutLoader extends JFrame {
 						// Refresh grid if meter/pump load only
 						if (m_NightScoutLoaderCore.isM_MeterPumpLoadOnly() == true)
 						{
-							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadMongoDB().getResultsFromDB();
+							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadNightScout().getResultsFromDB();
+							m_SaveDiffMessage = message;
+
+							EventQueue.invokeLater(new 
+									Runnable()
+							{ 
+								public void run()
+								{ 
+									// 1 kick off background analysis check
+									// 2 refresh grid
+									// 3 Generate a message
+									// Do in this order since grid refresh resets the m_MeterPumpLoadOnly flag
+									doBackgroundAnalysis();										
+									updateGrid();
+									JOptionPane.showMessageDialog(null, m_SaveDiffMessage);									
+								}
+							});
+						}
+
+					}
+				});	
+			}
+
+			else if (fileType == FileChecker.FileCheckType.RocheSQLExtract)
+			{
+				m_NightScoutLoaderCore.threadLoadRocheMeterPump(m_FileNameTxtFld.getText(),
+						new ThreadDataLoad.DataLoadCompleteHander(null) 
+				{
+					public void exceptionRaised(String message) { }
+					public void dataLoadComplete(Object obj, String message) 
+					{
+						// Refresh grid if meter/pump load only
+						if (m_NightScoutLoaderCore.isM_MeterPumpLoadOnly() == true)
+						{
+							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadNightScout().getResultsFromDB();
 							m_SaveDiffMessage = message;
 
 							EventQueue.invokeLater(new 
@@ -1148,47 +1325,47 @@ public class WinNightScoutLoader extends JFrame {
 
 	}
 
-//	private void doThreadLoadOmniPod(String file)
-//	{
-//		try
-//		{
-//			m_NightScoutLoaderCore.threadLoadOmniPodMeterPump(m_FileNameTxtFld.getText(),
-//					new ThreadDataLoad.DataLoadCompleteHander(null) 
-//			{
-//				public void exceptionRaised(String message) { }
-//				public void dataLoadComplete(Object obj, String message) 
-//				{
-//					// Refresh grid if meter/pump load only
-//					if (m_NightScoutLoaderCore.isM_MeterPumpLoadOnly() == true)
-//					{
-//						m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadMongoDB().getResultsFromDB();
-//						m_SaveDiffMessage = message;
-//
-//						EventQueue.invokeLater(new 
-//								Runnable()
-//						{ 
-//							public void run()
-//							{ 
-//								// 1 kick off background analysis check
-//								// 2 refresh grid
-//								// 3 Generate a message
-//								// Do in this order since grid refresh resets the m_MeterPumpLoadOnly flag
-//								doBackgroundAnalysis();										
-//								updateGrid();
-//								JOptionPane.showMessageDialog(null, m_SaveDiffMessage);									
-//							}
-//						});
-//					}
-//
-//				}
-//			});	
-//
-//		}
-//		catch (Exception e)
-//		{
-//			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "doThreadLoadOmniPod: Just caught an exception" + e.getMessage() + "-" + e.getLocalizedMessage());		
-//		}
-//	}
+	//	private void doThreadLoadOmniPod(String file)
+	//	{
+	//		try
+	//		{
+	//			m_NightScoutLoaderCore.threadLoadOmniPodMeterPump(m_FileNameTxtFld.getText(),
+	//					new ThreadDataLoad.DataLoadCompleteHander(null) 
+	//			{
+	//				public void exceptionRaised(String message) { }
+	//				public void dataLoadComplete(Object obj, String message) 
+	//				{
+	//					// Refresh grid if meter/pump load only
+	//					if (m_NightScoutLoaderCore.isM_MeterPumpLoadOnly() == true)
+	//					{
+	//						m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadMongoDB().getResultsFromDB();
+	//						m_SaveDiffMessage = message;
+	//
+	//						EventQueue.invokeLater(new 
+	//								Runnable()
+	//						{ 
+	//							public void run()
+	//							{ 
+	//								// 1 kick off background analysis check
+	//								// 2 refresh grid
+	//								// 3 Generate a message
+	//								// Do in this order since grid refresh resets the m_MeterPumpLoadOnly flag
+	//								doBackgroundAnalysis();										
+	//								updateGrid();
+	//								JOptionPane.showMessageDialog(null, m_SaveDiffMessage);									
+	//							}
+	//						});
+	//					}
+	//
+	//				}
+	//			});	
+	//
+	//		}
+	//		catch (Exception e)
+	//		{
+	//			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "doThreadLoadOmniPod: Just caught an exception" + e.getMessage() + "-" + e.getLocalizedMessage());		
+	//		}
+	//	}
 
 	private boolean offerToLoadCorrectFileFormat(String file, FileChecker.FileCheckType desiredFileType)
 	{
@@ -1204,7 +1381,9 @@ public class WinNightScoutLoader extends JFrame {
 					(fileType == FileChecker.FileCheckType.Diasend &&
 					desiredFileType == FileChecker.FileCheckType.Diasend) ||
 					(fileType == FileChecker.FileCheckType.OmniPod &&
-					desiredFileType == FileChecker.FileCheckType.OmniPod) )
+					desiredFileType == FileChecker.FileCheckType.OmniPod) ||
+					(fileType == FileChecker.FileCheckType.RocheSQLExtract &&
+					desiredFileType == FileChecker.FileCheckType.RocheSQLExtract) )
 			{
 				doThreadLoadFile(file, fileType);
 			}
@@ -1282,7 +1461,25 @@ public class WinNightScoutLoader extends JFrame {
 		}
 		else if (m_ComboBox.getSelectedIndex() == 3)
 		{
+			// Only enable the parameters that use MongoDB for Roche if it's Davids laptop
+			boolean davidsLaptop = PrefsNightScoutLoader.isItDavidsLaptop();
+
+			// For now, only I can do this on the laptop development machine...
+			if (davidsLaptop)
+			{
 			result = offerToLoadCorrectFileFormat(m_FileNameTxtFld.getText(), FileChecker.FileCheckType.OmniPod);
+			}
+			else
+			{
+				JDialog.setDefaultLookAndFeelDecorated(true);
+				JOptionPane.showMessageDialog(null, 
+						"Please note that OmniPod loads are not available yet.  This menu is here to allow development to proceed.");
+				result = false;
+			}
+		}
+		else if (m_ComboBox.getSelectedIndex() == 4)
+		{
+			result = offerToLoadCorrectFileFormat(m_FileNameTxtFld.getText(), FileChecker.FileCheckType.RocheSQLExtract);
 		}
 
 		// Update Status on window
@@ -1313,10 +1510,10 @@ public class WinNightScoutLoader extends JFrame {
 						//		@Override
 						public void operationComplete(Object obj, String message) 
 						{
-//							Boolean initialRun = (Boolean)obj;
-							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadMongoDB().getResultsFromDB();
+							//							Boolean initialRun = (Boolean)obj;
+							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadNightScout().getResultsFromDB();
 							//m_MongoResults = m_NightScoutLoaderCore.getM_ResultsMongoDB();
-							
+
 							m_SaveDiffMessage = message;
 
 							// Swing is not threadsafe, so add a request to update the grid onto the even queue
@@ -1337,7 +1534,7 @@ public class WinNightScoutLoader extends JFrame {
 							});
 
 							// Can't pass a parameter through to an interface
-//							if (initialRun == true && m_MongoResults != null && m_MongoResults.size() > 0)
+							//							if (initialRun == true && m_MongoResults != null && m_MongoResults.size() > 0)
 							if (m_MongoResults != null && m_MongoResults.size() > 0)
 							{
 								EventQueue.invokeLater(new 
@@ -1393,7 +1590,7 @@ public class WinNightScoutLoader extends JFrame {
 					}
 				}
 				);
-		
+
 		// Kick off the full history analysis in parallel too
 		doFullHistoryBackgroundAnalysis();
 	}
@@ -1422,7 +1619,7 @@ public class WinNightScoutLoader extends JFrame {
 				);
 	}
 
-	
+
 	private void doThreadedSynchronize()
 	{
 		// doThreadLoadRocheMeterPump(); Obsolete already - used to get Roche loader working in own thread
@@ -1489,13 +1686,14 @@ public class WinNightScoutLoader extends JFrame {
 		doThreadedLoadMeterPumpOnly();
 	}
 
+
 	private void doAnalyseResults()
 	{
 		// New way - now drive through new window
 
 		// However, only show this scarily complicated window if advanced features is set
 		// otherwise, just do the analysis for users.
-		if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions() == true)
+		if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings() == true)
 		{
 			analyzer.setVisible(true);
 		}
@@ -1504,10 +1702,9 @@ public class WinNightScoutLoader extends JFrame {
 			// Only do analysis if there are results
 			if (m_MongoResults != null && m_MongoResults.size() > 0)
 			{
-
 				// First off, ensure that the dates are set correctly.
 				resetAnalyzeDateRange();
-			
+
 				analyzer.threadAnalyze();
 			}
 		}
@@ -1517,7 +1714,7 @@ public class WinNightScoutLoader extends JFrame {
 	{
 		// Popup a confirmation dialog first ...
 		JDialog.setDefaultLookAndFeelDecorated(true);
-		int beforeTotalEntryCount = m_NightScoutLoaderCore.getM_DataLoadMongoDB().getResultsFromDB().size();
+		int beforeTotalEntryCount = m_NightScoutLoaderCore.getM_DataLoadNightScout().getResultsFromDB().size();
 		int beforeNSLEntryCount   = m_NightScoutLoaderCore.countNightScoutTreatments();
 
 		if (beforeNSLEntryCount > 0)
@@ -1542,7 +1739,7 @@ public class WinNightScoutLoader extends JFrame {
 		else
 		{
 			// Check if connected first
-			if (m_NightScoutLoaderCore.getM_DataLoadMongoDB().getM_ServerState() == DataLoadNightScout.MongoDBServerStateEnum.not_accessible)
+			if (m_NightScoutLoaderCore.getM_DataLoadNightScout().getM_ServerState() == DataLoadNightScoutTreatments.MongoDBServerStateEnum.not_accessible)
 			{
 				JOptionPane.showMessageDialog(null, "Currently not connected to MongoDB and so can't delete");
 
@@ -1868,8 +2065,15 @@ public class WinNightScoutLoader extends JFrame {
 	{
 		try
 		{
+			// Load treatments
 			m_NightScoutLoaderCore.loadNightScout();
 			m_MongoResults = m_NightScoutLoaderCore.getM_ResultsMongoDB();
+			
+			// Load entries
+			// DAVID 8 Dec 2016
+//			m_NightScoutLoaderCore.loadNightScoutEntries();
+//			m_MongoResultsEntries = m_NightScoutLoaderCore.getM_DataLoadNightScoutEntries();
+			
 			doBackgroundAnalysis();
 		}
 
@@ -1935,7 +2139,7 @@ public class WinNightScoutLoader extends JFrame {
 	//		changeStatusText(m_NightScoutLoaderCore.getM_StatusText());
 	//	}
 
-	private Boolean confirmWriteFile(String filePathString, String purpose)
+	public Boolean confirmWriteFile(String filePathString, String purpose)
 	{
 		// Assume no, don't go ahead and write to the file
 		Boolean result = false;
@@ -2016,7 +2220,7 @@ public class WinNightScoutLoader extends JFrame {
 
 		if (excelFile != null)
 		{
-//			m_NightScoutLoaderCore.analyseResults(excelFile);  
+			//			m_NightScoutLoaderCore.analyseResults(excelFile);  
 
 			// Store file back in preferences
 			PrefsNightScoutLoader.getInstance().setM_AnalysisFilePath(excelFile);
@@ -2036,11 +2240,19 @@ public class WinNightScoutLoader extends JFrame {
 	{
 
 	}
+	
+	public void displayCGMChart()
+	{
+		// Experimental - create a chart
+		CGMChart chart = new CGMChart(this.m_NightScoutLoaderCore.getM_NightScoutArrayListDBResultEntries());
+		chart.setVisible(true);
+	}
+	
 
 	public boolean threadDeeperAnalyseResults(ThreadAnalyzer.AnalyzerCompleteHander handler)
 	{
 		boolean result = false; // did we do analysis?
-		
+
 		String excelFile = getSelectedExcelFileForOutput(PrefsNightScoutLoader.getInstance().getM_AnalysisFilePath(), 
 				"Results Analysis", 
 				"You chose to generate Analysis to this file: ");
@@ -2057,7 +2269,7 @@ public class WinNightScoutLoader extends JFrame {
 			m_NightScoutLoaderCore.doThreadAnalyzeResults(excelFile, handler);		
 			result = true;
 		}
-		
+
 		return result;
 	}
 
@@ -2080,7 +2292,7 @@ public class WinNightScoutLoader extends JFrame {
 	{	
 		if (excelFile != null)
 		{
-//			m_NightScoutLoaderCore.analyseResults(excelFile);			
+			//			m_NightScoutLoaderCore.analyseResults(excelFile);			
 			// Open file finally
 			try {
 				Desktop.getDesktop().open(new File(excelFile));
@@ -2093,7 +2305,7 @@ public class WinNightScoutLoader extends JFrame {
 
 	public void analyseResults()
 	{
-//		m_NightScoutLoaderCore.analyseResults();      
+		//		m_NightScoutLoaderCore.analyseResults();      
 		// Update Status on window
 		changeStatusText(m_NightScoutLoaderCore.getM_StatusText());
 	}
@@ -2127,7 +2339,7 @@ public class WinNightScoutLoader extends JFrame {
 		return result;
 	}
 
-	
+
 	private boolean isRowJustLoaded(int rowNum)
 	{
 		boolean result = false;
@@ -2142,14 +2354,81 @@ public class WinNightScoutLoader extends JFrame {
 		return result;
 	}
 
+	// http://stackoverflow.com/questions/2749977/checking-if-a-row-appears-on-screen-before-force-scrolling-to-it
+	public boolean isRowVisible(JTable table, int rowIndex) 
+	{ 
+		if (!(table.getParent() instanceof JViewport)) { 
+			return true; 
+		} 
+
+		JViewport viewport = (JViewport)table.getParent(); 
+		// This rectangle is relative to the table where the 
+		// northwest corner of cell (0,0) is always (0,0) 
+
+		Rectangle rect = table.getCellRect(rowIndex, 1, true); 
+
+		// The location of the viewport relative to the table     
+		Point pt = viewport.getViewPosition(); 
+		// Translate the cell location so that it is relative 
+		// to the view, assuming the northwest corner of the 
+		// view is (0,0) 
+		rect.setLocation(rect.x-pt.x, rect.y-pt.y);
+		//	    rect.setLeft(0);
+		//	    rect.setWidth(1);
+		// Check if view completely contains the row
+		return new Rectangle(viewport.getExtentSize()).contains(rect); 
+	} 
+
+	private int getRowsToKeepVisible(JTable table)
+	{
+		int result;
+
+		// http://stackoverflow.com/questions/11887642/how-many-rows-is-a-jtable-currently-displaying
+		// How many rows visible
+		Rectangle vr = table.getVisibleRect ();
+		int first = table.rowAtPoint(vr.getLocation());
+		vr.translate(0, vr.height);
+		int visibleRows = table.rowAtPoint(vr.getLocation()) - first;
+
+		// Let's go for a quarter
+		result = visibleRows / 4;
+
+		return result;
+	}
+
+	public void displayMongoFormUp(DBResult result, int rowNum)
+	{
+		displayMongoForm(result, rowNum, -getRowsToKeepVisible(m_NightScoutTable));
+	}
+
+	public void displayMongoFormDown(DBResult result, int rowNum)
+	{
+		displayMongoForm(result, rowNum, getRowsToKeepVisible(m_NightScoutTable));
+	}
+
 	public void displayMongoForm(DBResult result, int rowNum)
 	{
 		// If the selected row is an updated result, it doesn't have an _ID yet.
 		// Need to therefore reload the entire collection first.
 		m_RowUpdated = -1;
-		mongoForm.initialize(result, rowNum);
+		mongoForm.initialize(m_MongoResults, result, rowNum);
+
 		mongoForm.setVisible(true);
-	}	
+		this.repaint();
+	}
+
+	public void displayMongoForm(DBResult result, int rowNum, int rowsToKeepInView)
+	{
+		displayMongoForm(result, rowNum);
+
+		// Check if the row is out of view.  If so, then scroll too.
+		if (!isRowVisible(m_NightScoutTable, rowNum))
+		{	
+			Rectangle aRect = m_NightScoutTable.getCellRect(rowNum + rowsToKeepInView, 0, true); 
+			m_NightScoutTable.scrollRectToVisible(aRect);		
+		}
+	}
+
 	public void meterSelected()
 	{
 		// If Roche is selected, then enable the date ranges
@@ -2183,6 +2462,12 @@ public class WinNightScoutLoader extends JFrame {
 				// Set the text filename if Medtronic is used.
 				// Initialise text field from preferences
 				m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_OmniPodMeterPumpResultFilePath());			
+			}
+			else if(m_ComboBox.getSelectedIndex() == 4)
+			{
+				// Set the text filename if Medtronic is used.
+				// Initialise text field from preferences
+				m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_RocheExtractMeterPumpResultFilePath());			
 			}
 
 			// If Medtronic or Diasend is selected, then disable the date ranges
@@ -2218,6 +2503,93 @@ public class WinNightScoutLoader extends JFrame {
 		{
 			setTimeZoneLabel(timezone);
 		}
+	}
+
+	public DBResult navigateTo(int rowNum)
+	{
+		DBResult result = null;
+
+		// From selected rowNum, decrease by 1 and return DBResult
+		// If at the top then return null
+
+		if (rowNum > 0 && rowNum > this.m_RowUpdated)
+		{
+			displayMongoFormDown(m_MongoResults.get(rowNum), rowNum);	
+		}
+		else
+		{
+			displayMongoFormUp(m_MongoResults.get(rowNum), rowNum);	
+		}
+
+		return result;
+	}
+
+	public DBResult navigateDownTo(int rowNum)
+	{
+		DBResult result = null;
+
+		// From selected rowNum, decrease by 1 and return DBResult
+		// If at the top then return null
+
+		if (rowNum > 0)
+		{
+			displayMongoFormDown(m_MongoResults.get(rowNum), rowNum);	
+		}
+
+		return result;
+	}
+
+	public DBResult navigateUpTo(int rowNum)
+	{
+		DBResult result = null;
+
+		// From selected rowNum, decrease by 1 and return DBResult
+		// If at the top then return null
+
+		if (rowNum >= 0)
+		{
+			displayMongoFormUp(m_MongoResults.get(rowNum), rowNum);	
+		}
+
+		return result;
+	}
+
+	public DBResult navigateUp(int rowNum)
+	{
+		DBResult result = null;
+
+		// From selected rowNum, decrease by 1 and return DBResult
+		// If at the top then return null
+
+		if (rowNum > 0)
+		{
+			displayMongoFormUp(m_MongoResults.get(rowNum - 1), rowNum - 1);	
+		}
+		else
+		{
+			mongoForm.vibrate();
+		}
+
+		return result;
+	}
+
+	public DBResult navigateDown(int rowNum)
+	{
+		DBResult result = null;
+
+		// From selected rowNum, decrease by 1 and return DBResult
+		// If at the top then return null
+
+		if (rowNum >= 0 && rowNum < m_MongoResults.size())
+		{
+			displayMongoFormDown(m_MongoResults.get(rowNum + 1), rowNum + 1);	
+		}
+		else
+		{
+			mongoForm.vibrate();
+		}
+
+		return result;
 	}
 
 }

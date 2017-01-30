@@ -20,16 +20,15 @@ import java.util.logging.Logger;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.sql.SQLException;
 
-public class DataLoadNightScout extends DataLoadBase 
+public abstract class DataLoadNightScout extends DataLoadBase 
 {
 	private static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());
 	private static final int m_FailedTestLimit = 2;
 
 	private static Integer m_FailedTests = 0;
-
-	private ArrayList <DBResult> resultsFromDB;
-	private MongoDBServerStateEnum m_ServerState = MongoDBServerStateEnum.unknown;
+	protected MongoDBServerStateEnum m_ServerState = MongoDBServerStateEnum.unknown;
 
 	enum MongoDBServerStateEnum
 	{
@@ -40,8 +39,11 @@ public class DataLoadNightScout extends DataLoadBase
 
 	public DataLoadNightScout()
 	{
-		resultsFromDB = new ArrayList<DBResult>();
+		;
 	}
+	
+	// Abstract method that returns the request type for messaging out
+	protected abstract String getRequestType();
 
 	// Check DB connection for where we only have server name
 	public String testDBConnection(String mongoHost)  throws UnknownHostException
@@ -113,10 +115,10 @@ public class DataLoadNightScout extends DataLoadBase
 	}
 
 	/*	// From abstract parent
-	public void loadDBResults()  throws UnknownHostException, SQLException, ClassNotFoundException, IOException
-	{
-		loadDBResults();
-	}*/
+		public void loadDBResults()  throws UnknownHostException, SQLException, ClassNotFoundException, IOException
+		{
+			loadDBResults();
+		}*/
 
 	public void testMongo()
 	{
@@ -129,174 +131,30 @@ public class DataLoadNightScout extends DataLoadBase
 				final String mongoHost      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoServer();
 				//			final int    mongoPort      = NightLoaderPreferences.getInstance().getM_NightscoutMongoPort();
 				final String mongoDB        = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB();
-//				final String mongoColl      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoCollection();
+				//					final String mongoColl      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoCollection();
 
 				if (mongoHost.equals(""))
 				{
-					m_Logger.log(Level.INFO, "Nightscout connection disabled.  Running in standalone mode.");
+					m_Logger.log(Level.INFO, getRequestType() + "Nightscout connection disabled.  Running in standalone mode.");
 					incrementTestCount();
 				}
 				else
 				{
-					m_Logger.log(Level.INFO, "Attempting to connect to Mongo at '" + mongoHost + "'  (May take a few seconds to detect failure)");
+					m_Logger.log(Level.INFO, getRequestType() + "Attempting to connect to Mongo at '" + mongoHost + "'  (May take a few seconds to detect failure)");
 
 					testDBConnection(mongoHost, mongoDB);
 
-					m_Logger.log(Level.INFO, "Mongo connection success!");
+					m_Logger.log(Level.INFO, getRequestType() + "Mongo connection success!");
 					m_ServerState = MongoDBServerStateEnum.accessible;
 
 				}
 			}
 			catch (Exception e)
 			{
-				m_Logger.log(Level.INFO, "Mongo connection failed.  Please review options.");
+				m_Logger.log(Level.INFO, getRequestType() + "Mongo connection failed.  Please review options.");
 				m_ServerState = MongoDBServerStateEnum.not_accessible;
 				incrementTestCount();
 			}
-		}
-	}
-
-	public void loadDBResults() throws UnknownHostException
-	{
-		testMongo();
-
-		if (m_ServerState == MongoDBServerStateEnum.accessible)
-		{
-			final String mongoHost      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoServer();
-			//		final int    mongoPort      = NightLoaderPreferences.getInstance().getM_NightscoutMongoPort();
-			final String mongoDB        = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB();
-			final String mongoColl      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoCollection();
-
-
-			MongoClient dbClient;
-			MongoClientURI dbURI;
-
-			if (mongoHost.contains("@"))
-			{
-				// Create full URI with DB too.  This is straight from the https://mongolab.com/databases/dexcom_db page
-				//			dbURI    = new MongoClientURI(mongoHost + ":" + mongoPort + "/" + mongoDB);
-
-				// Left like below after a few days not using server but not working clearly :-(
-				//dbURI    = new MongoClientURI(mongoHost + ":" + "/" + mongoDB);
-
-				dbURI    = new MongoClientURI(mongoHost + "/" + mongoDB);
-				dbClient = new MongoClient(dbURI);
-			}
-			else
-			{
-				dbClient = new MongoClient(mongoHost);
-			}
-
-			String timeFld = new String();
-			String collFld = new String();
-
-			timeFld = "created_at";
-			collFld = mongoColl /*"treatments"*/;
-
-			DB db = dbClient.getDB(mongoDB);
-
-			resultsFromDB = new ArrayList<DBResult>();
-
-			// Get the players collection
-			DBCollection coll = db.getCollection(collFld);
-			// Retrieve all the documents
-
-			BasicDBObject query = new BasicDBObject();
-			// Load *all* results
-			//		query.put(timeFld, BasicDBObjectBuilder.start("$gte", startString).add("$lte", endString).get());
-
-			m_Logger.log(Level.FINE, "loadDBResults Mongo Query is now " + query.toString());
-
-			DBCursor cursor = coll.find(query);
-			// Sort by time
-			cursor.sort(new BasicDBObject(timeFld, 1));
-
-			for (DBObject rs: cursor)
-			{			
-				// Now create Result objects for each document and store into array
-				//ResultFromDB res = new ResultFromDB(rs);
-
-				// Switch to new object type
-				DBResult res = new DBResultNightScout(rs, false);
-
-				resultsFromDB.add(res);
-
-				m_Logger.log(Level.FINEST, "Result added for Nightscout " + rs.toString());
-			}
-
-			dbClient.close();
-		}
-
-	}
-
-	// Used to load Mongo results between date ranges
-	// Either for Nightscout or for the Local Roche test data
-	public void loadDBResults(Date    startDate,
-			Date    endDate,
-			boolean rawData) throws UnknownHostException
-	{		
-		testMongo();
-
-		if (m_ServerState == MongoDBServerStateEnum.accessible)
-		{
-
-			final String mongoHost      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoServer();
-			final String mongoDB        = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB();
-			final String mongoColl      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoCollection();
-			final String mongoMeterColl = PrefsNightScoutLoader.getInstance().getM_MongoMeterCollection();
-
-			MongoClient dbClient;
-			dbClient = new MongoClient( mongoHost /*"localhost"*/ );
-			// dbClient = new MongoClient();
-
-			String timeFld = new String();
-			String collFld = new String();
-
-			if (rawData)
-			{
-				timeFld = "Time";
-				collFld = mongoMeterColl /*"Roche_Results"*/;
-			}
-			else
-			{
-				timeFld = "created_at";
-				collFld = mongoColl /*"treatments"*/;
-			}
-
-			final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
-			String startString = new String(df.format(startDate));
-			String endString   = new String(df.format(endDate));
-
-			DB db = dbClient.getDB( mongoDB /*"dexcom_db"*/ );
-			resultsFromDB = new ArrayList<DBResult>();
-
-			// Get the players collection
-			DBCollection coll = db.getCollection(collFld);
-			// Retrieve all the documents
-
-			BasicDBObject query = new BasicDBObject();
-			query.put(timeFld, BasicDBObjectBuilder.start("$gte", startString).add("$lte", endString).get());
-
-			m_Logger.log(Level.FINE, "loadDBResults with dates Mongo Query is now " + query.toString());
-
-			DBCursor cursor = coll.find(query);
-
-			// Sort by time
-			cursor.sort(new BasicDBObject(timeFld, 1));
-
-			for (DBObject rs: cursor)
-			{
-				// Now create Result objects for each document and store into array
-				//ResultFromDB res = new ResultFromDB(rs);
-
-				// Switch to new object type
-				DBResult res = new DBResultNightScout(rs, rawData);
-
-				resultsFromDB.add(res);
-				m_Logger.log(Level.FINEST, "Result added for Nightscout " + rs.toString());
-			}
-
-			dbClient.close();
 		}
 	}
 
@@ -310,7 +168,7 @@ public class DataLoadNightScout extends DataLoadBase
 		DBObject res = getLatestMongoRecord(collName, sortName);
 		if (res != null)
 		{
-			result = DBResultNightScout.getFieldStr(res, sortName);
+			result = CommonUtils.getFieldStr(res, sortName);
 		}
 
 		return result;
@@ -327,9 +185,9 @@ public class DataLoadNightScout extends DataLoadBase
 		DBObject res = getLatestMongoRecord(collName, sortName);
 		if (res != null)
 		{
-			result = DBResultNightScout.getFieldStr(res, sortName);
+			result = CommonUtils.getFieldStr(res, sortName);
 			// Add who did it too
-			result += " by " + DBResultNightScout.getFieldStr(res, whoName);
+			result += " by " + CommonUtils.getFieldStr(res, whoName);
 		}
 
 		return result;
@@ -371,24 +229,24 @@ public class DataLoadNightScout extends DataLoadBase
 			// Create & get reference to our Roche Results Collection
 			DB db = dbClient.getDB(mongoDB);
 			DBCollection coll = db.getCollection(collectionName);
-	
-//			
-//			
-//			
-//			
-//			final String mongoHost      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoServer();
-//			final String mongoDB        = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB();
-//			//		final String mongoMeterColl = PrefsNightScoutLoader.getInstance().getM_MongoMeterCollection();
-//
-//			MongoClient dbClient;
-//			dbClient = new MongoClient( mongoHost /*"localhost"*/ );
-//			// dbClient = new MongoClient();
-//
-//			DB db = dbClient.getDB( mongoDB /*"dexcom_db"*/ );
-//
-//			// Get the players collection
-//			DBCollection coll = db.getCollection(collectionName);
-//			// Retrieve all the documents
+
+			//				
+			//				
+			//				
+			//				
+			//				final String mongoHost      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoServer();
+			//				final String mongoDB        = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB();
+			//				//		final String mongoMeterColl = PrefsNightScoutLoader.getInstance().getM_MongoMeterCollection();
+			//
+			//				MongoClient dbClient;
+			//				dbClient = new MongoClient( mongoHost /*"localhost"*/ );
+			//				// dbClient = new MongoClient();
+			//
+			//				DB db = dbClient.getDB( mongoDB /*"dexcom_db"*/ );
+			//
+			//				// Get the players collection
+			//				DBCollection coll = db.getCollection(collectionName);
+			//				// Retrieve all the documents
 
 			BasicDBObject query = new BasicDBObject();		
 			//	m_Logger.log(Level.FINE, "loadDBResults with dates Mongo Query is now " + query.toString());
@@ -639,6 +497,66 @@ public class DataLoadNightScout extends DataLoadBase
 		}
 	}
 
+	public void updateExistingResultsFromDB(Set<DBResult> resultsSet) throws UnknownHostException
+	{
+		testMongo();
+
+		if (m_ServerState == MongoDBServerStateEnum.accessible)
+		{
+
+			final String mongoHost      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoServer();
+			//		final int    mongoPort      = NightLoaderPreferences.getInstance().getM_NightscoutMongoPort();
+			final String mongoDB        = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB();
+			final String mongoColl      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoCollection();
+
+			MongoClient dbClient;
+			MongoClientURI dbURI;
+
+			if (mongoHost.contains("@"))
+			{
+				// Create full URI with DB too.  This is straight from the https://mongolab.com/databases/dexcom_db page
+				//			dbURI    = new MongoClientURI(mongoHost + ":" + mongoPort + "/" + mongoDB);
+
+				// Left like below after a few days not using server but not working clearly :-(
+				//dbURI    = new MongoClientURI(mongoHost + ":" + "/" + mongoDB);
+
+				dbURI    = new MongoClientURI(mongoHost + "/" + mongoDB);
+				dbClient = new MongoClient(dbURI);
+			}
+			else
+			{
+				dbClient = new MongoClient(mongoHost);
+			}
+
+
+			// Build DBOjects for storing into MongoDB
+
+			// Create & get reference to our Roche Results Collection
+			DB db = dbClient.getDB(mongoDB);
+			DBCollection coll = db.getCollection(mongoColl);
+
+			// In reality, the collection used will probably be treatments!
+
+			// These are the list of potentially duplicate existing treatments that need
+			// their entered by values updating
+			for (DBResult x: resultsSet)
+			{				
+				BasicDBObject dbObject = new BasicDBObject();
+				dbObject.put("_id", new ObjectId(x.getM_ID())); 
+
+				DBObject newObject =  coll.find(dbObject).toArray().get(0);
+
+				newObject.put("enteredBy", x.getM_CP_EnteredBy());
+				coll.findAndModify(dbObject, newObject);
+
+				m_Logger.log(Level.FINEST, "enteredBy updated for Nightscout " + x.toString());
+			}
+
+			dbClient.close();
+		}
+	}
+
+
 	// Remove entries for all uploads
 	public int deleteLoadedTreatments() throws IOException
 	{
@@ -765,6 +683,65 @@ public class DataLoadNightScout extends DataLoadBase
 		return result;	
 	}
 
+	public int deleteLoadedTreatment(DBResult res) throws UnknownHostException
+	{
+		// How many did we actually delete
+		int result = 0;
+		testMongo();
+
+		if (m_ServerState == MongoDBServerStateEnum.accessible)
+		{
+			final String mongoHost      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoServer();
+			final String mongoDB        = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB();
+			final String mongoColl      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoCollection();
+
+			MongoClient dbClient;
+			MongoClientURI dbURI;
+
+			if (mongoHost.contains("@"))
+			{
+				// Create full URI with DB too.  This is straight from the https://mongolab.com/databases/dexcom_db page
+				//			dbURI    = new MongoClientURI(mongoHost + ":" + mongoPort + "/" + mongoDB);
+
+				// Left like below after a few days not using server but not working clearly :-(
+				//dbURI    = new MongoClientURI(mongoHost + ":" + "/" + mongoDB);
+
+				dbURI    = new MongoClientURI(mongoHost + "/" + mongoDB);
+				dbClient = new MongoClient(dbURI);
+			}
+			else
+			{
+				dbClient = new MongoClient(mongoHost);
+			}
+
+			String collFld = new String();
+			collFld = mongoColl /*"treatments"*/;
+
+			DB db = dbClient.getDB(mongoDB);
+
+			// Get the collection
+			DBCollection coll = db.getCollection(collFld);
+			// Retrieve all the documents
+
+			BasicDBObject query = new BasicDBObject();
+			//		query.append(DBResult.getM_determinantField(), DBResult.getM_determinantValue());
+			// For now, delete all match regexp
+
+			// Deletins by upload ID append proximity if deleting these items
+			query.append("_id", new ObjectId(res.getM_ID()));
+			m_Logger.log(Level.FINE, "deleteLoadedTreatment Mongo Query is now " + query.toString());
+
+			DBCursor cursor = coll.find(query);
+			result = cursor.count();
+
+			coll.remove(query);
+
+			dbClient.close();
+		}
+
+		return result;	
+	}
+
 
 
 	// Useful for saving SQL Server type results into local Mongo for developing
@@ -822,16 +799,6 @@ public class DataLoadNightScout extends DataLoadBase
 		dbClient.close();
 	}
 
-	ArrayList <DBResult> getResultsFromDB()
-	{
-		return resultsFromDB;
-	}
-
-	public void cloneMeterPumpOnlyResults(ArrayList <DBResult> results)
-	{
-		resultsFromDB = new ArrayList<DBResult>(results);
-	}
-
 	@Override
 	protected String getDevice() 
 	{
@@ -866,5 +833,12 @@ public class DataLoadNightScout extends DataLoadBase
 
 			DataLoadNightScout.m_FailedTests++;
 		}
+	}
+
+	@Override
+	public void loadDBResults() throws UnknownHostException, SQLException, ClassNotFoundException, IOException 
+	{
+		// TODO Auto-generated method stub
+
 	}
 }

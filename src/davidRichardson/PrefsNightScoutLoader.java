@@ -1,6 +1,16 @@
 package davidRichardson;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.Date;
 import java.util.Calendar;
+import java.util.Formatter;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.InvalidPreferencesFormatException;
 import java.util.prefs.Preferences;
 
 public class PrefsNightScoutLoader 
@@ -65,6 +75,7 @@ public class PrefsNightScoutLoader
 	final private String def_M_MedtronicMeterPumpResultFilePath  = "";
 	final private String def_M_DiasendMeterPumpResultFilePath    = "";
 	final private String def_M_OmniPodMeterPumpResultFilePath    = "";
+	final private String def_M_RocheExtractMeterPumpResultFilePath    = "";
 	final private String def_M_ExportFilePath                    = "";
 	final private String def_M_DownloadTreatmentFilePath         = "";
 	final private String def_M_DownloadSensorFilePath            = "";
@@ -78,15 +89,20 @@ public class PrefsNightScoutLoader
 	final private String def_M_NightscoutSensorMongoCollection   = "entries";
 	final private String def_M_NightscoutAuditCollection         = "treatments_loads";
 	final private String def_M_MongoMeterCollection              = "Roche_Results";
+	final private Boolean def_M_LoadNightscoutEntries            = true;
+	private int def_M_WeeksBackToLoadEntries               = 4;
 	
-	final private Boolean def_M_AdvancedOptions                  = false;
+	final private Boolean def_M_AdvancedSettings                 = false;
+	final private String  def_M_MongoMeterServer                 = "";
+	final private String  def_M_MongoMeterDB                     = "";
+
 	final private int    def_M_MaxMinsBetweenSameMealEvent       = 30; // Allow up to half an hour between BG, Carbs & Ins
 	final private int    def_M_MaxMinsBetweenSameCorrectionEvent = 5;  // Allow up to 5 mins between BG & Ins	
 	final private Boolean def_M_UseMongoForRocheResults          = false; 
 	
 	final private int     def_M_LogLevel                         = 0; // CHanged now.  It's an index onto 3 values
 	final private String  def_M_LogFile                          = "C:\\temp\\NightscoutLoader_Log.txt";
-	final private Boolean def_M_AttemptDiasendTempBasals         = false;
+	final private Boolean def_M_InferDiasendTempBasals         = false;
 	final private Boolean def_M_AuditLogAllShown                 = true;
 	
 	/*Not Final!*/      
@@ -96,7 +112,14 @@ public class PrefsNightScoutLoader
 	final private String  def_M_Timezone                         = "Local Timezone";
 	final private int     def_M_ProximityMinutes                 = 15;
 	final private boolean def_M_ProximityTypeCheck               = true;
-	final private int     def_M_ProximityValueCheck              = 1;
+	final private int     def_M_ProximityCheckType               = 1;
+	final private boolean def_M_CompareBGInProximityCheck        = true;
+	final private boolean def_M_CompareCarbInProximityCheck      = true;
+	final private boolean def_M_CompareInsulinInProximityCheck   = true;
+	final private int     def_M_BGDecPlacesProximityCheck        = 1;
+	final private int     def_M_CarbDecPlacesProximityCheck      = 1;
+	final private int     def_M_InsulinDecPlacesProximityCheck   = 1;
+	
 	final private int     def_M_MongoDBAlerterCheckInterval      = 10;
 
 	// Analyzer Controls
@@ -134,7 +157,17 @@ public class PrefsNightScoutLoader
 	final private String  def_M_AnalyzerBadNightEndTime            = "05:30:00";
 	final private boolean def_M_AnalyzerCompressMealTrends         = false;
 	final private boolean def_M_AnalyzerTotalRecurringTrendsOnly   = true;
+	
+	final private boolean def_M_AnalyzerIncludeBreakfast           = true;
+	final private boolean def_M_AnalyzerIncludeLunch               = true;
+	final private boolean def_M_AnalyzerIncludeDinner              = true;
+	final private boolean def_M_AnalyzerIncludeOvernight           = true;
+	final private int     def_M_AnalyzerExcelOutputLevel           = 0;  // 0 Full, 1 Med, 3 Min
 
+	final private int     def_M_EntryAnalyzerIntervalHours         = 1;
+	final private double  def_M_EntryAnalyzerSteepChange           = 3.0;
+	final private boolean def_M_EntryExtremesOverrideDirection     = true;
+	
 	
 	private int     m_BGUnits;    // 0 ==> mmol/L 1 ==> mg/
 	private String  m_SelectedMeter;
@@ -146,6 +179,7 @@ public class PrefsNightScoutLoader
 	private String  m_MedtronicMeterPumpResultFilePath;
 	private String  m_DiasendMeterPumpResultFilePath;
 	private String  m_OmniPodMeterPumpResultFilePath;
+	private String  m_RocheExtractMeterPumpResultFilePath;
 	private String  m_ExportFilePath;
 	private String  m_DownloadTreatmentFilePath;
 	private String  m_DownloadSensorFilePath;
@@ -157,23 +191,36 @@ public class PrefsNightScoutLoader
 	private String  m_NightscoutSensorMongoCollection;
 	private String  m_NightscoutAuditCollection;
 	// Items below are for more advanced use only
-	private boolean m_AdvancedOptions;
+	private boolean m_AdvancedSettings;
 	private String  m_MongoMeterServer;     // Used for development 'on the road'
 	private String  m_MongoMeterDB;         // Used for development 'on the road'
 	private String  m_MongoMeterCollection; // Used for development 'on the road'
+
+	private Boolean m_LoadNightscoutEntries;
+	private int m_WeeksBackToLoadEntries;
+
+
 	private int     m_MaxMinsBetweenSameMealEvent;
 	private int     m_MaxMinsBetweenSameCorrectionEvent;	
 	private boolean m_UseMongoForRocheResults;
 	private int     m_LogLevel;
 	private String  m_LogFile;
-	private boolean m_AttemptDiasendTempBasals;
+	private boolean m_InferDiasendTempBasals;
 	private boolean m_AuditLogAllShown;
 	private String  m_InputDateFormat;
 	private String  m_Timezone;
-	private int     m_ProximityMinutes            = 15;
-	private boolean m_ProximityTypeCheck          = true;
-	private int     m_ProximityValueCheck         = 1;
+	private int     m_ProximityMinutes                 = 15;
+	private boolean m_ProximityTypeCheck               = true;
+	
+	private int     m_ProximityCheckType               = 1;
+	private boolean m_CompareBGInProximityCheck        = true;
+	private boolean m_CompareCarbInProximityCheck      = true;
+	private boolean m_CompareInsulinInProximityCheck   = true;
+	private int     m_BGDecPlacesProximityCheck        = 1;
+	private int     m_CarbDecPlacesProximityCheck      = 1;
+	private int     m_InsulinDecPlacesProximityCheck   = 1;
 
+	
 	private int     m_MongoDBAlerterCheckInterval = 10;
 	
 	// Analyzer controls
@@ -215,7 +262,18 @@ public class PrefsNightScoutLoader
 	private boolean m_AnalyzerCompressMealTrends; // Compresses some meal trends so rises & false are grouped 
 	private boolean m_AnalyzerTotalRecurringTrendsOnly;  // 100% consists of trends that recur 2 or more times if true.  Else full trend list
 	
-			
+	
+	private boolean m_AnalyzerIncludeBreakfast;
+	private boolean m_AnalyzerIncludeLunch;
+	private boolean m_AnalyzerIncludeDinner;
+	private boolean m_AnalyzerIncludeOvernight;
+	private int     m_AnalyzerExcelOutputLevel;
+	
+	private int     m_EntryAnalyzerIntervalHours;
+	private double  m_EntryAnalyzerSteepChange;
+	private boolean m_EntryExtremesOverrideDirection;
+
+
 	// Handles to retrieve preferences
 	final private String pref_BGUnits                           = "NSL_BGUnits";
 	final private String pref_SelectedMeter                     = "NSL_SelectedMeter";
@@ -225,8 +283,9 @@ public class PrefsNightScoutLoader
 	final private String pref_SQLDBServerInstance               = "NSL_SQLDBServer_Instance";
 	final private String pref_SQLDBName                         = "NSL_SQLDBName";
 	final private String pref_MedtronicMeterPumpResultFilePath  = "NSL_MedtronicMeterPumpResultFilePath";
-	final private String pref_DiasendMeterPumpResultFilePath    = "NSL_m_DiasendMeterPumpResultFilePath";
-	final private String pref_OmniPodMeterPumpResultFilePath    = "NSL_m_OmniPodMeterPumpResultFilePath";
+	final private String pref_DiasendMeterPumpResultFilePath    = "NSL_DiasendMeterPumpResultFilePath";
+	final private String pref_OmniPodMeterPumpResultFilePath    = "NSL_OmniPodMeterPumpResultFilePath";
+	final private String pref_RocheExtractMeterPumpResultFilePath    = "NSL_RocheExtractMeterPumpResultFilePath";
 	final private String pref_ExportFilePath                    = "NSL_ExportFilePath";
 	final private String pref_DownloadTreatmentFilePath         = "NSL_DownloadTreatmentFilePath";
 	final private String pref_DownloadSensorFilePath            = "NSL_DownloadSensorFilePath";
@@ -239,23 +298,33 @@ public class PrefsNightScoutLoader
 	final private String pref_NightscoutSensorMongoCollection   = "NSL_NightscoutSensorMongoCollection";
 	final private String pref_NightscoutAuditCollection         = "NSL_NightscoutAuditCollection";
 	// Items below are for more advanced use only
-	final private String pref_AdvancedOptions                   = "NSL_AdvancedOptions";
+	final private String pref_AdvancedSettings                  = "NSL_AdvancedSettings";
 	final private String pref_MongoMeterServer                  = "NSL_MongoMeterServer";
 	final private String pref_MongoMeterDB                      = "NSL_MongoMeterDB";
 	final private String pref_MongoMeterCollection              = "NSL_MongoMeterCollection";
+	final private String pref_LoadNightscoutEntries             = "NSL_LoadNightscoutEntries";
+	final private String pref_WeeksBackToLoadEntries           = "NSL_WeeksBackToLoadEntries";
+	
 	final private String pref_MaxMinsBetweenSameMealEvent       = "NSL_MaxMinsBetweenSameMealEvent";
 	final private String pref_MaxMinsBetweenSameCorrectionEvent = "NSL_MaxMinsBetweenSameCorrectionEvent";
 	final private String pref_UseMongoForRocheResults           = "NSL_UseMongoForRocheResults";
 	final private String pref_LogLevel                          = "NSL_LogLevel";
 	final private String pref_LogFile                           = "NSL_LogFile";
-	final private String pref_AttemptDiasendTempBasals          = "NSL_AttemptDiasendTempBasals";
+	final private String pref_InferDiasendTempBasals          = "NSL_InferDiasendTempBasals";
 	final private String pref_AuditLogAllShown                  = "NSL_AuditLogAllShown";   
 	final private String pref_InputDateFormat                   = "NSL_InputDateFormat";
 	final private String pref_Timezone                          = "NSL_Timezone";
 	final private String pref_ProximityMinutes                  = "NSL_ProximityMinutes";
 	final private String pref_ProximityTypeCheck                = "NSL_ProximityTypeCheck";
-	final private String pref_ProximityValueCheck               = "ProximityValueCheck";
 
+	final private String pref_ProximityCheckType                = "NSL_ProximityCheckType";
+	final private String pref_CompareBGInProximityCheck         = "NSL_CompareBGInProximityCheck";
+	final private String pref_CompareCarbInProximityCheck       = "NSL_CompareCarbInProximityCheck";
+	final private String pref_CompareInsulinInProximityCheck    = "NSL_CompareInsulinInProximityCheck";
+	final private String pref_BGDecPlacesProximityCheck         = "NSL_BGDecPlacesProximityCheck";
+	final private String pref_CarbDecPlacesProximityCheck       = "NSL_CarbDecPlacesProximityCheck";
+	final private String pref_InsulinDecPlacesProximityCheck    = "NSL_InsulinDecPlacesProximityCheck";
+	
 	final private String pref_MongoDBAlerterCheckInterval       = "NSL_MongoDBAlerterCheckInterval";	
 
 	// Analyzer controls
@@ -290,9 +359,17 @@ public class PrefsNightScoutLoader
 	final private String  pref_AnalyzerBadNightEndTime              = "NSL_AnalyzerBadNightEndTime";
 	final private String  pref_AnalyzerCompressMealTrends           = "NSL_AnalyzerCompressMealTrends";
 	final private String  pref_AnalyzerTotalRecurringTrendsOnly     = "NSL_AnalyzerTotalRecurringTrendsOnly";
+	final private String  pref_AnalyzerIncludeBreakfast             = "NSL_AnalyzerIncludeBreakfast";
+	final private String  pref_AnalyzerIncludeLunch                 = "NSL_AnalyzerIncludeLunch";
+	final private String  pref_AnalyzerIncludeDinner                = "NSL_AnalyzerIncludeDinner";
+	final private String  pref_AnalyzerIncludeOvernight             = "NSL_AnalyzerIncludeOvernight";
+	final private String  pref_AnalyzerExcelOutputLevel             = "NSL_AnalyzerExcelOutputLevel";
 	
+	final private String  pref_EntryAnalyzerIntervalHours           = "NSL_EntryAnalyzerIntervalHours";
+	final private String  pref_EntryAnalyzerSteepChange             = "NSL_EntryAnalyzerSteepChange";
+	final private String  pref_EntryExtremesOverrideDirection       = "NSL_EntryExtremesOverrideDirection";
 	
-	public static int getBGUnitMultiplier()
+	static int getBGUnitMultiplier()
 	{
 		int result = 1;  // Default is mmol/L
 		
@@ -317,6 +394,7 @@ public class PrefsNightScoutLoader
 		m_MedtronicMeterPumpResultFilePath  = def_M_MedtronicMeterPumpResultFilePath;
 		m_DiasendMeterPumpResultFilePath    = def_M_DiasendMeterPumpResultFilePath;
 		m_OmniPodMeterPumpResultFilePath    = def_M_OmniPodMeterPumpResultFilePath;
+		m_RocheExtractMeterPumpResultFilePath    = def_M_RocheExtractMeterPumpResultFilePath;
 		
 		m_ExportFilePath                    = def_M_ExportFilePath;
 		m_DownloadTreatmentFilePath         = def_M_DownloadTreatmentFilePath;
@@ -330,27 +408,51 @@ public class PrefsNightScoutLoader
 		m_NightscoutSensorMongoCollection   = def_M_NightscoutSensorMongoCollection;
 		m_NightscoutAuditCollection         = def_M_NightscoutAuditCollection;
 		m_MongoMeterCollection              = def_M_MongoMeterCollection;
+		m_LoadNightscoutEntries             = def_M_LoadNightscoutEntries;
+		m_WeeksBackToLoadEntries           = def_M_WeeksBackToLoadEntries;
 		
-		m_AdvancedOptions                   = def_M_AdvancedOptions;
+		m_AdvancedSettings                   = def_M_AdvancedSettings;
 		m_MaxMinsBetweenSameMealEvent       = def_M_MaxMinsBetweenSameMealEvent;
 		m_MaxMinsBetweenSameCorrectionEvent = def_M_MaxMinsBetweenSameCorrectionEvent;	
 		m_UseMongoForRocheResults           = def_M_UseMongoForRocheResults; 
 		
 		m_LogLevel                          = def_M_LogLevel;
 		m_LogFile                           = def_M_LogFile;
-		m_AttemptDiasendTempBasals          = def_M_AttemptDiasendTempBasals;
+		m_InferDiasendTempBasals          = def_M_InferDiasendTempBasals;
 		m_AuditLogAllShown                  = def_M_AuditLogAllShown;
 		m_InputDateFormat                   = def_M_InputDateFormat;
 		m_Timezone                          = def_M_Timezone;
 		m_ProximityMinutes                  = def_M_ProximityMinutes;
 		m_ProximityTypeCheck                = def_M_ProximityTypeCheck;
-		m_ProximityValueCheck               = def_M_ProximityValueCheck;
 		
+		
+		m_ProximityCheckType                = def_M_ProximityCheckType;
+		m_CompareBGInProximityCheck         = def_M_CompareBGInProximityCheck;
+		m_CompareCarbInProximityCheck       = def_M_CompareCarbInProximityCheck;
+		m_CompareInsulinInProximityCheck    = def_M_CompareInsulinInProximityCheck;
+		m_BGDecPlacesProximityCheck         = def_M_BGDecPlacesProximityCheck;
+		m_CarbDecPlacesProximityCheck       = def_M_CarbDecPlacesProximityCheck;
+		m_InsulinDecPlacesProximityCheck    = def_M_InsulinDecPlacesProximityCheck;
+
 		m_MongoDBAlerterCheckInterval       = def_M_MongoDBAlerterCheckInterval;
 		
 		// Analyzer controls in a separate procedure since we want to call them from
 		// Analyzer window
 		loadAnalyzerDefaultPreferences();		
+	}
+
+	public void exportPreferences(String filename) throws FileNotFoundException, IOException, BackingStoreException
+	{		
+		FileOutputStream fos = new FileOutputStream(filename);
+		prefs.exportSubtree(fos);
+		fos.close();
+	}
+	
+	public void importPreferences(String filename) throws FileNotFoundException, IOException, BackingStoreException, InvalidPreferencesFormatException
+	{
+		FileInputStream fis = new FileInputStream(filename);
+		prefs.importPreferences(fis);
+		fis.close();
 	}
 	
 	/**
@@ -395,7 +497,15 @@ public class PrefsNightScoutLoader
 		m_AnalyzerBadNightEndTime              = def_M_AnalyzerBadNightEndTime;
 		m_AnalyzerCompressMealTrends           = def_M_AnalyzerCompressMealTrends;
 		m_AnalyzerTotalRecurringTrendsOnly     = def_M_AnalyzerTotalRecurringTrendsOnly;
+		m_AnalyzerIncludeBreakfast             = def_M_AnalyzerIncludeBreakfast;
+		m_AnalyzerIncludeLunch                 = def_M_AnalyzerIncludeLunch;
+		m_AnalyzerIncludeDinner                = def_M_AnalyzerIncludeDinner;
+		m_AnalyzerIncludeOvernight             = def_M_AnalyzerIncludeOvernight;
+		m_AnalyzerExcelOutputLevel             = def_M_AnalyzerExcelOutputLevel;
 		
+		m_EntryAnalyzerIntervalHours           = def_M_EntryAnalyzerIntervalHours;
+		m_EntryAnalyzerSteepChange             = def_M_EntryAnalyzerSteepChange * getBGUnitMultiplier();
+		m_EntryExtremesOverrideDirection       = def_M_EntryExtremesOverrideDirection;
 	}
 	
 	private void resetBGValues()
@@ -426,12 +536,17 @@ public class PrefsNightScoutLoader
 		prefs.put(pref_SelectedMeter, m_SelectedMeter);
 	    prefs.putInt(pref_DaysToLoad, m_DaysToLoad);
 	    prefs.put(pref_MongoMeterCollection, m_MongoMeterCollection);
+	    	    
+	    prefs.putBoolean(pref_LoadNightscoutEntries, m_LoadNightscoutEntries);
+	    prefs.putInt(pref_WeeksBackToLoadEntries, m_WeeksBackToLoadEntries);
+	    
 	    prefs.put(pref_SQLDBServerHost, m_SQLDBServerHost);
 	    prefs.put(pref_SQLDBServerInstance, m_SQLDBServerInstance);
 	    prefs.put(pref_SQLDBName, m_SQLDBName);
 	    prefs.put(pref_MedtronicMeterPumpResultFilePath, m_MedtronicMeterPumpResultFilePath);
 	    prefs.put(pref_DiasendMeterPumpResultFilePath, m_DiasendMeterPumpResultFilePath);
 	    prefs.put(pref_OmniPodMeterPumpResultFilePath, m_OmniPodMeterPumpResultFilePath);
+	    prefs.put(pref_RocheExtractMeterPumpResultFilePath, m_RocheExtractMeterPumpResultFilePath);
 	    prefs.put(pref_ExportFilePath,          m_ExportFilePath);
 	    prefs.put(pref_DownloadTreatmentFilePath, m_DownloadTreatmentFilePath);
 	    prefs.put(pref_DownloadSensorFilePath, m_DownloadSensorFilePath);
@@ -444,21 +559,32 @@ public class PrefsNightScoutLoader
 	    prefs.put(pref_NightscoutSensorMongoCollection, m_NightscoutSensorMongoCollection);
 	    prefs.put(pref_NightscoutAuditCollection, m_NightscoutAuditCollection);
 	    
-	    prefs.putBoolean(pref_AdvancedOptions, m_AdvancedOptions);
+	    prefs.putBoolean(pref_AdvancedSettings, m_AdvancedSettings);
 	    prefs.put(pref_MongoMeterCollection, m_MongoMeterCollection);
+	    prefs.putBoolean(pref_LoadNightscoutEntries, m_LoadNightscoutEntries);
+	    prefs.putInt(pref_WeeksBackToLoadEntries, m_WeeksBackToLoadEntries);
+	    
 	    prefs.putInt(pref_MaxMinsBetweenSameMealEvent, m_MaxMinsBetweenSameMealEvent);
 	    prefs.putInt(pref_MaxMinsBetweenSameCorrectionEvent, m_MaxMinsBetweenSameCorrectionEvent);
 	    prefs.putBoolean(pref_UseMongoForRocheResults, m_UseMongoForRocheResults);
 	    prefs.putInt(pref_LogLevel, m_LogLevel);
 	    prefs.put(pref_LogFile, m_LogFile);
-	    prefs.putBoolean(pref_AttemptDiasendTempBasals, m_AttemptDiasendTempBasals);
+	    prefs.putBoolean(pref_InferDiasendTempBasals, m_InferDiasendTempBasals);
 	    prefs.putBoolean(pref_AuditLogAllShown, m_AuditLogAllShown);
 	    prefs.put(pref_InputDateFormat, m_InputDateFormat);
 	    prefs.put(pref_Timezone, m_Timezone);
 	    prefs.putInt(pref_ProximityMinutes, m_ProximityMinutes);
 	    prefs.putBoolean(pref_ProximityTypeCheck, m_ProximityTypeCheck);
-	    prefs.putInt(pref_ProximityValueCheck, m_ProximityValueCheck);
-
+	    
+	    prefs.putInt(pref_ProximityCheckType, m_ProximityCheckType);
+	    prefs.putBoolean(pref_CompareBGInProximityCheck, m_CompareBGInProximityCheck);
+	    prefs.putBoolean(pref_CompareCarbInProximityCheck, m_CompareCarbInProximityCheck);
+	    prefs.putBoolean(pref_CompareInsulinInProximityCheck, m_CompareInsulinInProximityCheck);
+	    prefs.putInt(pref_BGDecPlacesProximityCheck, m_BGDecPlacesProximityCheck);
+	    prefs.putInt(pref_CarbDecPlacesProximityCheck, m_CarbDecPlacesProximityCheck);
+	    prefs.putInt(pref_InsulinDecPlacesProximityCheck, m_InsulinDecPlacesProximityCheck);
+    
+	    
 	    prefs.putInt(pref_MongoDBAlerterCheckInterval, m_MongoDBAlerterCheckInterval);
 	    
 	    
@@ -496,6 +622,15 @@ public class PrefsNightScoutLoader
 		prefs.put(pref_AnalyzerBadNightEndTime,   m_AnalyzerBadNightEndTime);
 		prefs.putBoolean(pref_AnalyzerCompressMealTrends, m_AnalyzerCompressMealTrends);
 		prefs.putBoolean(pref_AnalyzerTotalRecurringTrendsOnly, m_AnalyzerTotalRecurringTrendsOnly);
+		prefs.putBoolean(pref_AnalyzerIncludeBreakfast, m_AnalyzerIncludeBreakfast);
+		prefs.putBoolean(pref_AnalyzerIncludeLunch, m_AnalyzerIncludeLunch);
+		prefs.putBoolean(pref_AnalyzerIncludeDinner, m_AnalyzerIncludeDinner);
+		prefs.putBoolean(pref_AnalyzerIncludeOvernight, m_AnalyzerIncludeOvernight);
+		prefs.putInt(pref_AnalyzerExcelOutputLevel, m_AnalyzerExcelOutputLevel);
+
+		prefs.putInt(pref_EntryAnalyzerIntervalHours, m_EntryAnalyzerIntervalHours);
+		prefs.putFloat(pref_EntryAnalyzerSteepChange, (float)m_EntryAnalyzerSteepChange);
+		prefs.putBoolean(pref_EntryExtremesOverrideDirection, m_EntryExtremesOverrideDirection);
 
 	}
 	
@@ -517,6 +652,7 @@ public class PrefsNightScoutLoader
 		m_MedtronicMeterPumpResultFilePath  = prefs.get(pref_MedtronicMeterPumpResultFilePath, def_M_MedtronicMeterPumpResultFilePath);
 		m_DiasendMeterPumpResultFilePath    = prefs.get(pref_DiasendMeterPumpResultFilePath, def_M_DiasendMeterPumpResultFilePath);
 		m_OmniPodMeterPumpResultFilePath    = prefs.get(pref_OmniPodMeterPumpResultFilePath, def_M_OmniPodMeterPumpResultFilePath);
+		m_RocheExtractMeterPumpResultFilePath    = prefs.get(pref_RocheExtractMeterPumpResultFilePath, def_M_RocheExtractMeterPumpResultFilePath);
 		m_ExportFilePath                    = prefs.get(pref_ExportFilePath, def_M_ExportFilePath);
 		m_DownloadTreatmentFilePath         = prefs.get(pref_DownloadTreatmentFilePath, def_M_DownloadTreatmentFilePath);
 		m_DownloadSensorFilePath            = prefs.get(pref_DownloadSensorFilePath, def_M_DownloadSensorFilePath);
@@ -529,25 +665,37 @@ public class PrefsNightScoutLoader
 		m_NightscoutSensorMongoCollection   = prefs.get(pref_NightscoutSensorMongoCollection, def_M_NightscoutSensorMongoCollection);
 		m_NightscoutAuditCollection         = prefs.get(pref_NightscoutAuditCollection, def_M_NightscoutAuditCollection);
 		
-		m_AdvancedOptions                   = prefs.getBoolean(pref_AdvancedOptions, def_M_AdvancedOptions);
+		m_AdvancedSettings                  = prefs.getBoolean(pref_AdvancedSettings, def_M_AdvancedSettings);
 //		m_MongoMeterServer                  = prefs.get(pref_MongoMeterServer, "localhost");
-		m_MongoMeterServer                  = prefs.get(pref_MongoMeterServer, "");
-		m_MongoMeterDB                      = prefs.get(pref_MongoMeterDB, "dexcom_db");
-		m_MongoMeterCollection              = prefs.get(pref_MongoMeterCollection, "Roche_Results");
+		m_MongoMeterServer                  = prefs.get(pref_MongoMeterServer, def_M_MongoMeterServer);
+		m_MongoMeterDB                      = prefs.get(pref_MongoMeterDB, def_M_MongoMeterDB);
+		m_MongoMeterCollection              = prefs.get(pref_MongoMeterCollection, def_M_MongoMeterCollection);
+		
+		m_LoadNightscoutEntries             = prefs.getBoolean(pref_LoadNightscoutEntries, def_M_LoadNightscoutEntries);
+		m_WeeksBackToLoadEntries           = prefs.getInt(pref_WeeksBackToLoadEntries, def_M_WeeksBackToLoadEntries);
+
 		m_MaxMinsBetweenSameMealEvent       = prefs.getInt(pref_MaxMinsBetweenSameMealEvent, def_M_MaxMinsBetweenSameMealEvent);
 		m_MaxMinsBetweenSameCorrectionEvent = prefs.getInt(pref_MaxMinsBetweenSameCorrectionEvent, def_M_MaxMinsBetweenSameCorrectionEvent);
 		m_UseMongoForRocheResults           = prefs.getBoolean(pref_UseMongoForRocheResults, def_M_UseMongoForRocheResults);
 		
 		m_LogLevel                          = prefs.getInt(pref_LogLevel, def_M_LogLevel);
 		m_LogFile                           = prefs.get(pref_LogFile,  def_M_LogFile); // "C:\\temp\\NightscoutLoader.log");
-		m_AttemptDiasendTempBasals          = prefs.getBoolean(pref_AttemptDiasendTempBasals, def_M_AttemptDiasendTempBasals);
+		m_InferDiasendTempBasals          = prefs.getBoolean(pref_InferDiasendTempBasals, def_M_InferDiasendTempBasals);
 		m_AuditLogAllShown                  = prefs.getBoolean(pref_AuditLogAllShown, def_M_AuditLogAllShown);
 		m_InputDateFormat                   = prefs.get(pref_InputDateFormat, def_M_InputDateFormat);     
 		m_Timezone                          = prefs.get(pref_Timezone, def_M_Timezone);
 		m_ProximityMinutes                  = prefs.getInt(pref_ProximityMinutes, def_M_ProximityMinutes);
 		m_ProximityTypeCheck                = prefs.getBoolean(pref_ProximityTypeCheck, def_M_ProximityTypeCheck);
-		m_ProximityValueCheck               = prefs.getInt(pref_ProximityValueCheck, def_M_ProximityValueCheck);
 		
+		
+		m_ProximityCheckType                = prefs.getInt(pref_ProximityCheckType, def_M_ProximityCheckType);
+		m_CompareBGInProximityCheck         = prefs.getBoolean(pref_CompareBGInProximityCheck, def_M_CompareBGInProximityCheck);
+		m_CompareCarbInProximityCheck       = prefs.getBoolean(pref_CompareCarbInProximityCheck, def_M_CompareCarbInProximityCheck);
+		m_CompareInsulinInProximityCheck    = prefs.getBoolean(pref_CompareInsulinInProximityCheck, def_M_CompareInsulinInProximityCheck);
+		m_BGDecPlacesProximityCheck         = prefs.getInt(pref_BGDecPlacesProximityCheck, def_M_BGDecPlacesProximityCheck);
+		m_CarbDecPlacesProximityCheck       = prefs.getInt(pref_CarbDecPlacesProximityCheck, def_M_CarbDecPlacesProximityCheck);
+		m_InsulinDecPlacesProximityCheck    = prefs.getInt(pref_InsulinDecPlacesProximityCheck, def_M_InsulinDecPlacesProximityCheck);
+
 		m_MongoDBAlerterCheckInterval       = prefs.getInt(pref_MongoDBAlerterCheckInterval, def_M_MongoDBAlerterCheckInterval);
 		
 		// Analyzer controls
@@ -574,8 +722,7 @@ public class PrefsNightScoutLoader
 		m_AnalyzerMediumFrequencyPercentage   = prefs.getFloat(pref_AnalyzerMediumFrequencyPercentage, (float)def_M_AnalyzerMediumFrequencyPercentage);
 		m_AnalyzerLowRangeThreshold         = prefs.getFloat(pref_AnalyzerLowRangeThreshold, (float)def_M_AnalyzerLowRangeThreshold);
 		m_AnalyzerHighRangeThreshold        = prefs.getFloat(pref_AnalyzerHighRangeThreshold, (float)def_M_AnalyzerHighRangeThreshold);
-		// Made a mistake initially havnig same tag (NSL_HIGH) reference both low and hign.  Since thne, low is 7!!!
-
+		// Made a mistake initially having same tag (NSL_HIGH) reference both low and high.  Since then, low is 7!!!
 		
 		m_AnalyzerBedTrendStartStartTime    = prefs.get(pref_AnalyzerBedTrendStartStartTime, def_M_AnalyzerBedTrendStartStartTime);
 		m_AnalyzerBedTrendStartEndTime      = prefs.get(pref_AnalyzerBedTrendStartEndTime, def_M_AnalyzerBedTrendStartEndTime);
@@ -586,11 +733,39 @@ public class PrefsNightScoutLoader
 		m_AnalyzerBadNightEndTime           = prefs.get(pref_AnalyzerBadNightEndTime,   def_M_AnalyzerBadNightEndTime);
 		m_AnalyzerCompressMealTrends        = prefs.getBoolean(pref_AnalyzerCompressMealTrends, def_M_AnalyzerCompressMealTrends);
 		m_AnalyzerTotalRecurringTrendsOnly  = prefs.getBoolean(pref_AnalyzerTotalRecurringTrendsOnly, def_M_AnalyzerTotalRecurringTrendsOnly);
-		
-		
-		
+		m_AnalyzerIncludeBreakfast          = prefs.getBoolean(pref_AnalyzerIncludeBreakfast, def_M_AnalyzerIncludeBreakfast);
+		m_AnalyzerIncludeLunch              = prefs.getBoolean(pref_AnalyzerIncludeLunch, def_M_AnalyzerIncludeLunch);
+		m_AnalyzerIncludeDinner             = prefs.getBoolean(pref_AnalyzerIncludeDinner, def_M_AnalyzerIncludeDinner);
+		m_AnalyzerIncludeOvernight          = prefs.getBoolean(pref_AnalyzerIncludeOvernight, def_M_AnalyzerIncludeOvernight);
+		m_AnalyzerExcelOutputLevel          = prefs.getInt(pref_AnalyzerExcelOutputLevel, def_M_AnalyzerExcelOutputLevel);
+				
+		m_EntryAnalyzerIntervalHours        = prefs.getInt(pref_EntryAnalyzerIntervalHours, def_M_EntryAnalyzerIntervalHours);
+		m_EntryAnalyzerSteepChange          = prefs.getFloat(pref_EntryAnalyzerSteepChange, (float)def_M_EntryAnalyzerSteepChange);
+		m_EntryExtremesOverrideDirection    = prefs.getBoolean(pref_EntryExtremesOverrideDirection, def_M_EntryExtremesOverrideDirection);
+
 	//	prefs.nodeExists(arg0)
 	}
+	
+	public static boolean isItDavidsLaptop()
+	{
+	// Only enable the parameters that use MongoDB for Roche if it's Davids laptop
+	String hostName = null;
+	boolean davidsLaptop = false;
+
+	try {
+		hostName = InetAddress.getLocalHost().getHostName();
+		if (hostName.equals("KATDAVID-HP"))
+		{
+			davidsLaptop = true;
+		}
+	} catch (UnknownHostException e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
+	}
+	
+	return davidsLaptop;
+	}
+
 
 	/**
 	 * @return the m_BGUnits
@@ -735,6 +910,20 @@ public class PrefsNightScoutLoader
 	}
 
 	
+	/**
+	 * @return the m_RocheExtractMeterPumpResultFilePath
+	 */
+	public synchronized String getM_RocheExtractMeterPumpResultFilePath() {
+		return m_RocheExtractMeterPumpResultFilePath;
+	}
+
+	/**
+	 * @param m_RocheExtractMeterPumpResultFilePath the m_RocheExtractMeterPumpResultFilePath to set
+	 */
+	public synchronized void setM_RocheExtractMeterPumpResultFilePath(String m_RocheExtractMeterPumpResultFilePath) {
+		this.m_RocheExtractMeterPumpResultFilePath = m_RocheExtractMeterPumpResultFilePath;
+	}
+
 	/**
 	 * @return the m_ExportFilePath
 	 */
@@ -918,17 +1107,59 @@ public class PrefsNightScoutLoader
 	}
 
 	/**
-	 * @return the m_AdvancedOptions
+	 * @return the m_LoadNightscoutEntries
 	 */
-	public boolean isM_AdvancedOptions() {
-		return m_AdvancedOptions;
+	public synchronized Boolean getM_LoadNightscoutEntries() {
+		return m_LoadNightscoutEntries;
 	}
 
 	/**
-	 * @param m_AdvancedOptions the m_AdvancedOptions to set
+	 * @param m_LoadNightscoutEntries the m_LoadNightscoutEntries to set
 	 */
-	public void setM_AdvancedOptions(boolean m_AdvancedOptions) {
-		this.m_AdvancedOptions = m_AdvancedOptions;
+	public synchronized void setM_LoadNightscoutEntries(Boolean m_LoadNightscoutEntries) {
+		this.m_LoadNightscoutEntries = m_LoadNightscoutEntries;
+	}
+
+	/**
+	 * @return the m_WeeksBackToLoadEntries
+	 */
+	public synchronized int getM_WeeksBackToLoadEntries() {
+		return m_WeeksBackToLoadEntries;
+	}
+
+	/**
+	 * @param m_WeeksBackToLoadEntries the m_WeeksBackToLoadEntries to set
+	 */
+	public synchronized void setM_WeeksBackToLoadEntries(int m_WeeksBackToLoadEntries) {
+		this.m_WeeksBackToLoadEntries = m_WeeksBackToLoadEntries;
+	}
+
+	/**
+	 * @return the def_M_WeeksBackToLoadEntries
+	 */
+	public synchronized int getDef_M_WeeksBackToLoadEntries() {
+		return def_M_WeeksBackToLoadEntries;
+	}
+
+	/**
+	 * @param def_M_WeeksBackToLoadEntries the def_M_WeeksBackToLoadEntries to set
+	 */
+	public synchronized void setDef_M_WeeksBackToLoadEntries(int def_M_WeeksBackToLoadEntries) {
+		this.def_M_WeeksBackToLoadEntries = def_M_WeeksBackToLoadEntries;
+	}
+
+	/**
+	 * @return the m_AdvancedSettings
+	 */
+	public boolean isM_AdvancedSettings() {
+		return m_AdvancedSettings;
+	}
+
+	/**
+	 * @param m_AdvancedSettings the m_AdvancedSettings to set
+	 */
+	public void setM_AdvancedSettings(boolean m_AdvancedSettings) {
+		this.m_AdvancedSettings = m_AdvancedSettings;
 	}
 
 	/**
@@ -1002,17 +1233,17 @@ public class PrefsNightScoutLoader
 	}
 
 	/**
-	 * @return the m_AttemptDiasendTempBasals
+	 * @return the m_InferDiasendTempBasals
 	 */
-	public synchronized boolean isM_AttemptDiasendTempBasals() {
-		return m_AttemptDiasendTempBasals;
+	public synchronized boolean isM_InferDiasendTempBasals() {
+		return m_InferDiasendTempBasals;
 	}
 
 	/**
-	 * @param m_AttemptDiasendTempBasals the m_AttemptDiasendTempBasals to set
+	 * @param m_InferDiasendTempBasals the m_InferDiasendTempBasals to set
 	 */
-	public synchronized void setM_AttemptDiasendTempBasals(boolean m_AttemptDiasendTempBasals) {
-		this.m_AttemptDiasendTempBasals = m_AttemptDiasendTempBasals;
+	public synchronized void setM_InferDiasendTempBasals(boolean m_InferDiasendTempBasals) {
+		this.m_InferDiasendTempBasals = m_InferDiasendTempBasals;
 	}
 
 	/**
@@ -1086,17 +1317,101 @@ public class PrefsNightScoutLoader
 	}
 
 	/**
-	 * @return the m_ProximityValueCheck
+	 * @return the m_ProximityCheckType
 	 */
-	public synchronized int getM_ProximityValueCheck() {
-		return m_ProximityValueCheck;
+	public synchronized int getM_ProximityCheckType() {
+		return m_ProximityCheckType;
 	}
 
 	/**
-	 * @param m_ProximityValueCheck the m_ProximityValueCheck to set
+	 * @param m_ProximityCheckType the m_ProximityCheckType to set
 	 */
-	public synchronized void setM_ProximityValueCheck(int m_ProximityValueCheck) {
-		this.m_ProximityValueCheck = m_ProximityValueCheck;
+	public synchronized void setM_ProximityCheckType(int m_ProximityCheckType) {
+		this.m_ProximityCheckType = m_ProximityCheckType;
+	}
+
+	/**
+	 * @return the m_CompareBGInProximityCheck
+	 */
+	public synchronized boolean isM_CompareBGInProximityCheck() {
+		return m_CompareBGInProximityCheck;
+	}
+
+	/**
+	 * @param m_CompareBGInProximityCheck the m_CompareBGInProximityCheck to set
+	 */
+	public synchronized void setM_CompareBGInProximityCheck(boolean m_CompareBGInProximityCheck) {
+		this.m_CompareBGInProximityCheck = m_CompareBGInProximityCheck;
+	}
+
+	/**
+	 * @return the m_CompareCarbInProximityCheck
+	 */
+	public synchronized boolean isM_CompareCarbInProximityCheck() {
+		return m_CompareCarbInProximityCheck;
+	}
+
+	/**
+	 * @param m_CompareCarbInProximityCheck the m_CompareCarbInProximityCheck to set
+	 */
+	public synchronized void setM_CompareCarbInProximityCheck(boolean m_CompareCarbInProximityCheck) {
+		this.m_CompareCarbInProximityCheck = m_CompareCarbInProximityCheck;
+	}
+
+	/**
+	 * @return the m_CompareInsulinInProximityCheck
+	 */
+	public synchronized boolean isM_CompareInsulinInProximityCheck() {
+		return m_CompareInsulinInProximityCheck;
+	}
+
+	/**
+	 * @param m_CompareInsulinInProximityCheck the m_CompareInsulinInProximityCheck to set
+	 */
+	public synchronized void setM_CompareInsulinInProximityCheck(boolean m_CompareInsulinInProximityCheck) {
+		this.m_CompareInsulinInProximityCheck = m_CompareInsulinInProximityCheck;
+	}
+
+	/**
+	 * @return the m_BGDecPlacesProximityCheck
+	 */
+	public synchronized int getM_BGDecPlacesProximityCheck() {
+		return m_BGDecPlacesProximityCheck;
+	}
+
+	/**
+	 * @param m_BGDecPlacesProximityCheck the m_BGDecPlacesProximityCheck to set
+	 */
+	public synchronized void setM_BGDecPlacesProximityCheck(int m_BGDecPlacesProximityCheck) {
+		this.m_BGDecPlacesProximityCheck = m_BGDecPlacesProximityCheck;
+	}
+
+	/**
+	 * @return the m_CarbDecPlacesProximityCheck
+	 */
+	public synchronized int getM_CarbDecPlacesProximityCheck() {
+		return m_CarbDecPlacesProximityCheck;
+	}
+
+	/**
+	 * @param m_CarbDecPlacesProximityCheck the m_CarbDecPlacesProximityCheck to set
+	 */
+	public synchronized void setM_CarbDecPlacesProximityCheck(int m_CarbDecPlacesProximityCheck) {
+		this.m_CarbDecPlacesProximityCheck = m_CarbDecPlacesProximityCheck;
+	}
+
+	/**
+	 * @return the m_InsulinDecPlacesProximityCheck
+	 */
+	public synchronized int getM_InsulinDecPlacesProximityCheck() {
+		return m_InsulinDecPlacesProximityCheck;
+	}
+
+	/**
+	 * @param m_InsulinDecPlacesProximityCheck the m_InsulinDecPlacesProximityCheck to set
+	 */
+	public synchronized void setM_InsulinDecPlacesProximityCheck(int m_InsulinDecPlacesProximityCheck) {
+		this.m_InsulinDecPlacesProximityCheck = m_InsulinDecPlacesProximityCheck;
 	}
 
 	/**
@@ -1546,6 +1861,120 @@ public class PrefsNightScoutLoader
 	 */
 	public synchronized void setM_AnalyzerTotalRecurringTrendsOnly(boolean m_AnalyzerTotalRecurringTrendsOnly) {
 		this.m_AnalyzerTotalRecurringTrendsOnly = m_AnalyzerTotalRecurringTrendsOnly;
+	}
+
+	/**
+	 * @return the m_AnalyzerIncludeBreakfast
+	 */
+	public synchronized boolean isM_AnalyzerIncludeBreakfast() {
+		return m_AnalyzerIncludeBreakfast;
+	}
+
+	/**
+	 * @param m_AnalyzerIncludeBreakfast the m_AnalyzerIncludeBreakfast to set
+	 */
+	public synchronized void setM_AnalyzerIncludeBreakfast(boolean m_AnalyzerIncludeBreakfast) {
+		this.m_AnalyzerIncludeBreakfast = m_AnalyzerIncludeBreakfast;
+	}
+
+	/**
+	 * @return the m_AnalyzerIncludeLunch
+	 */
+	public synchronized boolean isM_AnalyzerIncludeLunch() {
+		return m_AnalyzerIncludeLunch;
+	}
+
+	/**
+	 * @param m_AnalyzerIncludeLunch the m_AnalyzerIncludeLunch to set
+	 */
+	public synchronized void setM_AnalyzerIncludeLunch(boolean m_AnalyzerIncludeLunch) {
+		this.m_AnalyzerIncludeLunch = m_AnalyzerIncludeLunch;
+	}
+
+	/**
+	 * @return the m_AnalyzerIncludeDinner
+	 */
+	public synchronized boolean isM_AnalyzerIncludeDinner() {
+		return m_AnalyzerIncludeDinner;
+	}
+
+	/**
+	 * @param m_AnalyzerIncludeDinner the m_AnalyzerIncludeDinner to set
+	 */
+	public synchronized void setM_AnalyzerIncludeDinner(boolean m_AnalyzerIncludeDinner) {
+		this.m_AnalyzerIncludeDinner = m_AnalyzerIncludeDinner;
+	}
+
+	/**
+	 * @return the m_AnalyzerIncludeOvernight
+	 */
+	public synchronized boolean isM_AnalyzerIncludeOvernight() {
+		return m_AnalyzerIncludeOvernight;
+	}
+
+	/**
+	 * @param m_AnalyzerIncludeOvernight the m_AnalyzerIncludeOvernight to set
+	 */
+	public synchronized void setM_AnalyzerIncludeOvernight(boolean m_AnalyzerIncludeOvernight) {
+		this.m_AnalyzerIncludeOvernight = m_AnalyzerIncludeOvernight;
+	}
+
+	/**
+	 * @return the m_AnalyzerExcelOutputLevel
+	 */
+	public synchronized int getM_AnalyzerExcelOutputLevel() {
+		return m_AnalyzerExcelOutputLevel;
+	}
+
+	/**
+	 * @param m_AnalyzerExcelOutputLevel the m_AnalyzerExcelOutputLevel to set
+	 */
+	public synchronized void setM_AnalyzerExcelOutputLevel(int m_AnalyzerExcelOutputLevel) {
+		this.m_AnalyzerExcelOutputLevel = m_AnalyzerExcelOutputLevel;
+	}
+
+	/**
+	 * @return the m_EntryAnalyzerIntervalHours
+	 */
+	public synchronized int getM_EntryAnalyzerIntervalHours() 
+	{
+		// Override the intervals in case advanced settings are off
+		return m_AdvancedSettings == true ? m_EntryAnalyzerIntervalHours : 1;
+	}
+
+	/**
+	 * @param m_EntryAnalyzerIntervalHours the m_EntryAnalyzerIntervalHours to set
+	 */
+	public synchronized void setM_EntryAnalyzerIntervalHours(int m_EntryAnalyzerIntervalHours) {
+		this.m_EntryAnalyzerIntervalHours = m_EntryAnalyzerIntervalHours;
+	}
+
+	/**
+	 * @return the m_EntryAnalyzerSteepChange
+	 */
+	public synchronized double getM_EntryAnalyzerSteepChange() {
+		return m_EntryAnalyzerSteepChange;
+	}
+
+	/**
+	 * @param m_EntryAnalyzerSteepChange the m_EntryAnalyzerSteepChange to set
+	 */
+	public synchronized void setM_EntryAnalyzerSteepChange(double m_EntryAnalyzerSteepChange) {
+		this.m_EntryAnalyzerSteepChange = m_EntryAnalyzerSteepChange;
+	}
+
+	/**
+	 * @return the m_EntryExtremesOverrideDirection
+	 */
+	public synchronized boolean isM_EntryExtremesOverrideDirection() {
+		return m_EntryExtremesOverrideDirection;
+	}
+
+	/**
+	 * @param m_EntryExtremesOverrideDirection the m_EntryExtremesOverrideDirection to set
+	 */
+	public synchronized void setM_EntryExtremesOverrideDirection(boolean m_EntryExtremesOverrideDirection) {
+		this.m_EntryExtremesOverrideDirection = m_EntryExtremesOverrideDirection;
 	}
 
 

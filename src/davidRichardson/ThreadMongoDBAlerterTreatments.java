@@ -20,7 +20,7 @@ public class ThreadMongoDBAlerterTreatments extends ThreadMongoDBAlerter
 			Matcher m = r.matcher(result);
 			if (m.find())
 			{
-				m_CurrentResultAt = DBResultNightScout.convertNSZDateString(m.group(1));
+				m_CurrentResultAt = CommonUtils.convertNSZDateString(m.group(1));
 				m_CurrentResultBy = m.group(3);
 			}
 		}

@@ -20,6 +20,7 @@ import java.net.URL;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
 import java.awt.event.ActionEvent;
+import javax.swing.SwingConstants;
 //import javax.swing.JEditorPane;
 
 public class WinAuditLogForm extends JFrame 
@@ -47,7 +48,8 @@ public class WinAuditLogForm extends JFrame
 	private JTextField  tf_EntriesAdded;
 	private JTextField  tf_TreatmentsAtStart;
 	private JTextField  tf_TreatmentsByNSLAtStart;
-	private JTextField  tf_ProximityEntries;
+	private JTextField  tf_ProximityMeterEntries;
+	private JTextField  tf_ProximityNSEntries;
 
 	private JButton     btn_ReverseSynchronization;
 	private JButton     btn_ReverseProximityEntries;
@@ -259,7 +261,7 @@ public class WinAuditLogForm extends JFrame
 		panel_2.add(tf_TreatmentsByNSLAtStart, gbc_tf_TimeSlot);
 		tf_TreatmentsByNSLAtStart.setColumns(10);
 
-		JLabel lblNewLabel_6 = new JLabel("Proximity Entries");
+		JLabel lblNewLabel_6 = new JLabel("Meter Dupes");
 		GridBagConstraints gbc_lblNewLabel_6 = new GridBagConstraints();
 		gbc_lblNewLabel_6.anchor = GridBagConstraints.EAST;
 		gbc_lblNewLabel_6.insets = new Insets(0, 0, 5, 5);
@@ -267,15 +269,34 @@ public class WinAuditLogForm extends JFrame
 		gbc_lblNewLabel_6.gridy = 9;
 		panel_2.add(lblNewLabel_6, gbc_lblNewLabel_6);
 		
-		tf_ProximityEntries = new JTextField();
-		tf_ProximityEntries.setEditable(false);
-		GridBagConstraints gbc_ProximityEntries = new GridBagConstraints();
-		gbc_ProximityEntries.insets = new Insets(0, 0, 5, 0);
-		gbc_ProximityEntries.fill = GridBagConstraints.HORIZONTAL;
-		gbc_ProximityEntries.gridx = 1;
-		gbc_ProximityEntries.gridy = 9;
-		panel_2.add(tf_ProximityEntries, gbc_ProximityEntries);
-		tf_ProximityEntries.setColumns(10);
+		tf_ProximityMeterEntries = new JTextField();
+		tf_ProximityMeterEntries.setEditable(false);
+		GridBagConstraints gbc_ProximityMeterEntries = new GridBagConstraints();
+		gbc_ProximityMeterEntries.insets = new Insets(0, 0, 5, 0);
+		gbc_ProximityMeterEntries.fill = GridBagConstraints.HORIZONTAL;
+		gbc_ProximityMeterEntries.gridx = 1;
+		gbc_ProximityMeterEntries.gridy = 9;
+		panel_2.add(tf_ProximityMeterEntries, gbc_ProximityMeterEntries);
+		tf_ProximityMeterEntries.setColumns(10);
+		
+		JLabel lblNightscoutDupes = new JLabel("Nightscout Dupes");
+		lblNightscoutDupes.setHorizontalAlignment(SwingConstants.RIGHT);
+		GridBagConstraints gbc_lblNightscoutDupes = new GridBagConstraints();
+		gbc_lblNightscoutDupes.anchor = GridBagConstraints.EAST;
+		gbc_lblNightscoutDupes.insets = new Insets(0, 0, 5, 5);
+		gbc_lblNightscoutDupes.gridx = 0;
+		gbc_lblNightscoutDupes.gridy = 10;
+		panel_2.add(lblNightscoutDupes, gbc_lblNightscoutDupes);
+		
+		tf_ProximityNSEntries = new JTextField();
+		tf_ProximityNSEntries.setEditable(false);
+		tf_ProximityNSEntries.setColumns(10);
+		GridBagConstraints gbc_tf_ProximityNSEntries = new GridBagConstraints();
+		gbc_tf_ProximityNSEntries.insets = new Insets(0, 0, 5, 0);
+		gbc_tf_ProximityNSEntries.fill = GridBagConstraints.HORIZONTAL;
+		gbc_tf_ProximityNSEntries.gridx = 1;
+		gbc_tf_ProximityNSEntries.gridy = 10;
+		panel_2.add(tf_ProximityNSEntries, gbc_tf_ProximityNSEntries);
 		
 		JPanel panel_1 = new JPanel();
 		contentPane.add(panel_1, BorderLayout.SOUTH);
@@ -345,7 +366,8 @@ public class WinAuditLogForm extends JFrame
 		tf_TreatmentsAtStart.setText(String.format("%d", m_result.getM_TreatmentsAtStart()));
 		tf_TreatmentsByNSLAtStart.setText(String.format("%d", m_result.getM_TreatmentsByNSLAtStart()));
 		
-		tf_ProximityEntries.setText(String.format("%d", m_result.getM_ProximityEntries()));
+		tf_ProximityMeterEntries.setText(String.format("%d", m_result.getM_ProximityMeterEntries()));
+		tf_ProximityNSEntries.setText(String.format("%d", m_result.getM_ProximityNSEntries()));
 	}
 
 	//	public boolean updateResultFromDB()
@@ -377,7 +399,7 @@ public class WinAuditLogForm extends JFrame
 		// State set to enabled for active records only
 		// AND if the advanced option is set.
 		boolean activeRecord = false;
-		Boolean advancedOptions = PrefsNightScoutLoader.getInstance().isM_AdvancedOptions();
+		Boolean advancedOptions = PrefsNightScoutLoader.getInstance().isM_AdvancedSettings();
 
 		if (advancedOptions == true && m_result != null)
 		{
@@ -388,7 +410,8 @@ public class WinAuditLogForm extends JFrame
 		btn_ReverseSynchronization.setEnabled(activeRecord);
 		
 		// Do extra check for proximity - only enable if there are any entries here.
-		if (m_result.getM_ProximityEntries() == 0)
+		if (m_result.getM_ProximityMeterEntries() == 0 &&
+				m_result.getM_ProximityNSEntries() == 0)
 		{
 			activeRecord = false;
 		}
@@ -419,13 +442,7 @@ public class WinAuditLogForm extends JFrame
 		
 		// Get Core to remove required entries
 		CoreNightScoutLoader.getInstance().deleteLoadedProximityTreatment(m_result);
-		
-		// Need to update the audit log to show there are no proximity entries left
-		// TO DO DAVID
-		
-		// Challenge now is to get the main window to load nightscout again and update
-		// See CoreNightScoutLoader.doDeleteLoadedTreatments()
-		
+				
 		dispose();
 		
 		// Tell main window to refresh

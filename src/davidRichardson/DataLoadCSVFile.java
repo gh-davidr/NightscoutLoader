@@ -19,13 +19,16 @@ public abstract class DataLoadCSVFile extends DataLoadBase
 	// Used for 2 separate calls to load
 	// One to initialize other the abstract load
 	private String              m_initFilename;
-
+	
 	// Base class that must know how to create a DBResult derived instance
 	// with String array
 	protected abstract DBResult makeDBResult(String[] res);    
 	
 	// Similarly, base class must know what types it creates for logging
 	protected abstract String loadStringName();
+	
+	// Derived class must know what separates the fields
+	protected abstract String getSplitBy();
 	
 	public DBResult getReportDateRange()
 	{
@@ -40,7 +43,7 @@ public abstract class DataLoadCSVFile extends DataLoadBase
 	// New initialize routine
 	public void initialize(String filename)
 	{
-		m_initFilename = filename;
+		m_initFilename = new String(filename);
 		
 		// Also clear out any stored results
 		clearLists();
@@ -68,14 +71,15 @@ public abstract class DataLoadCSVFile extends DataLoadBase
 
 	protected String getDevice()
 	{
-		return "Medtronic";
+		return "Roche";
 	}
 
 	public void loadDBRawResults(String fileName) throws  IOException
 	{
 		BufferedReader br = null;
 		String line = "";
-		String cvsSplitBy = ",";
+		//String cvsSplitBy = ",";
+		String cvsSplitBy = getSplitBy();
 
 		try 
 		{			

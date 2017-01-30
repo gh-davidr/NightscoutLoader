@@ -132,7 +132,7 @@ public class MyLogger
 		@Override
 		public String format(LogRecord record) 
 		{
-			final DateFormat df = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss", Locale.ENGLISH);
+			final DateFormat df = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
 			Date now = new Date();
 			
 			StringBuffer sb = new StringBuffer();
@@ -177,7 +177,7 @@ public class MyLogger
 		@Override
 		public String format(LogRecord record) 
 		{
-			final DateFormat df = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss", Locale.ENGLISH);
+			final DateFormat df = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
 			Date now = new Date();
 			
 			StringBuffer sb = new StringBuffer();

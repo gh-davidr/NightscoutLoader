@@ -18,9 +18,9 @@ import org.apache.poi.hssf.usermodel.HSSFRow;
 public class DBResultDiasend extends DBResult 
 {
 	private static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());	
-	
+
 	private boolean  m_Valid;
-	
+
 	private boolean  m_ReportDateRange;
 	static private Date     m_StartDate;
 	static private Date     m_EndDate;
@@ -32,11 +32,11 @@ public class DBResultDiasend extends DBResult
 	static private String[] m_GlucoseFieldNames =
 		{
 				"Time",
-				"mmol/L",
+				"mmol/L mg/dl", // We can see either string come through
 		};
 	static private int m_GlucoseTimeIndex = 0;
 	static private int m_GlucoseBGIndex = 0;
-	
+
 	// Collection of items to handle the Insulin tab
 	static private boolean m_InsulinIndexesInitialized = false; 
 	static private String[] m_InsulinFieldNames =
@@ -56,12 +56,12 @@ public class DBResultDiasend extends DBResult
 	static private int m_InsulinBolusTypeIndex = 0;
 	static private int m_InsulinBolusVolumeIndex = 0;
 	static private int m_InsulinImmediateVolumeIndex = 0;
-//	static private int m_InsulinExtendedVolumeIndex = 0;
+	//	static private int m_InsulinExtendedVolumeIndex = 0;
 	static private int m_InsulinDurationIndex = 0;
 	static private int m_InsulinCarbsIndex = 0;
-//	static private int m_InsulinNotesIndex = 0;
+	//	static private int m_InsulinNotesIndex = 0;
 
-	
+
 	public boolean isValid()
 	{
 		return m_Valid;
@@ -81,15 +81,15 @@ public class DBResultDiasend extends DBResult
 		return m_EndDate;	
 	}
 
-	private Date parseFileDate(String date)
+	private Date parseFileDateTime(String date)
 	{
 		Date result = new Date(0);
 		// Combined Date Time
-		
+
 		final String defSlashFormat = new String("dd/MM/yy HH:mm");
 		String prefDateFormat       = PrefsNightScoutLoader.getInstance().getM_InputDateFormat();
 		DateFormat slashformat      = new SimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat), Locale.ENGLISH);
-//		DateFormat slashformat      = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ENGLISH);
+		//		DateFormat slashformat      = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ENGLISH);
 
 		try
 		{
@@ -97,7 +97,7 @@ public class DBResultDiasend extends DBResult
 		}
 		catch (ParseException e) 
 		{
-   	    	m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+"> " + "parseFileDate - Unexpected error parsing date: " + date);
+			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+"> " + "parseFileDate - Unexpected error parsing date: " + date);
 		}
 
 		return result;
@@ -115,7 +115,7 @@ public class DBResultDiasend extends DBResult
 		}
 		catch (ParseException e) 
 		{
-   	    	m_Logger.log(Level.SEVERE, "<DBResultDiasend>" + "parseDate - Unexpected error parsing date: " + date);
+			m_Logger.log(Level.SEVERE, "<DBResultDiasend>" + "parseDate - Unexpected error parsing date: " + date);
 		}
 
 		return result;
@@ -124,28 +124,28 @@ public class DBResultDiasend extends DBResult
 	private static Date parseFromDate(String field)
 	{
 		Date result = new Date(0);
-		
+
 		// field is in the form 2dd/mm/yyyy to dd/mm/yyyy"
 		Pattern fromDatePattern = Pattern.compile("([0-9/]*) to");
 		Matcher fromDateMatcher = fromDatePattern.matcher(field);
-		
+
 		if (fromDateMatcher.find())
 		{
 			String matchedString = fromDateMatcher.group(0);
 			String date = new String(matchedString.substring(0, matchedString.length() - 3));
 			result = parseDate(date);
 		}
-		
+
 		return result;
 	}
 	private static Date parseToDate(String field)
 	{
 		Date result = new Date(0);
-		
+
 		// field is in the form 2dd/mm/yyyy to dd/mm/yyyy"
 		Pattern fromDatePattern = Pattern.compile("to ([0-9/]*)");
 		Matcher fromDateMatcher = fromDatePattern.matcher(field);
-		
+
 		if (fromDateMatcher.find())
 		{
 			String matchedString = fromDateMatcher.group(0);
@@ -155,11 +155,11 @@ public class DBResultDiasend extends DBResult
 
 		return result;
 	}
-	
+
 	public DBResultDiasend(HSSFRow row, boolean insulinTab) 
 	{
 		super();
-		
+
 		if (insulinTab == true)
 		{
 			// Handle an Insulin record
@@ -172,7 +172,7 @@ public class DBResultDiasend extends DBResult
 		}
 
 	}
-	
+
 	String getStringCellValue(HSSFRow row, int index)
 	{
 		String result = null;
@@ -194,7 +194,7 @@ public class DBResultDiasend extends DBResult
 		}
 		return result;
 	}
-	
+
 	Double getDoubleCellValue(HSSFRow row, int index)
 	{
 		Double result = null;
@@ -217,7 +217,7 @@ public class DBResultDiasend extends DBResult
 		return result;
 	}
 
-	
+
 	private void loadRawGlucose(HSSFRow row)
 	{
 		String timeStr  = getStringCellValue(row, m_GlucoseTimeIndex);
@@ -232,7 +232,8 @@ public class DBResultDiasend extends DBResult
 		if (timeStr != null)
 		{
 			Date d = new Date(0);
-			d = parseFileDate(timeStr);
+			//			d = parseFileDate(timeStr);
+			d = parseFileDateTime(timeStr);
 			if (d.getTime() == 0)
 			{
 				m_Valid=false;
@@ -254,19 +255,20 @@ public class DBResultDiasend extends DBResult
 		String bolTypeStr   = getStringCellValue(row, m_InsulinBolusTypeIndex);
 		Double bolAmtDbl    = getDoubleCellValue(row, m_InsulinBolusVolumeIndex);
 		Double bolImmAmtDbl = getDoubleCellValue(row, m_InsulinImmediateVolumeIndex);
-//		Double bolExtAmtDbl = getDoubleCellValue(row, m_InsulinExtendedVolumeIndex);
+		//		Double bolExtAmtDbl = getDoubleCellValue(row, m_InsulinExtendedVolumeIndex);
 		Double bolDurDbl    = getDoubleCellValue(row, m_InsulinDurationIndex);
 		Double carbAmtDbl   = getDoubleCellValue(row, m_InsulinCarbsIndex);
-//		String notesStr     = getStringCellValue(row, m_InsulinNotesIndex);
+		//		String notesStr     = getStringCellValue(row, m_InsulinNotesIndex);
 
 		// Not sure how data looks for square waves as yet ...
 
-		
+
 		if (timeStr != null && !timeStr.equals(""))
 		{
 			Date d = new Date(0);
 
-			d = parseFileDate(timeStr);
+			//			d = parseFileDate(timeStr);
+			d = parseFileDateTime(timeStr);
 			if (d.getTime() == 0)
 			{
 				m_Valid=false;
@@ -292,7 +294,7 @@ public class DBResultDiasend extends DBResult
 				if (bolDurDbl != null)
 				{
 					this.m_Duration = bolDurDbl.toString();
-					
+
 					// Add the amount of immediate to notes
 					if (bolImmAmtDbl != null)
 					{
@@ -311,9 +313,10 @@ public class DBResultDiasend extends DBResult
 			this.m_ResultType = "Carbs";
 			this.m_Result = carbAmtDbl.toString();
 		}
-		
+
 		// Now store the Basals and allow the controlling loader to decide whether it's of interest or not
-		else if (basAmtDbl != null)
+		//		else if (basAmtDbl != null)
+		else if (basAmtDbl != null && !basAmtDbl.equals(0.0))// David 28 Jan 2017.  Diagnosing issues with odd temp basals
 		{
 			this.m_ResultType = "Basal";
 			this.m_Result     = basAmtDbl.toString();
@@ -326,29 +329,29 @@ public class DBResultDiasend extends DBResult
 
 
 	}
-	
+
 	private void setDateFields()
 	{
-	    Calendar cal = Calendar.getInstance();
-	    cal.setTime(m_Time);
-	    m_Year = cal.get(Calendar.YEAR);
-	    m_Month = cal.get(Calendar.MONTH) + 1;  // Seem to have to add 1 to month 
-	    m_Day = cal.get(Calendar.DAY_OF_MONTH);
-	    
-	    DateFormat f = new SimpleDateFormat("EEEE");
-	    try 
-	    {
-	    	m_DayName = f.format(m_Time);
-	    }
-	    catch(Exception e) 
-	    {
-	    	m_DayName = "";
-	    }
-	    
-	    // Finally, set this critical field too
-	    m_EpochMillies = m_Time.getTime();
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(m_Time);
+		m_Year = cal.get(Calendar.YEAR);
+		m_Month = cal.get(Calendar.MONTH) + 1;  // Seem to have to add 1 to month 
+		m_Day = cal.get(Calendar.DAY_OF_MONTH);
+
+		DateFormat f = new SimpleDateFormat("EEEE");
+		try 
+		{
+			m_DayName = f.format(m_Time);
+		}
+		catch(Exception e) 
+		{
+			m_DayName = "";
+		}
+
+		// Finally, set this critical field too
+		m_EpochMillies = m_Time.getTime();
 	}
-	
+
 	public static void initializeGlucoseDateRange(HSSFRow row)
 	{
 
@@ -395,10 +398,10 @@ public class DBResultDiasend extends DBResult
 						case 2 : m_InsulinBolusTypeIndex       = c; break;
 						case 3 : m_InsulinBolusVolumeIndex     = c; break;
 						case 4 : m_InsulinImmediateVolumeIndex = c; break;
-//						case 5 : m_InsulinExtendedVolumeIndex  = c; break;
+						//						case 5 : m_InsulinExtendedVolumeIndex  = c; break;
 						case 6 : m_InsulinDurationIndex        = c; break;
 						case 7 : m_InsulinCarbsIndex           = c; break;
-//						case 8 : m_InsulinNotesIndex           = c; break;
+						//						case 8 : m_InsulinNotesIndex           = c; break;
 						default :                                  break;
 						}
 					}
@@ -420,7 +423,8 @@ public class DBResultDiasend extends DBResult
 				for (c=0; c<m_GlucoseFieldNames.length; c++)
 				{
 					String cell = row.getCell(c).getStringCellValue();
-					if (cell.equals(m_GlucoseFieldNames[c]))
+					if (m_GlucoseFieldNames[c].contains(cell))
+						//					if (cell.equals(m_GlucoseFieldNames[c]))
 					{
 						switch (c)
 						{

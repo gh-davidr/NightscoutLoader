@@ -98,7 +98,7 @@ public class DBResultMedtronic extends DBResult
 		return m_EndDate;	
 	}
 	
-	private Date parseFileDate(String date)
+/*	private Date parseFileDate(String date)
 	{
 		Date result = new Date(0);
 		// One of a couple of formats
@@ -134,7 +134,7 @@ public class DBResultMedtronic extends DBResult
 
 		return result;
 	}
-	
+*/	
 	public DBResultMedtronic(String[] recordSet) 
 	{
 		super();

@@ -31,6 +31,8 @@ public class DataLoadOmniPod extends DataLoadBase
 
 	DataLoadOmniPod()
 	{
+		m_OmniPodBinaryFileSection = new ArrayList<OmniPodBinaryFileSection>();
+		
 		if (!m_Initialized)
 		{
 			initialize();
@@ -42,6 +44,7 @@ public class DataLoadOmniPod extends DataLoadBase
 		m_Initialized = true;
 		
 		// Load up the FileSection list
+		initializeFileSections();
 	}
 
 	private void initializeFileSections()
@@ -156,6 +159,7 @@ public class DataLoadOmniPod extends DataLoadBase
 	public void loadDBResults() throws UnknownHostException, SQLException, ClassNotFoundException, IOException 
 	{
 		readSmallBinaryFile(m_initFilename); 
+		interpretBinaryFile();
 	}
 
 	void initialize(String filePath)
@@ -191,6 +195,14 @@ public class DataLoadOmniPod extends DataLoadBase
 		
 		offset = getPDMVersion(offset);
 		
+		offset = getManufacturingData(offset);
+		
+		offset = getBasalProgramNames(offset);
+		
+		offset = getEEPromSettings(offset);
+
+		offset = getLogDescriptions(offset);
+
 	}
 	
 	void unpack(String section)
@@ -230,7 +242,28 @@ public class DataLoadOmniPod extends DataLoadBase
 	{
 		int result = offset;
 		
+		// 1 Locate the section in header
+		// 2 Unpack bytes according to specification
+		// 3 move offset ahead
+		
+		OmniPodBinaryFileSection section = locateFileSection("ibf_version");
+		
 //		unpack();
+		
+		return result;
+	}
+	
+	private OmniPodBinaryFileSection locateFileSection(String header)
+	{
+		OmniPodBinaryFileSection result = null;
+		
+		for (OmniPodBinaryFileSection c : m_OmniPodBinaryFileSection)
+		{
+			if (c.getM_SectionHeader().equals(header))
+			{
+				result = c;
+			}
+		}
 		
 		return result;
 	}
@@ -242,5 +275,38 @@ public class DataLoadOmniPod extends DataLoadBase
 		return result;
 
 	}
+	
+	private int getManufacturingData(int offset)
+	{
+		int result = offset;
+		
+		return result;
+
+	}
+	
+	private int getBasalProgramNames(int offset)
+	{
+		int result = offset;
+		
+		return result;
+
+	}
+	
+	private int getEEPromSettings(int offset)
+	{
+		int result = offset;
+		
+		return result;
+
+	}
+
+	private int getLogDescriptions(int offset)
+	{
+		int result = offset;
+		
+		return result;
+
+	}
+
 
 }

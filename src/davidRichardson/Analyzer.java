@@ -1,10 +1,14 @@
 package davidRichardson;
 
+import java.awt.EventQueue;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 //import java.awt.Color;
 //import java.awt.Font;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -17,23 +21,49 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.poi.hssf.record.CFRuleBase.ComparisonOperator;
+import org.apache.poi.hssf.record.cf.BorderFormatting;
+import org.apache.poi.hssf.usermodel.HSSFBorderFormatting;
+
 //import javax.swing.table.DefaultTableModel;
 
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
+import org.apache.poi.hssf.usermodel.HSSFConditionalFormattingRule;
 import org.apache.poi.hssf.usermodel.HSSFFont;
+import org.apache.poi.hssf.usermodel.HSSFFontFormatting;
+import org.apache.poi.hssf.usermodel.HSSFPatriarch;
+import org.apache.poi.hssf.usermodel.HSSFPatternFormatting;
+import org.apache.poi.hssf.usermodel.HSSFPicture;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFSheetConditionalFormatting;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.util.IOUtils;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.ConditionalFormattingRule;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 //import org.apache.poi.ss.usermodel.Workbook;
 //import org.apache.poi.xssf.usermodel.XSSFColor;
 //import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTConditionalFormatting;
 
 //import davidRichardson.DBResult.TimeSlot;
 
 import java.util.Date;
+import java.util.List;
+
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.general.DefaultPieDataset;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.ChartUtilities; 
 
 
 public class Analyzer extends DataExportExcel 
@@ -44,7 +74,7 @@ public class Analyzer extends DataExportExcel
 	{
 		normal,
 		summaryOnly,
-		fullHistory		
+		fullHistory,
 	};
 
 	public enum AnalyzerResult
@@ -55,6 +85,7 @@ public class Analyzer extends DataExportExcel
 	};
 
 	// Lightweight class that can analyze results & provide commentary in text area	
+	// Haha - used to be lightweight :-)
 
 
 	ArrayList<AnalyzerSingleResult>   m_CombinedSingleResults;
@@ -69,6 +100,9 @@ public class Analyzer extends DataExportExcel
 	ArrayList<AnalyzerDaySummary>     m_AnalyzerDaySummaries;
 
 	ArrayList <DBResult>              m_DBResults;
+	ArrayList <DBResultEntry>         m_DBResultEntries;
+
+	AnalyzerEntries                   m_AnalyzerEntries;
 
 	Date                              m_StartDate;
 	Date                              m_EndDate;
@@ -107,9 +141,24 @@ public class Analyzer extends DataExportExcel
 
 	private String[]                  m_DaySummary_ColNames = {"ID", "Date", "Day Name", "Possible Duplicates", "Missing Meal BG", "Missing Meal Carbs", "Num Hypos", "Very Late Night BGs", "Very Late Night Corrections", "Very Late Night Hypos"};
 
-//	private String[]                  m_Skipped_Trends_ColNames     = {"Date", "Day Name", "Start TimeSlot", "End TimeSlot", "Type", "Significance", "Start BG", "Start Time", "End BG", "End Date", "End Time", "Skipped Entries", "Category Code", "Commentary"};
+	//	private String[]                  m_Skipped_Trends_ColNames     = {"Date", "Day Name", "Start TimeSlot", "End TimeSlot", "Type", "Significance", "Start BG", "Start Time", "End BG", "End Date", "End Time", "Skipped Entries", "Category Code", "Commentary"};
 
 	private String[]                  m_Comparison_To_Full_History  = {"Time Slot", "Trend", "Full History Count", "Full History Count %", "This Analysis Count", "This Analysis Count %"};	
+
+	//	private String[]                  m_CGM_Date_Ranges  = {"Start Date", "End Date", "Number of Days", "Average Readings per Day"};
+	private String[]                  m_CGM_Date_Ranges  = {"Start Date", "End Date", "Overlap with Treatments", "Number of Days", "Number of Hypos", "Number of Hypers", "Number in Range", "Average Readings per Day"};
+
+	//	private String[]                  m_CGM_Trends      = {"Start Hour", "End Hour", "Profile", "Offset", "Count"};
+	//	private String[]                  m_CGM_Trends      = {"Start Hour", "End Hour", "Goes Hypo", "Goes Hyper", "Start Profile", "End Profile", "Profile Direction", "Offset", "Count"};
+
+	private String[]                  m_CGM_Trends      = null;
+
+	private String[]                  m_CGM_Results  = {"ID", "Date", "Trend Range", "Trend Profile Type", "Entry Interval ID", "Time", "CGM Value"};
+	private String[]                  m_CGM_EntryIntervals  = {"ID", "Date", "Trend Range", "Trend Profile Type", "Goes Hypo", "Goes Hyper", "Start Profile", "End Profile", "Trend Result Entry ID", "Num CGM Entries"};
+	private String[]                  m_CGM_TrendResultEntry  = {"ID", "Start Hour", "End Hour", "Trend Profile Type", "Goes Hypo", "Goes Hyper", "Start Profile", "End Profile", "Num CGM Intervals"};
+
+	// CGM_Trends2 is dynamically generated :-)
+
 
 	private ArrayList<L2AnalyzerTrendResultEnumWrapper> m_RiseEnumList = new ArrayList<L2AnalyzerTrendResultEnumWrapper>();
 	private ArrayList<L2AnalyzerTrendResultEnumWrapper> m_FallEnumList = new ArrayList<L2AnalyzerTrendResultEnumWrapper>();
@@ -120,45 +169,59 @@ public class Analyzer extends DataExportExcel
 
 	private int                        m_BreakfastTimeSlotRiseCnt;
 	private int                        m_BreakfastTimeSlotFallCnt;
-//	private int                        m_BreakfastTimeSlotFlatCnt;
+	//	private int                        m_BreakfastTimeSlotFlatCnt;
 	private int                        m_LunchTimeSlotRiseCnt;
 	private int                        m_LunchTimeSlotFallCnt;
-//	private int                        m_LunchTimeSlotFlatCnt;
+	//	private int                        m_LunchTimeSlotFlatCnt;
 	private int                        m_DinnerTimeSlotRiseCnt;
 	private int                        m_DinnerTimeSlotFallCnt;
-//	private int                        m_DinnerTimeSlotFlatCnt;
+	//	private int                        m_DinnerTimeSlotFlatCnt;
 	private int                        m_OvernightTimeSlotRiseCnt;
 	private int                        m_OvernightTimeSlotFallCnt;
-//	private int                        m_OvernightTimeSlotFlatCnt;
+	//	private int                        m_OvernightTimeSlotFlatCnt;
 
 
 	private Analyzer                   m_FullHistoryAnalyzer = null;     
 
+	private CGMChart                   m_Chart = null;
+
 	// To Do - future work.  Send analytical results to Excel for more detail
-	Analyzer(ArrayList <DBResult> results)
+	Analyzer(ArrayList <DBResult> results, ArrayList<DBResultEntry> resultEntries)
 	{
-		initialize(results);
+		initialize(results, resultEntries);
 	}
 
-	Analyzer(ArrayList <DBResult> results, boolean summaryOnly)
+	Analyzer(ArrayList <DBResult> results, ArrayList<DBResultEntry> resultEntries, boolean summaryOnly)
 	{
 		m_SummaryOnly = summaryOnly;
-		initialize(results);
+		initialize(results, resultEntries);
 	}
 
-	Analyzer(ArrayList <DBResult> results, Analyzer.AnalyzerMode mode)
+	Analyzer(ArrayList <DBResult> results, ArrayList<DBResultEntry> resultEntries, Analyzer.AnalyzerMode mode)
 	{
 		m_AnalyzerMode = mode;
-		initialize(results);
+		initialize(results, resultEntries);
 	}
 
-	private void initialize(ArrayList <DBResult> results)
+
+	public void initialize(ArrayList<DBResultEntry> resultEntries)
+	{
+	}
+
+	private void initialize(ArrayList <DBResult> results, ArrayList<DBResultEntry> resultEntries)
 	{
 		// Reset all the m_ID static counters
 		AnalyzerSingleResult.resetStaticID();
 		AnalyzerTrendResult.resetStaticID();
 		AnalyzerDaySummary.resetStaticID();
 		AnalyzerRecurringTrendResult.resetStaticID();
+		AnalyzerEntriesCGMDay.resetStaticID();
+
+		AnalyzerResultEntryInterval.resetStaticID();
+		AnalyzerTrendResultAggregateGroup.resetStaticID();
+		AnalyzerTrendResultEntry.resetStaticID();
+		AnalyzerTrendResultEntryAggregate.resetStaticID();
+
 
 		m_CombinedSingleResults = new ArrayList<AnalyzerSingleResult>();
 
@@ -172,6 +235,10 @@ public class Analyzer extends DataExportExcel
 
 		// Retain copy of Nightscout Results
 		m_DBResults                 = new ArrayList<DBResult>(results);
+		m_DBResultEntries           = new ArrayList<DBResultEntry>(resultEntries);
+
+		m_AnalyzerEntries           = new AnalyzerEntries(m_DBResultEntries, m_DBResults);
+		m_AnalyzerEntries.initialize(resultEntries);
 
 		m_StartDate                 = new Date(0);
 		m_EndDate                   = new Date(0);
@@ -238,16 +305,16 @@ public class Analyzer extends DataExportExcel
 
 		m_BreakfastTimeSlotRiseCnt = 0;
 		m_BreakfastTimeSlotFallCnt = 0;
-//		m_BreakfastTimeSlotFlatCnt = 0;
+		//		m_BreakfastTimeSlotFlatCnt = 0;
 		m_LunchTimeSlotRiseCnt     = 0; 
 		m_LunchTimeSlotFallCnt     = 0;
-//		m_LunchTimeSlotFlatCnt     = 0;
+		//		m_LunchTimeSlotFlatCnt     = 0;
 		m_DinnerTimeSlotRiseCnt    = 0;
 		m_DinnerTimeSlotFallCnt    = 0;
-//		m_DinnerTimeSlotFlatCnt    = 0;
+		//		m_DinnerTimeSlotFlatCnt    = 0;
 		m_OvernightTimeSlotRiseCnt = 0;
 		m_OvernightTimeSlotFallCnt = 0;
-//		m_OvernightTimeSlotFlatCnt = 0;
+		//		m_OvernightTimeSlotFlatCnt = 0;
 
 		// Initialize the full history analyzer from control
 		m_FullHistoryAnalyzer = CoreNightScoutLoader.getInstance().getM_FullHistoryAnalyzer();
@@ -257,7 +324,7 @@ public class Analyzer extends DataExportExcel
 	{
 		String[] result = null;
 
-		if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions())
+		if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
 		{
 			result = stringArr.clone();
 		}
@@ -284,7 +351,7 @@ public class Analyzer extends DataExportExcel
 			}
 		}	
 
-		// See whether advanced options are set.
+		// See whether advanced Settings are set.
 		// If so, then filter out the ID columns
 
 
@@ -636,7 +703,6 @@ public class Analyzer extends DataExportExcel
 
 		return result;
 	}
-
 
 	public String furtherInsights(AnalyzerRecurringTrendResult res)
 	{
@@ -1056,9 +1122,19 @@ public class Analyzer extends DataExportExcel
 			}
 			else
 			{
+				// Analyze the CGM results too
+				// Commented out for now
+				// Have a choice ...
+				//  Either make the initial load synchroized with entry load
+				//  Or make a separate analyze method
+				m_AnalyzerEntries.analyzeResults(startDateLong, endDateLong);
+
+				// Then do the main analysis
 				analyzeResults(results, daysBack, startDateLong, endDateLong, excelFileName);
 			}
+
 		}
+
 
 		return result;
 	}	
@@ -1066,6 +1142,10 @@ public class Analyzer extends DataExportExcel
 	public void analyzeResults(ArrayList <DBResult> results, long daysBack, 
 			long startDateLong, long endDateLong, String excelFileName)
 	{
+		// Keep a record of start and end date / times
+		this.m_StartDate = new Date(startDateLong);
+		this.m_EndDate = new Date(endDateLong);
+
 		// Take a physical copy of result list for our own sorting
 		m_DBResults = new ArrayList<DBResult> (results);
 
@@ -1127,16 +1207,16 @@ public class Analyzer extends DataExportExcel
 		// Determine rise & fall counts for each timeslot
 		m_BreakfastTimeSlotRiseCnt  = countRecurringMatches(this.m_RiseEnumList, DBResult.TimeSlot.BreakfastTime);
 		m_BreakfastTimeSlotFallCnt  = countRecurringMatches(this.m_FallEnumList, DBResult.TimeSlot.BreakfastTime);
-//		m_BreakfastTimeSlotFlatCnt  = countRecurringMatches(this.m_FlatEnumList, DBResult.TimeSlot.BreakfastTime);
+		//		m_BreakfastTimeSlotFlatCnt  = countRecurringMatches(this.m_FlatEnumList, DBResult.TimeSlot.BreakfastTime);
 		m_LunchTimeSlotRiseCnt      = countRecurringMatches(this.m_RiseEnumList, DBResult.TimeSlot.LunchTime);
 		m_LunchTimeSlotFallCnt      = countRecurringMatches(this.m_FallEnumList, DBResult.TimeSlot.LunchTime);
-//		m_LunchTimeSlotFlatCnt      = countRecurringMatches(this.m_FlatEnumList, DBResult.TimeSlot.LunchTime);
+		//		m_LunchTimeSlotFlatCnt      = countRecurringMatches(this.m_FlatEnumList, DBResult.TimeSlot.LunchTime);
 		m_DinnerTimeSlotRiseCnt     = countRecurringMatches(this.m_RiseEnumList, DBResult.TimeSlot.DinnerTime);
 		m_DinnerTimeSlotFallCnt     = countRecurringMatches(this.m_FallEnumList, DBResult.TimeSlot.DinnerTime);
-//		m_DinnerTimeSlotFlatCnt     = countRecurringMatches(this.m_FlatEnumList, DBResult.TimeSlot.DinnerTime);
+		//		m_DinnerTimeSlotFlatCnt     = countRecurringMatches(this.m_FlatEnumList, DBResult.TimeSlot.DinnerTime);
 		m_OvernightTimeSlotRiseCnt  = countRecurringMatches(this.m_RiseEnumList, DBResult.TimeSlot.BedTime);
 		m_OvernightTimeSlotFallCnt  = countRecurringMatches(this.m_FallEnumList, DBResult.TimeSlot.BedTime);
-//		m_OvernightTimeSlotFlatCnt  = countRecurringMatches(this.m_FlatEnumList, DBResult.TimeSlot.BedTime);
+		//		m_OvernightTimeSlotFlatCnt  = countRecurringMatches(this.m_FlatEnumList, DBResult.TimeSlot.BedTime);
 
 		int totalTrends = this.m_CombinedTrendResults.size();
 
@@ -1268,9 +1348,33 @@ public class Analyzer extends DataExportExcel
 		return result;
 	}
 
+	private boolean settingsAreAllFine()
+	{
+		boolean result = true;  // All looks good, so proceed with analysis
+
+		// Collect the include Settings and insist that at least one is set.
+
+		boolean analyzeBreakfast                  = PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeBreakfast();
+		boolean analyzeLunch                      = PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeLunch();
+		boolean analyzeDinner                     = PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeDinner();
+		boolean analyzeOvernight                  = PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeOvernight();
+
+		result = (analyzeBreakfast || analyzeLunch || analyzeDinner || analyzeOvernight) ? true : false;
+
+		return result;
+	}
+
 	public void analyzeResults(long startDateLong, long endDateLong)
 	{
-		analyzeResultsNew(startDateLong, endDateLong);  // Issue with Excel file generation on highs & lows ...
+		if (settingsAreAllFine())
+		{
+			analyzeResultsNew(startDateLong, endDateLong);  // Issue with Excel file generation on highs & lows ...	
+		}
+
+		else
+		{
+			m_Logger.log(Level.INFO, "Analysis will not run since no meals are included.");
+		}
 	}
 
 	public void analyzeResultsNew(long startDateLong, long endDateLong)
@@ -1431,7 +1535,7 @@ public class Analyzer extends DataExportExcel
 		if (m_DBResults.size() > 0)
 		{
 			HSSFWorkbook wb = new HSSFWorkbook();
-			
+
 			long diffMillies = endDateLong - startDateLong;
 			int diffDays = (int)TimeUnit.DAYS.convert(diffMillies, TimeUnit.MILLISECONDS);
 
@@ -1441,6 +1545,14 @@ public class Analyzer extends DataExportExcel
 			// Generate Recurring Trend report based on number of days between start and end		
 			writeRecurringTrendsToExcel(wb, diffDays);
 
+			// Include a tab with a CGM trend heatmap - very nice
+			writeCGMTrends(wb);
+
+			// If there any CGM entries, then include a tab that summarises
+			// date ranges that CGM was active.  Useful if not on CGM 24x7
+			// Include CGM summary in Excel too
+			writeCGMSummary(wb);
+			
 			// Generate Trends report
 			writeTrendResultsToExcel(wb);
 
@@ -1458,22 +1570,23 @@ public class Analyzer extends DataExportExcel
 
 			// Generate Raw data too
 			writeRawDataToExcel(wb, startDateLong, endDateLong);
+			
+			// Summarise the intermediate CGM structures if enabled and data is there
+			writeCGMTrendResultEntries(wb);
+			writeCGMResultEntryIntervals(wb);
+			writeCGMResults(wb);
 
-			// Only include explicit details of full history if advanced options are set
-			if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions())
-			{
-				// Generate comparison to full history results
-				writeFullHistoryTrendResultsToExcel(wb);
+			// Generate comparison to full history results
+			writeFullHistoryTrendResultsToExcel(wb);
 
-				// Generate comparison to full history results
-				writeComparisonToFullHistory(wb);
-			}
+			// Generate comparison to full history results
+			writeComparisonToFullHistory(wb);
 
 			// Generate a summary of all analyzer parameters
 			writeParametersToExcel(wb);
 
 			// Generate a summary of all option parameters
-			writeOptionsToExcel(wb);
+			writeSettingsToExcel(wb);
 
 			// Generate a summary of supported categories
 			writeAnalyzerToExcel(wb);
@@ -1491,284 +1604,320 @@ public class Analyzer extends DataExportExcel
 
 	private void writeAnalyzerToExcel(HSSFWorkbook wb)
 	{
-		Sheet sheet = wb.createSheet("Trend Explanations");
-		sheet.createFreezePane(0,1);
+		String sheetName = new String("Trend Explanations");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName))
+		{
+			Sheet sheet = wb.createSheet(sheetName);
 
-		writeColumnHeaderRow(wb, sheet, m_Analyzer_ColNames);
-		int rowNum = 1;
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.hypo_after_after_presumed_carbs, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_into_hypo_no_carbs, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_into_hypo_after_meal, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_into_hypo_after_correction, sheet, rowNum);
+			writeColumnHeaderRow(wb, sheet, m_Analyzer_ColNames);
+			int rowNum = 1;
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.hypo_after_after_presumed_carbs, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_into_hypo_no_carbs, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_into_hypo_after_meal, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_into_hypo_after_correction, sheet, rowNum);
 
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_into_hypo_but_hypo_first, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_into_hypo_no_intervention, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_into_hypo_but_corrected_first, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_overnight_out_of_range_but_hypo_first, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_overnight_into_range_but_hypo_first, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_out_of_range_but_hypo_first, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_into_range_but_hypo_first, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.overnight_in_range_to_in_range_but_hypo_first, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_out_of_range_no_carbs, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_out_of_range_after_meal, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_in_to_out_of_range_no_carbs, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_in_to_out_of_range_after_meal, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_out_of_range_after_correction, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_in_to_out_of_range_after_correction, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_out_of_range_after_presumed_carbs, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_overnight_out_of_range_no_intervention, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_overnight_out_of_range_but_corrected_first, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_out_of_range_no_carbs, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_out_of_range_after_meal, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_out_of_range_after_correction, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_out_of_range_no_intervention, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_out_of_range_but_corrected_first, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.in_range_to_in_range, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.overnight_in_range_to_in_range_no_intervention, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.overnight_in_range_to_in_range_but_corrected_first, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_overnight_into_range_no_intervention, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_overnight_into_range_but_corrected_first, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_into_range_no_intervention, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_into_range_but_corrected_first, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_into_range_no_carbs, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_into_range_after_meal, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_into_range_after_correction, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_into_range_no_carbs, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_into_range_after_meal, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_into_range_after_correction, sheet, rowNum);
-		rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_into_range_after_presumed_carbs, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_into_hypo_but_hypo_first, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_into_hypo_no_intervention, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_into_hypo_but_corrected_first, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_overnight_out_of_range_but_hypo_first, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_overnight_into_range_but_hypo_first, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_out_of_range_but_hypo_first, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_into_range_but_hypo_first, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.overnight_in_range_to_in_range_but_hypo_first, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_out_of_range_no_carbs, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_out_of_range_after_meal, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_in_to_out_of_range_no_carbs, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_in_to_out_of_range_after_meal, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_out_of_range_after_correction, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_in_to_out_of_range_after_correction, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_out_of_range_after_presumed_carbs, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_overnight_out_of_range_no_intervention, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_overnight_out_of_range_but_corrected_first, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_out_of_range_no_carbs, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_out_of_range_after_meal, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_out_of_range_after_correction, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_out_of_range_no_intervention, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_out_of_range_but_corrected_first, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.in_range_to_in_range, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.overnight_in_range_to_in_range_no_intervention, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.overnight_in_range_to_in_range_but_corrected_first, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_overnight_into_range_no_intervention, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_overnight_into_range_but_corrected_first, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_into_range_no_intervention, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_overnight_into_range_but_corrected_first, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_into_range_no_carbs, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_into_range_after_meal, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.fall_into_range_after_correction, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_into_range_no_carbs, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_into_range_after_meal, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_into_range_after_correction, sheet, rowNum);
+			rowNum += addAnalyzerValues(L2AnalyzerTrendResultEnum.rise_into_range_after_presumed_carbs, sheet, rowNum);
 
-		autoSizeColumns(sheet, m_Analyzer_ColNames);
+			autoSizeColumns(sheet, m_Analyzer_ColNames);
+		}
 	}
 
 	private void writeParametersToExcel(HSSFWorkbook wb)
 	{
-		Sheet sheet = wb.createSheet("Parameters");
-		sheet.createFreezePane(0,1);
+		String sheetName = new String("Parameters");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName))
+		{
+			Sheet sheet = wb.createSheet(sheetName);
 
-		writeColumnHeaderRow(wb, sheet, m_Parameter_ColNames);
+			writeColumnHeaderRow(wb, sheet, m_Parameter_ColNames);
 
-		// Get Date as of now
-		Date now = new Date();
-		String date_time = new String("");
-		final DateFormat format = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
-		date_time = format.format(now);
+			// Get Date as of now
+			Date now = new Date();
+			String date_time = new String("");
+			final DateFormat format = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
+			date_time = format.format(now);
 
-		Date   start_date      = new Date(PrefsNightScoutLoader.getInstance().getM_AnalyzerStartDateLong());
-		Date   end_date        = new Date(PrefsNightScoutLoader.getInstance().getM_AnalyzerEndDateLong());
-		String start_date_time = new String("");
-		String end_date_time   = new String("");
-		start_date_time        = format.format(start_date);
-		end_date_time          = format.format(end_date);
+			Date   start_date      = new Date(PrefsNightScoutLoader.getInstance().getM_AnalyzerStartDateLong());
+			Date   end_date        = new Date(PrefsNightScoutLoader.getInstance().getM_AnalyzerEndDateLong());
+			String start_date_time = new String("");
+			String end_date_time   = new String("");
+			start_date_time        = format.format(start_date);
+			end_date_time          = format.format(end_date);
 
-		// Now just add the rows one at a time...
+			// Now just add the rows one at a time...
 
-		//	 m_Parameter_ColNames  = {"Parameter", "Value", "Notes" };
-		int rowNum = 1;
-		rowNum += addParameterValue("Date / Time run", date_time, "When the analysis was run", sheet, rowNum);
-		rowNum += addParameterValue("BG UNITS", PrefsNightScoutLoader.getInstance().getM_BGUnits() == 0 ? "mmol/L" : "mg/dL", "KEY parameter in determining how your results are interpreted.  Please set accordingly!", sheet, rowNum);
-		rowNum += addParameterValue("Advanced Options", PrefsNightScoutLoader.getInstance().isM_AdvancedOptions() ? "True" : "False", "Advanced Options in the Options tab.  If set to false, then all parameters are either default or unchanged from before", sheet, rowNum);
-		rowNum += addParameterValue("Start Date", start_date_time, "Inclusive start date range for the analysis", sheet, rowNum);
-		rowNum += addParameterValue("End Date", end_date_time, "Inclusive end date range for the analysis", sheet, rowNum);
-		rowNum += addParameterValue("Breakfast Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBreakfastTimeStart(), "Defines start time for results in breakfast range", sheet, rowNum);
-		rowNum += addParameterValue("Lunch Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerLunchTimeStart(), "Defines start time for results in lunch range", sheet, rowNum);
-		rowNum += addParameterValue("Dinner Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerDinnerTimeStart(), "Defines start time for results in dinner range", sheet, rowNum);
-		rowNum += addParameterValue("Bed Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTimeStart(), "Defines start time for results in bed range", sheet, rowNum);
-		rowNum += addParameterValue("BedTime Trend Start Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartStartTime(), "Overnight trends start between this start time and end time", sheet, rowNum);
-		rowNum += addParameterValue("BedTime Trend Start End Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartEndTime(), "Overnight trends start between start time and this end time", sheet, rowNum);
-		rowNum += addParameterValue("BedTime Trend End Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendEndStartTime(), "Overnight trends end between this start time and end time", sheet, rowNum);
-		rowNum += addParameterValue("BedTime Trend End End Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendEndEndTime(), "Overnight trends end between start time and this end time", sheet, rowNum);	
-
-		rowNum += addParameterValue("% Based on recurring counts only", PrefsNightScoutLoader.getInstance().isM_AnalyzerTotalRecurringTrendsOnly() ? "Yes" : "No", "As example, if there are only 3 trend results and 2 recur, then if this is true 100% = 2 else 100% = 3", sheet, rowNum);
-
-		rowNum += addParameterValue("High Threshold", PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThreshold(), "Values above this are considered 'too high'", sheet, rowNum);
-		rowNum += addParameterValue("Low Threshold", PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThreshold(), "Values below this are considered 'too low'", sheet, rowNum);
-		rowNum += addParameterValue("High Threshold Relevance Factor", PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThresholdRelevanceFactor(), "High BG Results are ranked from 1 to 10.  BGs outside range at this value and above represent 10", sheet, rowNum);
-		rowNum += addParameterValue("Low Threshold Relevance Factor", PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThresholdRelevanceFactor(), "Low BG results are ranked from 1 to 10.  BGs outside range at this value and below represent 10", sheet, rowNum);
-		// not used rowNum += addParameterValue("Individual Trend Ratio", PrefsNightScoutLoader.getInstance().getM_AnalyzerIndividualTrendRatio(), "Low BG results are ranked from 1 to 10.  BGs outside range at this value and below represent 10", sheet, rowNum);
-		rowNum += addParameterValue("Overnight Change Trend Ratio", PrefsNightScoutLoader.getInstance().getM_AnalyzerOvernightChangeTrendRatio(), "BG changes are ranked from 1 to 10.  BG change overnight at this value and above represent 10", sheet, rowNum);
-		rowNum += addParameterValue("Breakfast Change Trend Ratio", PrefsNightScoutLoader.getInstance().getM_AnalyzerBreakfastChangeTrendRatio(), "BG changes are ranked from 1 to 10.  BG change from breakfast at this value and above represent 10", sheet, rowNum);
-		rowNum += addParameterValue("Lunch Change Trend Ratio", PrefsNightScoutLoader.getInstance().getM_AnalyzerLunchChangeTrendRatio(), "BG changes are ranked from 1 to 10.  BG change from lunch at this value and above represent 10", sheet, rowNum);
-		rowNum += addParameterValue("Dinner Change Trend Ratio", PrefsNightScoutLoader.getInstance().getM_AnalyzerDinnerChangeTrendRatio(), "BG changes are ranked from 1 to 10.  BG change from dinner at this value and above represent 10", sheet, rowNum);
-		rowNum += addParameterValue("Minimum Minutes for Trend", (double)PrefsNightScoutLoader.getInstance().getM_AnalyzerMinMinsForTrendResults(), "To make a trend, two BG results must be at least this number of minutes apart", sheet, rowNum);
-
-		rowNum += addParameterValue("Ratio of incidents / number of days as High Priority", PrefsNightScoutLoader.getInstance().getM_AnalyzerHighFrequencyPercentage(), "For recurring trends, if the raio of incidents exceeds this, then it's coloured RED", sheet, rowNum);
-		rowNum += addParameterValue("Ratio of incidents / number of days as Medium Priority", PrefsNightScoutLoader.getInstance().getM_AnalyzerMediumFrequencyPercentage(), "For recurring trends, if the raio of incidents exceeds this, then it's coloured AMBER", sheet, rowNum);
-
-		rowNum += addParameterValue("High Normal Range", PrefsNightScoutLoader.getInstance().getM_AnalyzerHighRangeThreshold(), "Upper range of 'normal' BG levels.  Typically 7 mmol/L", sheet, rowNum);
-		rowNum += addParameterValue("Low Normal Range", PrefsNightScoutLoader.getInstance().getM_AnalyzerLowRangeThreshold(), "Lower range of 'normal' BG levels.  Typically 4 mmol/L", sheet, rowNum);
-		rowNum += addParameterValue("Bad Night Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBadNightStartTime(), "Start time of 'silly o-clock' BG results.", sheet, rowNum);
-		rowNum += addParameterValue("Bad Night End Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBadNightEndTime(), "End time of 'silly o-clock' BG results.", sheet, rowNum);
+			//	 m_Parameter_ColNames  = {"Parameter", "Value", "Notes" };
+			int rowNum = 1;
+			rowNum += addParameterValue("Date / Time run", date_time, "When the analysis was run", sheet, rowNum);
+			rowNum += addParameterValue("BG UNITS", PrefsNightScoutLoader.getInstance().getM_BGUnits() == 0 ? "mmol/L" : "mg/dL", "KEY parameter in determining how your results are interpreted.  Please set accordingly!", sheet, rowNum);
+			rowNum += addParameterValue("Excel Output Level", 
+					PrefsNightScoutLoader.getInstance().getM_AnalyzerExcelOutputLevel() == 0 ? "Minimal Detail Excel Summary"  :
+						PrefsNightScoutLoader.getInstance().getM_AnalyzerExcelOutputLevel() == 1 ? "Moderate Detail Excel Summary" : "Full Detail Excel Summary" , "Hides more complexity in output as needed", sheet, rowNum);
+			rowNum += addParameterValue("Advanced Settings", PrefsNightScoutLoader.getInstance().isM_AdvancedSettings() ? "True" : "False", "Advanced Settings in the Settings tab.  If set to false, then all parameters are either default or unchanged from before", sheet, rowNum);
+			rowNum += addParameterValue("Start Date", start_date_time, "Inclusive start date range for the analysis", sheet, rowNum);
+			rowNum += addParameterValue("End Date", end_date_time, "Inclusive end date range for the analysis", sheet, rowNum);
+			rowNum += addParameterValue("Breakfast Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBreakfastTimeStart(), "Defines start time for results in breakfast range", sheet, rowNum);
+			rowNum += addParameterValue("Lunch Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerLunchTimeStart(), "Defines start time for results in lunch range", sheet, rowNum);
+			rowNum += addParameterValue("Dinner Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerDinnerTimeStart(), "Defines start time for results in dinner range", sheet, rowNum);
+			rowNum += addParameterValue("Bed Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTimeStart(), "Defines start time for results in bed range", sheet, rowNum);
+			rowNum += addParameterValue("BedTime Trend Start Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartStartTime(), "Overnight trends start between this start time and end time", sheet, rowNum);
+			rowNum += addParameterValue("BedTime Trend Start End Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartEndTime(), "Overnight trends start between start time and this end time", sheet, rowNum);
+			rowNum += addParameterValue("BedTime Trend End Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendEndStartTime(), "Overnight trends end between this start time and end time", sheet, rowNum);
+			rowNum += addParameterValue("BedTime Trend End End Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendEndEndTime(), "Overnight trends end between start time and this end time", sheet, rowNum);	
 
 
-		autoSizeColumns(sheet, m_Parameter_ColNames);
+			rowNum += addParameterValue("High Threshold", PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThreshold(), "Values above this are considered 'too high'", sheet, rowNum);
+			rowNum += addParameterValue("Low Threshold", PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThreshold(), "Values below this are considered 'too low'", sheet, rowNum);
+			rowNum += addParameterValue("High Threshold Relevance Factor", PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThresholdRelevanceFactor(), "High BG Results are ranked from 1 to 10.  BGs outside range at this value and above represent 10", sheet, rowNum);
+			rowNum += addParameterValue("Low Threshold Relevance Factor", PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThresholdRelevanceFactor(), "Low BG results are ranked from 1 to 10.  BGs outside range at this value and below represent 10", sheet, rowNum);
+			// not used rowNum += addParameterValue("Individual Trend Ratio", PrefsNightScoutLoader.getInstance().getM_AnalyzerIndividualTrendRatio(), "Low BG results are ranked from 1 to 10.  BGs outside range at this value and below represent 10", sheet, rowNum);
+			rowNum += addParameterValue("Overnight Change Trend Ratio", PrefsNightScoutLoader.getInstance().getM_AnalyzerOvernightChangeTrendRatio(), "BG changes are ranked from 1 to 10.  BG change overnight at this value and above represent 10", sheet, rowNum);
+			rowNum += addParameterValue("Breakfast Change Trend Ratio", PrefsNightScoutLoader.getInstance().getM_AnalyzerBreakfastChangeTrendRatio(), "BG changes are ranked from 1 to 10.  BG change from breakfast at this value and above represent 10", sheet, rowNum);
+			rowNum += addParameterValue("Lunch Change Trend Ratio", PrefsNightScoutLoader.getInstance().getM_AnalyzerLunchChangeTrendRatio(), "BG changes are ranked from 1 to 10.  BG change from lunch at this value and above represent 10", sheet, rowNum);
+			rowNum += addParameterValue("Dinner Change Trend Ratio", PrefsNightScoutLoader.getInstance().getM_AnalyzerDinnerChangeTrendRatio(), "BG changes are ranked from 1 to 10.  BG change from dinner at this value and above represent 10", sheet, rowNum);
+			rowNum += addParameterValue("Minimum Minutes for Trend", (double)PrefsNightScoutLoader.getInstance().getM_AnalyzerMinMinsForTrendResults(), "To make a trend, two BG results must be at least this number of minutes apart", sheet, rowNum);
+
+			rowNum += addParameterValue("Ratio of incidents / number of days as High Priority", PrefsNightScoutLoader.getInstance().getM_AnalyzerHighFrequencyPercentage(), "For recurring trends, if the raio of incidents exceeds this, then it's coloured RED", sheet, rowNum);
+			rowNum += addParameterValue("Ratio of incidents / number of days as Medium Priority", PrefsNightScoutLoader.getInstance().getM_AnalyzerMediumFrequencyPercentage(), "For recurring trends, if the raio of incidents exceeds this, then it's coloured AMBER", sheet, rowNum);
+
+			rowNum += addParameterValue("High Normal Range", PrefsNightScoutLoader.getInstance().getM_AnalyzerHighRangeThreshold(), "Upper range of 'normal' BG levels.  Typically 7 mmol/L", sheet, rowNum);
+			rowNum += addParameterValue("Low Normal Range", PrefsNightScoutLoader.getInstance().getM_AnalyzerLowRangeThreshold(), "Lower range of 'normal' BG levels.  Typically 4 mmol/L", sheet, rowNum);
+			rowNum += addParameterValue("Bad Night Start Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBadNightStartTime(), "Start time of 'silly o-clock' BG results.", sheet, rowNum);
+			rowNum += addParameterValue("Bad Night End Time", PrefsNightScoutLoader.getInstance().getM_AnalyzerBadNightEndTime(), "End time of 'silly o-clock' BG results.", sheet, rowNum);
+
+			rowNum += addParameterValue("CGM Trend Hour Intervals", PrefsNightScoutLoader.getInstance().getM_EntryAnalyzerIntervalHours(), "Either 1, 2 or 3 hour intervals CGM results are grouped into for trends.", sheet, rowNum);
+			rowNum += addParameterValue("Compress Meal Trends", PrefsNightScoutLoader.getInstance().isM_AnalyzerCompressMealTrends() ? "Yes" : "No", "Rises into range and out of range treated same if enabled", sheet, rowNum);
+			rowNum += addParameterValue("Total Recurring Trends Only", PrefsNightScoutLoader.getInstance().isM_AnalyzerTotalRecurringTrendsOnly() ? "Yes" : "No", "As example, if there are only 3 trend results and 2 recur, then if this is true 100% = 2 else 100% = 3", sheet, rowNum);
+			rowNum += addParameterValue("CGM Trend Hour Intervals", PrefsNightScoutLoader.getInstance().getM_EntryAnalyzerIntervalHours(), "Either 1, 2 or 3 hourly intervals set on CGM Heat Map", sheet, rowNum);
+
+			autoSizeColumns(sheet, m_Parameter_ColNames);
+		}
 	}
 
 	private void writeOutsideRangeResultsToExcel(HSSFWorkbook wb) 
 	{
-		Sheet sheet = wb.createSheet("BGs Outside Range");
-		sheet.createFreezePane(0,1);
+		String sheetName = new String("BGs Outside Range");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) &&
+				m_CombinedSingleResults.size() > 0)
+		{
+			Sheet sheet = wb.createSheet(sheetName);
 
-		writeColumnHeaderRow(wb, sheet, m_Highs_Lows_ColNames);
+			writeColumnHeaderRow(wb, sheet, m_Highs_Lows_ColNames);
 
-		int rowNum = 1;
+			int rowNum = 1;
 
-		rowNum += addOutsideRangeRowResult(m_CombinedSingleResults, sheet, rowNum);
+			rowNum += addOutsideRangeRowResult(m_CombinedSingleResults, sheet, rowNum);
 
-		autoSizeColumns(sheet, m_Highs_Lows_ColNames);
+			autoSizeColumns(sheet, m_Highs_Lows_ColNames);
+		}
 	}
 
 	private void writeRawDataToExcel(HSSFWorkbook wb, long startDateLong, long endDateLong)
 	{
-		Sheet sheet = wb.createSheet("Treatment Data Analyzed");
-		sheet.createFreezePane(0,1);
-
-		writeColumnHeaderRow(wb, sheet, getColumnNameArray(DBResult.getColNamesWithID()));
-
-		Row row   = null;
-		Cell cell = null;
-
-		int      i = 1;
-
-		Long     currDateLong = 0L;
-		for (DBResult result : m_DBResults)
+		String sheetName = new String("Treatment Data Analyzed");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) &&
+				m_CombinedSingleResults.size() > 0)
 		{
-			currDateLong = result.getM_Time().getTime();
-			Double bg    = result.getM_CP_Glucose();
+			Sheet sheet = wb.createSheet(sheetName);
 
-			if (bg != null && (startDateLong <= currDateLong) && (endDateLong >= currDateLong))
+			writeColumnHeaderRow(wb, sheet, getColumnNameArray(DBResult.getColNamesWithID()));
+
+			Row row   = null;
+			Cell cell = null;
+
+			int      i = 1;
+
+			Long     currDateLong = 0L;
+			for (DBResult result : m_DBResults)
 			{
-				row = sheet.createRow(i++);
+				currDateLong = result.getM_Time().getTime();
+				Double bg    = result.getM_CP_Glucose();
 
-				int n = 0;
-
-				if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions())
+				if (bg != null && (startDateLong <= currDateLong) && (endDateLong >= currDateLong))
 				{
-					cell = row.createCell(n++);
-					cell.setCellValue(result.getM_ID());	
-				}
+					row = sheet.createRow(i++);
 
-				String[] dbResArray = result.toArray(false);
-				for (int j = 0; j < dbResArray.length; j++) 
-				{
-					cell = row.createCell(j + n);
-					cell.setCellValue(dbResArray[j]);
-				}
-			}
-		}	
+					int n = 0;
 
-		autoSizeColumns(sheet, getColumnNameArray(DBResult.getColNamesWithID()));
+					if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
+					{
+						cell = row.createCell(n++);
+						cell.setCellValue(result.getM_ID());	
+					}
+
+					String[] dbResArray = result.toArray(false);
+					for (int j = 0; j < dbResArray.length; j++) 
+					{
+						cell = row.createCell(j + n);
+						cell.setCellValue(dbResArray[j]);
+					}
+				}
+			}	
+
+			autoSizeColumns(sheet, getColumnNameArray(DBResult.getColNamesWithID()));
+		}
 	}
 
 	private void writeSingleResultsToExcel(HSSFWorkbook wb)
 	{
-		Sheet sheet = wb.createSheet("Single Results");
-		sheet.createFreezePane(0,1);
+		String sheetName = new String("Single Results");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) &&
+				m_CombinedSingleResults.size() > 0)
+		{
+			Sheet sheet = wb.createSheet(sheetName);
 
-		writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_SingleRes_ColNames));
+			writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_SingleRes_ColNames));
 
-		int rowNum = 1;
+			int rowNum = 1;
 
-		rowNum += addSingleResult(m_CombinedSingleResults, wb, sheet, rowNum);
+			rowNum += addSingleResult(m_CombinedSingleResults, wb, sheet, rowNum);
 
-		autoSizeColumns(sheet, getColumnNameArray(m_SingleRes_ColNames));
+			autoSizeColumns(sheet, getColumnNameArray(m_SingleRes_ColNames));
+		}
 	}
 
 	private void writeTrendResultsToExcel(HSSFWorkbook wb)
 	{
-		Sheet sheet = wb.createSheet("Trends");
-		sheet.createFreezePane(0,1);
+		String sheetName = new String("Trends");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) &&
+				m_CombinedTrendResults.size() > 0)
+		{
+			Sheet sheet = wb.createSheet(sheetName);
 
-		writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_Trends_ColNames));
+			writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_Trends_ColNames));
 
-		int rowNum = 1;
+			int rowNum = 1;
 
-		rowNum += addTrendResult(m_CombinedTrendResults, wb, sheet, rowNum);
+			rowNum += addTrendResult(m_CombinedTrendResults, wb, sheet, rowNum);
 
-		autoSizeColumns(sheet, getColumnNameArray(m_Trends_ColNames));
+			autoSizeColumns(sheet, getColumnNameArray(m_Trends_ColNames));
+		}
 	}
 
 	private void writeSkippedTrendResultsToExcel(HSSFWorkbook wb)
 	{
-		// This tab shares exactly the same structure as the Trends
-		Sheet sheet = wb.createSheet("Skipped Meal Trends");
-		sheet.createFreezePane(0,1);
+		String sheetName = new String("Skipped Meal Trends");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) &&
+				m_CombinedTrendResults.size() > 0)
+		{
+			Sheet sheet = wb.createSheet(sheetName);
+			// This tab shares exactly the same structure as the Trends
 
-		writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_Trends_ColNames));
+			writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_Trends_ColNames));
 
-		int rowNum = 1;
+			int rowNum = 1;
 
-		// Filter specifically for results that have no carbs only
-		rowNum += addTrendResult(m_CombinedTrendResults, wb, sheet, rowNum, true, false);
+			// Filter specifically for results that have no carbs only
+			rowNum += addTrendResult(m_CombinedTrendResults, wb, sheet, rowNum, true, false);
 
-		autoSizeColumns(sheet, getColumnNameArray(m_Trends_ColNames));
-
+			autoSizeColumns(sheet, getColumnNameArray(m_Trends_ColNames));
+		}
 
 	}
 
 	private void writeRecurringTrendsToExcel(HSSFWorkbook wb, long daysBack)
 	{
-		Sheet sheet = wb.createSheet("Recurring Trends");
-		sheet.createFreezePane(0,1);
+		String sheetName = new String("Recurring Trends");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) &&
+				m_AnalyzerRecurringTrendResultList.size() > 0)
+		{
+			Sheet sheet = wb.createSheet(sheetName);
 
-		writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_RecurringTrends_ColNames));
+			writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_RecurringTrends_ColNames));
 
-		int rowNum = 1;
-		rowNum += addRecurringTrendResult(m_AnalyzerRecurringTrendResultList, wb, sheet, rowNum, daysBack);	
+			int rowNum = 1;
+			rowNum += addRecurringTrendResult(m_AnalyzerRecurringTrendResultList, wb, sheet, rowNum, daysBack);	
 
-		autoSizeColumns(sheet, getColumnNameArray(m_RecurringTrends_ColNames));
+			autoSizeColumns(sheet, getColumnNameArray(m_RecurringTrends_ColNames));
+		}
 	}
-
-//	private void reorderExcelTabs(HSSFWorkbook wb)
-//	{
-//		int i = 0;
-//
-//		wb.setSheetOrder("Guide to Tabs", i++);
-//		wb.setSheetOrder("Recurring Trends", i++);
-//		wb.setSheetOrder("Trends", i++);
-//		wb.setSheetOrder("Skipped Meal Trends", i++);
-//		wb.setSheetOrder("BGs Outside Range", i++);
-//		wb.setSheetOrder("Day Summaries", i++);
-//		wb.setSheetOrder("Single Results", i++);
-//		wb.setSheetOrder("Treatment Data Analyzed", i++);
-//		if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions())
-//		{
-//			wb.setSheetOrder("Comparison to Full History", i++);
-//			wb.setSheetOrder("Full History Trends", i++);
-//		}
-//		wb.setSheetOrder("Parameters", i++);
-//		wb.setSheetOrder("Options", i++);
-//		wb.setSheetOrder("Trend Explanations", i++);
-//
-//		wb.setActiveSheet(0);
-//
-//	}
+	//	private void reorderExcelTabs(HSSFWorkbook wb)
+	//	{
+	//		int i = 0;
+	//
+	//		wb.setSheetOrder("Guide to Tabs", i++);
+	//		wb.setSheetOrder("Recurring Trends", i++);
+	//		wb.setSheetOrder("Trends", i++);
+	//		wb.setSheetOrder("Skipped Meal Trends", i++);
+	//		wb.setSheetOrder("BGs Outside Range", i++);
+	//		wb.setSheetOrder("Day Summaries", i++);
+	//		wb.setSheetOrder("Single Results", i++);
+	//		wb.setSheetOrder("Treatment Data Analyzed", i++);
+	//		if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
+	//		{
+	//			wb.setSheetOrder("Comparison to Full History", i++);
+	//			wb.setSheetOrder("Full History Trends", i++);
+	//		}
+	//		wb.setSheetOrder("Parameters", i++);
+	//		wb.setSheetOrder("Settings", i++);
+	//		wb.setSheetOrder("Trend Explanations", i++);
+	//
+	//		wb.setActiveSheet(0);
+	//
+	//	}
 
 
 	// Experimental for now.
 	// Not sure even higher level of aggregation adds much value
 	private void writeGuidanceToExcel(HSSFWorkbook wb)
 	{
-		Sheet sheet = wb.createSheet("Guide to Tabs");
-		sheet.createFreezePane(0,1);
+		String sheetName = new String("Guide to Tabs");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName))
+		{
+			Sheet sheet = wb.createSheet(sheetName);
+			writeColumnHeaderRow(wb, sheet, m_Guidance_ColNames);
 
-		writeColumnHeaderRow(wb, sheet, m_Guidance_ColNames);
+			int rowNum = 1;
+			rowNum += addGuidance(wb, sheet, rowNum);	
 
-		int rowNum = 1;
-		rowNum += addGuidance(wb, sheet, rowNum);	
-
-		autoSizeColumns(sheet, m_Guidance_ColNames);
+			autoSizeColumns(sheet, m_Guidance_ColNames);
+		}
 
 	}
 
 	private void writeFullHistoryTrendResultsToExcel(HSSFWorkbook wb)
 	{
-		// We only do this if the full history is available
-		if (this.m_FullHistoryAnalyzer != null)
+		String sheetName = new String("Full History Trends");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) &&
+				PrefsNightScoutLoader.getInstance().isM_AdvancedSettings() &&
+				this.m_FullHistoryAnalyzer != null)
 		{
-			Sheet sheet = wb.createSheet("Full History Trends");
-
-			sheet.createFreezePane(0,1);
+			Sheet sheet = wb.createSheet(sheetName);
 
 			writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_Trends_ColNames));
 
@@ -1777,17 +1926,19 @@ public class Analyzer extends DataExportExcel
 			rowNum += addTrendResult(m_FullHistoryAnalyzer.m_CombinedTrendResults, wb, sheet, rowNum);
 
 			autoSizeColumns(sheet, getColumnNameArray(m_Trends_ColNames));
-
 		}
 	}
 
 	private void writeComparisonToFullHistory(HSSFWorkbook wb)
 	{
-		// We only do this if the full history is available
-		if (this.m_FullHistoryAnalyzer != null)
+		String sheetName = new String("Comparison to Full History");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) && 
+				PrefsNightScoutLoader.getInstance().isM_AdvancedSettings() &&
+				this.m_FullHistoryAnalyzer != null)
 		{
+			HSSFSheet sheet = wb.createSheet(sheetName);
+
 			//			Sheet sheet = wb.createSheet("Comparison to Full History");
-			HSSFSheet sheet = wb.createSheet("Comparison to Full History");
 			//			sheet.createFreezePane(0,1);
 
 			writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_Comparison_To_Full_History));
@@ -1797,20 +1948,306 @@ public class Analyzer extends DataExportExcel
 
 			autoSizeColumns(sheet, getColumnNameArray(m_Comparison_To_Full_History));
 		}
+
 	}
+
+	private void writeCGMSummary(HSSFWorkbook wb)
+	{
+		// We only do this if the full history is available and there are CGM results
+		String sheetName = new String("CGM Summary");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) &&
+				m_DBResultEntries.size() > 0)
+		{
+			HSSFSheet sheet = wb.createSheet(sheetName);
+			//			Sheet sheet = wb.createSheet("Comparison to Full History");
+			//			sheet.createFreezePane(0,1);
+
+			writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_CGM_Date_Ranges));
+			int rowNum = 1;
+
+			rowNum += addCGMSummary(this.m_AnalyzerEntries, wb, sheet, rowNum);	
+
+			autoSizeColumns(sheet, getColumnNameArray(m_CGM_Date_Ranges));
+		}
+
+	}
+
+	//	private void writeCGMTrends(HSSFWorkbook wb)
+	//	{
+	//	
+	//		// We only do this if the full history is available and there are CGM results
+	//		if (this.m_DBResultEntries.size() > 0)
+	//		{
+	//			//			Sheet sheet = wb.createSheet("Comparison to Full History");
+	//			HSSFSheet sheet = wb.createSheet("CGM Trends");
+	//			//			sheet.createFreezePane(0,1);
+	//
+	//			writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_CGM_Trends));
+	//			int rowNum = 1;
+	//
+	//			rowNum += addCGMTrends(this.m_AnalyzerEntries, wb, sheet, rowNum);	
+	//
+	//			autoSizeColumns(sheet, getColumnNameArray(m_CGM_Trends));
+	//		}
+	//	}
+
+	private void writeCGMTrends(HSSFWorkbook wb)
+	{
+		String sheetName = new String("CGM Heat Map");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) &&
+				m_AnalyzerEntries.getM_InRangeDBResultEntries().size() > 0)
+		{
+
+			int  interval = PrefsNightScoutLoader.getInstance().getM_EntryAnalyzerIntervalHours();
+			int  blocks   = 24 / interval;
+
+			// Allocate enough time slots
+			m_CGM_Trends = new String[blocks + 1];
+
+			m_CGM_Trends[0] = "Profile Type";
+
+//			// Headers are dynamically added based on the interval configured
+//			for (int i = 0; i < 24; i += interval)
+//			{
+//				m_CGM_Trends[i + 2] = new String( (i < 10 ? "0" : "") + i + "->");
+//			}
+			
+			// Headers are dynamically added based on the interval configured
+			for (int i = 0; i < blocks; i++)
+			{
+				m_CGM_Trends[i + 1] = new String( ((i * interval) < 10 ? "0" : "") + (i * interval) + "->");
+			}
+
+			// We only do this if the full history is available and there are CGM results
+			if (this.m_DBResultEntries.size() > 0)
+			{
+				//			Sheet sheet = wb.createSheet("Comparison to Full History");
+				//			sheet.createFreezePane(0,1);
+				HSSFSheet sheet = wb.createSheet(sheetName);
+
+				writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_CGM_Trends));
+				int rowNum = 1;
+
+				//			rowNum += addCGMTrends("Minus 1", this.m_AnalyzerEntries.getM_TrendResultEntriesAggregates().getM_OffsetMinusOneAggregateGroup(), 
+				//					wb, sheet, rowNum);	
+				rowNum += addCGMTrends("No Offset", this.m_AnalyzerEntries.getM_TrendResultEntriesAggregates().getM_NoOffsetAggregateGroup(), 
+						wb, sheet, rowNum);	
+				//			rowNum += addCGMTrends("Plus 1", this.m_AnalyzerEntries.getM_TrendResultEntriesAggregates().getM_OffsetPlusOneAggregateGroup(), 
+				//					wb, sheet, rowNum);	
+
+				autoSizeColumns(sheet, getColumnNameArray(m_CGM_Trends));
+			}
+		}
+	}
+
+	private void writeCGMResults(HSSFWorkbook wb)
+	{
+		String sheetName = new String("In Range CGM Results");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) &&
+				m_AnalyzerEntries.getM_InRangeDBResultEntries().size() > 0)
+		{
+			HSSFSheet sheet = wb.createSheet(sheetName);
+
+			//			Sheet sheet = wb.createSheet("Comparison to Full History");
+			//			sheet.createFreezePane(0,1);
+
+			writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_CGM_Results));
+			int rowNum = 1;
+
+			rowNum += addCGMResults(wb, sheet, rowNum);	
+
+			autoSizeColumns(sheet, getColumnNameArray(m_CGM_Results));
+		}
+
+	}
+
+	// 13 jan
+	// fix details so we can see the AnalyzerResultEntryIntervals 
+	private void writeCGMResultEntryIntervals(HSSFWorkbook wb)
+	{
+		String sheetName = new String("In Range CGM Entry Intervals");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) &&
+				m_AnalyzerEntries.getM_InRangeDBResultEntries().size() > 0)
+		{
+			HSSFSheet sheet = wb.createSheet(sheetName);
+
+			//			Sheet sheet = wb.createSheet("Comparison to Full History");
+			//			sheet.createFreezePane(0,1);
+
+			writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_CGM_EntryIntervals));
+			int rowNum = 1;
+
+			rowNum += addCGMEntryIntervals(wb, sheet, rowNum);	
+
+			autoSizeColumns(sheet, getColumnNameArray(m_CGM_EntryIntervals));
+		}
+
+	}
+
+
+	private void writeCGMTrendResultEntries(HSSFWorkbook wb)
+	{
+		String sheetName = new String("In Range CGM Trend Result Entries");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) &&
+				m_AnalyzerEntries.getM_InRangeDBResultEntries().size() > 0)
+		{
+			HSSFSheet sheet = wb.createSheet(sheetName);
+
+
+			//			Sheet sheet = wb.createSheet("Comparison to Full History");
+			//			sheet.createFreezePane(0,1);
+
+			writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_CGM_TrendResultEntry));
+			int rowNum = 1;
+
+			rowNum += addCGMTrendResultEntries(wb, sheet, rowNum);	
+
+			autoSizeColumns(sheet, getColumnNameArray(m_CGM_TrendResultEntry));
+		}
+
+	}
+
+	/*
+	private void writeCGMGraphs(HSSFWorkbook wb)
+	{
+		// We only do this if the full history is available and there are CGM results
+		if (this.m_DBResultEntries.size() > 0)
+		{
+
+			// Test out creating graphs
+			m_Chart = new CGMChart(m_DBResultEntries,
+					m_StartDate,
+					m_EndDate);
+			//			chart = new CGMChart(m_DBResultEntries);
+
+			if (m_AnalyzerMode == Analyzer.AnalyzerMode.normal)
+			{
+				// We want to do this UI change in the main thread, and not the DB worker thread that's just
+				// notified back
+				EventQueue.invokeLater(new 
+						Runnable()
+				{ 
+					public void run()
+					{ 
+						m_Chart.setVisible(true);
+					}
+				});
+			}
+
+			ByteArrayOutputStream outStream = m_Chart.getByteStream();
+
+			if (outStream != null &&
+					true == false) // DAVID DISABLED THIS FOR NOW
+			{
+				// only create the workbook if there's an outstream
+
+				//			Sheet sheet = wb.createSheet("Comparison to Full History");
+				HSSFSheet sheet = wb.createSheet("CGM Result Graphs");
+				//			sheet.createFreezePane(0,1);
+
+				InputStream feed_chart_to_excel=new ByteArrayInputStream(outStream.toByteArray());
+				int my_picture_id = 0;
+				byte[] bytes;
+				try {
+					bytes = IOUtils.toByteArray(feed_chart_to_excel);
+					 Add picture to workbook 
+					my_picture_id = wb.addPicture(bytes, Workbook.PICTURE_TYPE_JPEG);		
+					feed_chart_to_excel.close();
+					outStream.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+
+
+				DefaultPieDataset my_pie_chart_data = new DefaultPieDataset();
+
+				HSSFPatriarch patriarch = sheet.createDrawingPatriarch();
+				ClientAnchor my_anchor = new HSSFClientAnchor();
+				 Define top left corner, and we can resize picture suitable from there 
+				my_anchor.setCol1(4);
+				my_anchor.setRow1(5);
+
+				 Invoke createPicture and pass the anchor point and ID 
+				HSSFPicture  my_picture = patriarch.createPicture(my_anchor, my_picture_id);
+				 Call resize method, which resizes the image 
+				my_picture.resize();
+
+
+				 Invoke createPicture and pass the anchor point and ID 
+				//       HSSFPicture  my_picture = drawing.createPicture(my_anchor, my_picture_id);
+				 Call resize method, which resizes the image 
+				//         my_picture.resize();
+
+				//			JFreeChart lineChartObject = ChartFactory.createLineChart(
+				//					"CGM ","Date",
+				//					"CGM Values",
+				//					createCGMDataset(),
+				//					PlotOrientation.VERTICAL,
+				//					true,true,false);	
+			}
+		}
+	}
+
+	 */
+	/*	private DefaultCategoryDataset createCGMDataset()
+	{
+		DefaultCategoryDataset dataset = null;
+
+		for (DBResultEntry c : this.m_DBResultEntries)
+		{
+			if (dataset == null)
+			{
+				dataset = new DefaultCategoryDataset( );
+			}
+
+			if (c.getM_SGV() != null)
+			{
+				dataset.addValue(c.getM_SGV(), "CGM Value", c.getM_DateString());
+			}
+
+		}
+		return dataset;
+	}
+	 */
+	/*
+	private DefaultCategoryDataset createCGMDataset(String startDate, String endDate ) throws ParseException
+	{
+		DefaultCategoryDataset dataset = null;
+
+		for (DBResultEntry c : this.m_DBResultEntries)
+		{
+			if (CommonUtils.isTimeBetween(startDate, endDate, c.getM_UTCDate()))
+			{
+				if (dataset == null)
+				{
+					new DefaultCategoryDataset( );
+				}
+
+				dataset.addValue(c.getM_SGV(), "CGM Value", c.getM_DateString());
+			}
+		}
+		return dataset;
+	}
+
+	 */
 
 	private void writeDaySummariesToExcel(HSSFWorkbook wb)
 	{
-		Sheet sheet = wb.createSheet("Day Summaries");
-		sheet.createFreezePane(0,1);
+		String sheetName = new String("Day Summaries");
+		if (AnalyzerTabs.getInstance().isTabEnabled(sheetName) &&
+				m_AnalyzerDaySummaries.size() > 0)
+		{
+			Sheet sheet = wb.createSheet(sheetName);
 
-		writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_DaySummary_ColNames));
+			writeColumnHeaderRow(wb, sheet, getColumnNameArray(m_DaySummary_ColNames));
 
-		int rowNum = 1;
-		rowNum += addDaySummaries(m_AnalyzerDaySummaries, wb, sheet, rowNum);	
+			int rowNum = 1;
+			rowNum += addDaySummaries(m_AnalyzerDaySummaries, wb, sheet, rowNum);	
 
-		autoSizeColumns(sheet, getColumnNameArray(m_DaySummary_ColNames));
-
+			autoSizeColumns(sheet, getColumnNameArray(m_DaySummary_ColNames));
+		}
 	}
 
 	private int addAnalyzerValues(L2AnalyzerTrendResultEnum resEnum, Sheet sheet, int rowNum)
@@ -1938,7 +2375,7 @@ public class Analyzer extends DataExportExcel
 			row = sheet.createRow(result + rowNum);
 			AnalyzerSingleResult res = singleResultList.get(i);
 
-			if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions())
+			if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
 			{
 				cell = row.createCell(j++);
 				cell.setCellValue(res.getM_ID());
@@ -1981,7 +2418,7 @@ public class Analyzer extends DataExportExcel
 			String insulin = res.getM_DBResult().getM_CP_Insulin() == null ? "" : res.getM_DBResult().getM_CP_Insulin().toString();
 			cell.setCellValue(insulin);
 
-			if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions())
+			if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
 			{
 				cell = row.createCell(j++);
 				cell.setCellValue(res.getM_ReasonForDiscard());		
@@ -2086,7 +2523,7 @@ public class Analyzer extends DataExportExcel
 					skippedIDs += skippedIDs.length() > 0 ? "," + c.getM_ID() : c.getM_ID();
 				}
 
-				if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions())
+				if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
 				{
 					cell = row.createCell(j++);
 					cell.setCellValue(res.getM_ID());
@@ -2119,7 +2556,7 @@ public class Analyzer extends DataExportExcel
 
 				cell = row.createCell(j++);
 				cell.setCellValue(res.getM_RelevanceScore());
-				if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions())
+				if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
 				{
 
 					cell = row.createCell(j++);
@@ -2129,7 +2566,7 @@ public class Analyzer extends DataExportExcel
 				cell.setCellValue(res.getM_AnalyzerSingleResult1().getM_DBResult().getM_CP_Glucose());
 				cell = row.createCell(j++);
 				cell.setCellValue(res.getM_AnalyzerSingleResult1().getM_DBResult().getM_TreatmentTime());
-				if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions())
+				if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
 				{
 					cell = row.createCell(j++);
 					cell.setCellValue(res.getM_AnalyzerSingleResult2().getM_ID());
@@ -2149,7 +2586,7 @@ public class Analyzer extends DataExportExcel
 				case 2   : cell.setCellValue("Twice"); break;
 				default  : cell.setCellValue(singleResultCarbs + " Times"); break;
 				}
-				if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions())
+				if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
 				{
 					cell = row.createCell(j++);
 					cell.setCellValue(interveningIDs);
@@ -2291,7 +2728,7 @@ public class Analyzer extends DataExportExcel
 			// 	 m_RecurringTrends_ColNames = {"Time Slot", "Trend", "Number of Times", "Recommendation" };
 			// 	 m_RecurringTrends_ColNames = {"ID", "Time Slot", "Trend", "Number of Incidents", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Exact Opposites", "Rises at TimeSlot", "Falls at TimeSlot", "Significance", "Recommendation", "Further Insights" };
 
-			if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions())
+			if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
 			{
 				cell = row.createCell(j++);
 				cell.setCellValue(res.getM_ID());
@@ -2376,6 +2813,135 @@ public class Analyzer extends DataExportExcel
 	{
 		int	result = 0;
 
+		rowNum += addGuidanceParameterValue("Guide to Tabs", "Provides a summary of worksheets generated by NightscoutLoader", "", sheet, rowNum);
+
+		if (m_AnalyzerRecurringTrendResultList.size() > 0)
+		{
+			String topTrend    = new String();
+			String topTimeSlot = new String();
+			//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
+			AnalyzerRecurringTrendResult topRecurringTrend = this.m_AnalyzerRecurringTrendResultList.get(0);
+
+			topTimeSlot = DBResult.getTimeSlotString(topRecurringTrend.getM_TimeSlot());
+			topTrend = getL2TrendResultString(topRecurringTrend.getM_L2TrendResultEnum());
+
+			// Cell Colouring / Font for most important recommendations 
+			HSSFCellStyle highPriorityStyle = wb.createCellStyle();
+			highPriorityStyle.setFillForegroundColor(HSSFColor.RED.index);
+			highPriorityStyle.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+
+			HSSFFont highPriorityFont = wb.createFont();
+			highPriorityFont.setColor(HSSFColor.WHITE.index);
+			highPriorityStyle.setFont(highPriorityFont);
+
+			int recurrRows = m_AnalyzerRecurringTrendResultList.size();
+			int freq = m_AnalyzerRecurringTrendResultList.get(0).getM_TrendResultList().size();
+	//		int trendRows = this.m_CombinedTrendResults.size();
+
+			// No longer accurate - count them directly instead.
+//			int skippedRows = 0;
+//			for (AnalyzerTrendResult res : m_CombinedTrendResults)
+//			{
+//				skippedRows += (res.isNoCarbsTrend() == true ? 1 : 0);
+//			}
+//			int outsideRangeRows = 0;
+//			int daySummaryRows = this.m_AnalyzerDaySummaries.size();
+//			int singleRows = this.m_CombinedSingleResults.size();
+//			int totalDataSet = this.m_DBResults.size();
+
+//			for (AnalyzerSingleResult res : m_CombinedSingleResults)
+//			{
+//				outsideRangeRows += (res.getM_AnalyzerSingleResultEnum() != L0AnalyzerSingleResultEnum.inRange ? 1 : 0);
+//			}
+
+			rowNum += addGuidanceParameterValue("Recurring Trends", "There are " + recurrRows + " separate recurring trends, and " + freq + " highest frequency" + (topTrend.equals("") ? "" : " (" + topTrend + " at " + topTimeSlot + ")"),
+					"Use this tab to analyze recurring trends.  Top row" + (topTimeSlot.equals("") ? "" : " at " + topTimeSlot) + " needs most attention.", sheet, rowNum);
+		}
+		if (this.m_AnalyzerEntries.getM_InRangeDBResultEntries().size() > 0)
+		{
+			rowNum += addGuidanceParameterValue("CGM Heat Map", "CGM Results within selected analysis date range are analyzed over time blocks, categorized and trends counted." , "Use this tab to see a colour coded heatmap of where comparative trend counts and types of change by time.", sheet, rowNum);
+		}
+		if (this.m_AnalyzerEntries.getM_DBResultEntries().size() > 0)
+		{
+			int cgmBlocks = this.m_AnalyzerEntries.getM_CGMRanges().size();
+			int cgmWeeksLoaded = PrefsNightScoutLoader.getInstance().getM_WeeksBackToLoadEntries();
+			rowNum += addGuidanceParameterValue("CGM Summary", "There are " + cgmBlocks + " separate date ranges where CGM was active going back " + cgmWeeksLoaded + " weeks." , "Use this tab to determine when CGM was used and so narrow down analysis to where CGM data is also available.", sheet, rowNum);
+		}			
+
+		if (m_AnalyzerRecurringTrendResultList.size() > 0)
+		{
+//			String topTrend    = new String();
+//			String topTimeSlot = new String();
+			//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
+//			AnalyzerRecurringTrendResult topRecurringTrend = this.m_AnalyzerRecurringTrendResultList.get(0);
+
+//			topTimeSlot = DBResult.getTimeSlotString(topRecurringTrend.getM_TimeSlot());
+//			topTrend = getL2TrendResultString(topRecurringTrend.getM_L2TrendResultEnum());
+
+			// Cell Colouring / Font for most important recommendations 
+			HSSFCellStyle highPriorityStyle = wb.createCellStyle();
+			highPriorityStyle.setFillForegroundColor(HSSFColor.RED.index);
+			highPriorityStyle.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+
+			HSSFFont highPriorityFont = wb.createFont();
+			highPriorityFont.setColor(HSSFColor.WHITE.index);
+			highPriorityStyle.setFont(highPriorityFont);
+
+//			int recurrRows = m_AnalyzerRecurringTrendResultList.size();
+//			int freq = m_AnalyzerRecurringTrendResultList.get(0).getM_TrendResultList().size();
+			int trendRows = this.m_CombinedTrendResults.size();
+
+			// No longer accurate - count them directly instead.
+			int skippedRows = 0;
+			for (AnalyzerTrendResult res : m_CombinedTrendResults)
+			{
+				skippedRows += (res.isNoCarbsTrend() == true ? 1 : 0);
+			}
+			int outsideRangeRows = 0;
+			int daySummaryRows = this.m_AnalyzerDaySummaries.size();
+			int singleRows = this.m_CombinedSingleResults.size();
+			int totalDataSet = this.m_DBResults.size();
+
+			for (AnalyzerSingleResult res : m_CombinedSingleResults)
+			{
+				outsideRangeRows += (res.getM_AnalyzerSingleResultEnum() != L0AnalyzerSingleResultEnum.inRange ? 1 : 0);
+			}
+
+			rowNum += addGuidanceParameterValue("Trends", "There are " + trendRows + " separate trends identified", "Use this tab to analyze the " + trendRows + " individual trends.  Sorted in date order. Filter as necessary to see actual dates.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Skipped Meal Trends", "There are " + skippedRows + " separate instances of skipped meals", "Use this tab to analyze the " + skippedRows + " trends across meal times when nothing was eaten.  Provides a useful way to see fasting results.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("BGs Outside Range", "There are " + outsideRangeRows + " separate high or low events found", "Use this tab to specifically focus on the " + outsideRangeRows + " highs & lows.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Day Summaries", "There are " + daySummaryRows + " separate day summaries", "Use this tab to review the " + daySummaryRows + " days with exceptional events.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Single Results", "There are " + singleRows + " separate treatment rows analyzed out of a total of " + totalDataSet + " total results in MongoDB.", "Use this tab to see the " + singleRows + " rows of raw treatment data included in the analysis.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Treatment Data Analyzed", "There are " + singleRows + " identified treatment rows that qualify as potential trends.", "Use this tab to see the " + singleRows + " rows of single data that may or may not have been included in the analysis and why if not.", sheet, rowNum);
+		}
+
+		if (this.m_AnalyzerEntries.getM_InRangeDBResultEntries().size() > 0)
+		{
+			rowNum += addGuidanceParameterValue("In Range CGM Trend Result Entries", "This is the tabular data used to generate the 'CGM Heat Map' heatmap ", "Can be used to verify the heatmap contents, else heatmap provides a more convenient view", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("In Range CGM Entry Intervals", "This groups the CGM data within analysis date range into time blocks and then categorizes them for trend visualization.", "Can be used to verify the heatmap contents, else heatmap provides a more convenient view", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("In Range CGM Results", "This is the raw CGM data within analysis date range in tabular format.", "Graphs can be generated from with Excel.  Unfortunately, the JAVA libraries used have not allowed the developer to do this automatically.", sheet, rowNum);
+		}
+		if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
+		{
+			int fullHistoryTrendRows = this.m_FullHistoryAnalyzer.m_CombinedTrendResults.size();
+
+			rowNum += addGuidanceParameterValue("", "", "", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Full History Trends", "There are " + fullHistoryTrendRows + " separate full history trends identified", "Use this tab to see the full list of trend categories analyzed for comparison across the entire history of results.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Comparison to Full History", "", "Use this tab to see a comparison between the requested analysis and the full list of trend categories analyzed separately across the entire history of results.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("", "", "", sheet, rowNum);
+
+		}
+		rowNum += addGuidanceParameterValue("Parameters", "", "Use this tab to see all parameter values used for analysis.", sheet, rowNum);
+		rowNum += addGuidanceParameterValue("Settings", "", "Use this tab to see option values set at time of analysis.", sheet, rowNum);
+		rowNum += addGuidanceParameterValue("Trend Explanations", "", "Use this tab to see the full list of trend categories.", sheet, rowNum);
+
+		return result;
+	}
+
+	private int addGuidance_orig(HSSFWorkbook wb, Sheet sheet, int rowNum)
+	{
+		int	result = 0;
+
 		if (m_AnalyzerRecurringTrendResultList.size() > 0)
 		{
 
@@ -2412,39 +2978,64 @@ public class Analyzer extends DataExportExcel
 			int daySummaryRows = this.m_AnalyzerDaySummaries.size();
 			int singleRows = this.m_CombinedSingleResults.size();
 			int totalDataSet = this.m_DBResults.size();
+			int cgmBlocks = this.m_AnalyzerEntries.getM_CGMRanges().size();
+			int cgmWeeksLoaded = PrefsNightScoutLoader.getInstance().getM_WeeksBackToLoadEntries();
 
 			for (AnalyzerSingleResult res : m_CombinedSingleResults)
 			{
 				outsideRangeRows += (res.getM_AnalyzerSingleResultEnum() != L0AnalyzerSingleResultEnum.inRange ? 1 : 0);
 			}
 
-			rowNum += addParameterValue("Recurring Trends", "There are " + recurrRows + " separate recurring trends, and " + freq + " highest frequency" + (topTrend.equals("") ? "" : " (" + topTrend + " at " + topTimeSlot + ")"),
-					"Use this tab to analyze recurring trends.  Top row" + (topTimeSlot.equals("") ? "" : " at " + topTimeSlot) + " needs most attention.", sheet, rowNum);
-
-			rowNum += addParameterValue("Trends", "There are " + trendRows + " separate trends identified", "Use this tab to analyze the " + trendRows + " individual trends.  Sorted in date order. Filter as necessary to see actual dates.", sheet, rowNum);
-			rowNum += addParameterValue("Skipped Meal Trends", "There are " + skippedRows + " separate instances of skipped meals", "Use this tab to analyze the " + skippedRows + " trends across meal times when nothing was eaten.  Provides a useful way to see fasting results.", sheet, rowNum);
-			rowNum += addParameterValue("BGs Outside Range", "There are " + outsideRangeRows + " separate high or low events found", "Use this tab to specifically focus on the " + outsideRangeRows + " highs & lows.", sheet, rowNum);
-			rowNum += addParameterValue("Day Summaries", "There are " + daySummaryRows + " separate day summaries", "Use this tab to review the " + daySummaryRows + " days with exceptional events.", sheet, rowNum);
-			rowNum += addParameterValue("Single Results", "There are " + singleRows + " separate treatment rows analyzed out of a total of " + totalDataSet + " total results in MongoDB.", "Use this tab to see the " + singleRows + " rows of raw treatment data included in the analysis.", sheet, rowNum);
-			rowNum += addParameterValue("Treatment Data Analyzed", "There are " + singleRows + " identified treatment rows that qualify as potential trends.", "Use this tab to see the " + singleRows + " rows of single data that may or may not have been included in the analysis and why if not.", sheet, rowNum);
-
-			if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions())
+			rowNum += addGuidanceParameterValue("Guide to Tabs", "Provides a summary of worksheets generated by NightscoutLoader", "", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Recurring Trends", "There are " + recurrRows + " separate recurring trends, and " + freq + " highest frequency" + (topTrend.equals("") ? "" : " (" + topTrend + " at " + topTimeSlot + ")"),
+					"Use this tab to analyze recurring trends.  Top row" + (topTimeSlot.equals("") ? "" : " at " + topTimeSlot) + " needs most attention.", sheet, rowNum);			
+			if (this.m_AnalyzerEntries.getM_InRangeDBResultEntries().size() > 0)
+			{
+				rowNum += addGuidanceParameterValue("CGM Heat Map", "CGM Results within selected analysis date range are analyzed over time blocks, categorized and trends counted." , "Use this tab to see a colour coded heatmap of where comparative trend counts and types of change by time.", sheet, rowNum);
+			}
+			if (this.m_AnalyzerEntries.getM_DBResultEntries().size() > 0)
+			{
+				rowNum += addGuidanceParameterValue("CGM Summary", "There are " + cgmBlocks + " separate date ranges where CGM was active going back " + cgmWeeksLoaded + " weeks." , "Use this tab to determine when CGM was used and so narrow down analysis to where CGM data is also available.", sheet, rowNum);
+			}			
+			rowNum += addGuidanceParameterValue("Trends", "There are " + trendRows + " separate trends identified", "Use this tab to analyze the " + trendRows + " individual trends.  Sorted in date order. Filter as necessary to see actual dates.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Skipped Meal Trends", "There are " + skippedRows + " separate instances of skipped meals", "Use this tab to analyze the " + skippedRows + " trends across meal times when nothing was eaten.  Provides a useful way to see fasting results.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("BGs Outside Range", "There are " + outsideRangeRows + " separate high or low events found", "Use this tab to specifically focus on the " + outsideRangeRows + " highs & lows.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Day Summaries", "There are " + daySummaryRows + " separate day summaries", "Use this tab to review the " + daySummaryRows + " days with exceptional events.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Single Results", "There are " + singleRows + " separate treatment rows analyzed out of a total of " + totalDataSet + " total results in MongoDB.", "Use this tab to see the " + singleRows + " rows of raw treatment data included in the analysis.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Treatment Data Analyzed", "There are " + singleRows + " identified treatment rows that qualify as potential trends.", "Use this tab to see the " + singleRows + " rows of single data that may or may not have been included in the analysis and why if not.", sheet, rowNum);
+			if (this.m_AnalyzerEntries.getM_InRangeDBResultEntries().size() > 0)
+			{
+				rowNum += addGuidanceParameterValue("In Range CGM Trend Result Entries", "This is the tabular data used to generate the 'CGM Heat Map' heatmap ", "Can be used to verify the heatmap contents, else heatmap provides a more convenient view", sheet, rowNum);
+				rowNum += addGuidanceParameterValue("In Range CGM Entry Intervals", "This groups the CGM data within analysis date range into time blocks and then categorizes them for trend visualization.", "Can be used to verify the heatmap contents, else heatmap provides a more convenient view", sheet, rowNum);
+				rowNum += addGuidanceParameterValue("In Range CGM Results", "This is the raw CGM data within analysis date range in tabular format.", "Graphs can be generated from with Excel.  Unfortunately, the JAVA libraries used have not allowed the developer to do this automatically.", sheet, rowNum);
+			}
+			if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
 			{
 				int fullHistoryTrendRows = this.m_FullHistoryAnalyzer.m_CombinedTrendResults.size();
 
-				rowNum += addParameterValue("", "", "", sheet, rowNum);
-				rowNum += addParameterValue("Full History Trends", "There are " + fullHistoryTrendRows + " separate full history trends identified", "Use this tab to see the full list of trend categories analyzed for comparison across the entire history of results.", sheet, rowNum);
-				rowNum += addParameterValue("Comparison to Full History", "", "Use this tab to see a comparison between the requested analysis and the full list of trend categories analyzed separately across the entire history of results.", sheet, rowNum);
-				rowNum += addParameterValue("", "", "", sheet, rowNum);
+				rowNum += addGuidanceParameterValue("", "", "", sheet, rowNum);
+				rowNum += addGuidanceParameterValue("Full History Trends", "There are " + fullHistoryTrendRows + " separate full history trends identified", "Use this tab to see the full list of trend categories analyzed for comparison across the entire history of results.", sheet, rowNum);
+				rowNum += addGuidanceParameterValue("Comparison to Full History", "", "Use this tab to see a comparison between the requested analysis and the full list of trend categories analyzed separately across the entire history of results.", sheet, rowNum);
+				rowNum += addGuidanceParameterValue("", "", "", sheet, rowNum);
 
 			}
-			rowNum += addParameterValue("Parameters", "", "Use this tab to see all parameter values used for analysis.", sheet, rowNum);
-			rowNum += addParameterValue("Options", "", "Use this tab to see option values set at time of analysis.", sheet, rowNum);
-			rowNum += addParameterValue("Trend Explanations", "", "Use this tab to see the full list of trend categories.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Parameters", "", "Use this tab to see all parameter values used for analysis.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Settings", "", "Use this tab to see option values set at time of analysis.", sheet, rowNum);
+			rowNum += addGuidanceParameterValue("Trend Explanations", "", "Use this tab to see the full list of trend categories.", sheet, rowNum);
 		}
 
 		return result;
 	}
+	
+
+	// Used by Analyzer
+	protected int addGuidanceParameterValue(String sheetName, String parValue, String notes, Sheet sheet, int rowNum)
+	{
+		int result = sheetName.equals("") || AnalyzerTabs.getInstance().isTabEnabled(sheetName) ? 
+				addParameterValue(sheetName, parValue, notes, sheet, rowNum) : 0;
+		return result;
+	}
+
 
 	private int addComparisonToFullHistory(ArrayList<AnalyzerRecurringTrendResult> recurringTrendResultList, 
 			HSSFWorkbook wb, Sheet sheet, int rowNum)
@@ -2548,117 +3139,851 @@ public class Analyzer extends DataExportExcel
 		return result; // How many actually added
 	}
 
-//	private int addGuidanceUpdDownFlatSummary(HSSFWorkbook wb, Sheet sheet, int rowNum, 
-//			int flats, int rises, int falls, String eventType, HSSFCellStyle style)
-//	{
-//		int	result = 0;
-//		long daysBack      = PrefsNightScoutLoader.getInstance().getM_AnalyzerDaysBack();
-//
-//		String commentary1 = new String("");
-//		String commentaryDirection = new String("");
-//		String recommendation = new String("");
-//
-//		if ((rises > falls) && (rises > flats))
-//		{
-//			commentaryDirection = "of rise trends";
-//			if ((rises / daysBack) > 0.5)  // > 50% is significant
-//				//			if (Math.abs(rises - falls) > rises / 2)
-//			{
-//				commentary1 = "a very high recurrence (" + rises + " across " + daysBack + " days)";
-//				if (falls > 0)
-//				{
-//					recommendation = "Despite the very strong pattern, there are still both falls (" + falls + ") as well as rises (" + rises + ") seen for " + eventType +
-//							" use caution when considering any changes to basal or bolus as results might be inconclusive.";
-//				}
-//				else
-//				{
-//					recommendation = "Given there are no falls, this could be a strong pattern of rises (based on recurrence) and worth investigating changes for " + eventType;				
-//				}
-//
-//			}
-//			else if ((rises / daysBack) > 0.333)  // > 33% is significant
-//				//			else if (Math.abs(rises - falls) > falls / 2)
-//			{
-//				commentary1 = "a high recurrence (" + rises + " across " + daysBack + " days)";
-//				if (falls > 0)
-//				{
-//					recommendation = "Despite the strong pattern, there are still both falls (" + falls + ") as well as rises (" + rises + ") seen for " + eventType +
-//							" use caution when considering any changes to basal or bolus as results might be inconclusive.";
-//				}
-//				else
-//				{
-//					recommendation = "Given there are no falls, this could be a strong pattern of rises (based on recurrence) and worth investigating changes for " + eventType;				
-//				}
-//
-//			}
-//
-//			else
-//			{
-//				commentary1 = "a notable recurrence (" + rises + " across " + daysBack + " days)";
-//				recommendation = "Given there are still both falls (" + falls + ") as well as rises (" + rises + ") seen for " + eventType +
-//						" use caution when considering any changes to basal or bolus as results might be inconclusive.";
-//			}
-//
-//		}
-//		else if ((falls > rises) && (falls > flats))
-//		{
-//			commentaryDirection = "of fall trends" ;
-//			if ((falls / daysBack) > 0.5)  // > 50% is significant
-//			{
-//				commentary1 = "a very high recurrence (" + falls + " across " + daysBack + " days)";
-//				if (rises > 0)
-//				{
-//					recommendation = "Despite the very strong pattern, there are still both rises (" + rises + ") as well as falls (" + falls + ") seen for " + eventType +
-//							" use caution when considering any changes to basal or bolus as results might be inconclusive.";
-//				}
-//				else
-//				{
-//					recommendation = "Given there are no rises, this could be a strong pattern of rises (based on recurrence) and worth investigating changes for " + eventType;				
-//				}
-//
-//			}
-//			//			else if (Math.abs(falls - rises) > rises / 2)
-//			else if ((falls / daysBack) > 0.33)  // > 33% is significant			
-//			{
-//				commentary1 = "a high recurrence (" + falls + " across " + daysBack + " days)";
-//				if (rises > 0)
-//				{
-//					recommendation = "Despite the strong pattern, there are still both rises (" + rises + ") as well as falls (" + falls + ") seen for " + eventType +
-//							" use caution when considering any changes to basal or bolus as results might be inconclusive.";
-//				}
-//				else
-//				{
-//					recommendation = "Given there are no rises, this could be a strong pattern of rises (based on recurrence) and worth investigating changes for " + eventType;				
-//				}
-//
-//			}
-//
-//			else
-//			{
-//				commentary1 = "a notable recurrence (" + falls + " across " + daysBack + " days)";
-//				recommendation = "Given there are still both rises (" + rises + ") as well as falls (" + falls + ") seen for " + eventType +
-//						" use caution when considering any changes to basal or bolus as results might be inconclusive.";
-//			}
-//		}
-//		else if ((flats > rises) && (flats > falls))
-//		{
-//			commentaryDirection = "of flat trends";
-//			recommendation = "Flat results are good (as long as the start is is range!).";
-//		}
-//		else
-//		{
-//			commentaryDirection = "a very even distribution.  Same number of rise, fall and flat trends";
-//			recommendation = "Given the equal distribution, it's difficult to determine what if any change is needed here.";
-//		}
-//
-//
-//		rowNum += addParameterValue("High Level Analysis - " + eventType, "For all trend results starting at " + eventType + " there is " + commentary1 +
-//				" " + commentaryDirection, recommendation, sheet, rowNum, style);
-//
-//		result++;
-//
-//		return result;
-//	}
+	private int addCGMSummary(AnalyzerEntries analyzer,	HSSFWorkbook wb, Sheet sheet, int rowNum)
+	{
+		int result = 0;
+
+		int i = 0;
+
+		//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
+
+		Row row = null;
+		Cell cell = null;
+
+		// No particular format
+		HSSFCellStyle regularStyle = wb.createCellStyle();
+
+		// Add results from each list
+		for (AnalyzerEntriesCGMRange c : this.m_AnalyzerEntries.getM_CGMRanges()) 
+		{
+			// Row always one more since we add the title
+			row = sheet.createRow(result + rowNum);
+
+			HSSFCellStyle style = null;
+
+			int j = 0;
+
+			style = regularStyle;
+
+			// 	private String[]                  m_CGM_Date_Ranges  = {"Start Date", "End Date", "Number of Days", "Average Readings per Day"};
+			// 	private String[]                  m_CGM_Date_Ranges  = 
+			// {"Start Date", "End Date", "Overlap with Treatments", "Number of Days", 
+			// "Number of Hypos", "Number of Hypers", "Number in Range", "Average Readings per Day", "Number of CGM Days"};
+
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_StartDateStr());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_EndDateStr());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_DateOverlapStr());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_Duration());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_NumHypos());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_NumHypers());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_NumInRange());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_AverageDBResultEntries());
+			cell.setCellStyle(style);
+
+			result++;
+		}
+
+		return result; // How many actually added
+
+	}
+	/*
+	private int addCGMTrends(AnalyzerEntries analyzer,	HSSFWorkbook wb, Sheet sheet, int rowNum)
+	{
+		int result = 0;
+
+		int i = 0;
+
+		//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
+
+		Row row = null;
+		Cell cell = null;
+
+		// No particular format
+		HSSFCellStyle regularStyle = wb.createCellStyle();
+
+		ArrayList<AnalyzerTrendResultEntry> trendResultList = this.m_AnalyzerEntries.getM_TrendResultEntries();
+
+		// Now sort the list
+		Collections.sort(trendResultList, new AnalyzerTrendResultEntryComparator(true));
+
+		// Add results from each list
+		for (AnalyzerTrendResultEntry c : trendResultList) 
+		{
+			// Row always one more since we add the title
+			row = sheet.createRow(result + rowNum);
+
+			HSSFCellStyle style = null;
+
+			int j = 0;
+
+			style = regularStyle;
+
+			// 	private String[]                  m_CGM_Trends      = {"Start Hour", "End Hour", "Profile", "Offset", "Count"};
+			// 	private String[]                  m_CGM_Trends      = {"Start Hour", "End Hour", "Goes Hypo", "Goes Hyper", "Start Profile", "End Profile", "Profile Direction", "Offset", "Count"};
+
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_StartHour());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_EndHour());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_GoesHypo() ? "Yes" : "No");
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_GoesHyper() ? "Yes" : "No");
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_StartProfile().toString());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_EndProfile().toString());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_ProfileDirection().toString());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_Offset());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_ResultEntryIntervals().size());
+			cell.setCellStyle(style);
+
+			result++;
+		}
+
+		return result; // How many actually added
+
+	}
+
+	 */
+
+	private int addCGMResults(HSSFWorkbook wb, Sheet sheet, int rowNum)
+	{
+		int result = 0;
+
+		int i = 0;
+
+		//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
+
+		Row row = null;
+		Cell cell = null;
+
+		// No particular format
+		HSSFCellStyle regularStyle = wb.createCellStyle();
+
+		HSSFCellStyle mmolStyle = wb.createCellStyle();
+		mmolStyle.setDataFormat(wb.createDataFormat().getFormat("#.#"));
+
+		//		ArrayList<DBResultEntry> resultEntryList = this.m_DBResultEntries;
+		ArrayList<DBResultEntry> resultEntryList = this.m_AnalyzerEntries.getM_InRangeDBResultEntries();
+
+		final String dtf = new String("dd/MM/yyyy");
+		final String hrf = new String("HH");
+
+		// Is preference for BG in mg/dL or mmol/L?
+
+		boolean mmol = PrefsNightScoutLoader.getInstance().getM_BGUnits() == 0 ? true : false;
+
+		// Add results from each list
+		for (DBResultEntry c : resultEntryList) 
+		{
+			/*			if (c.getM_SGV() != null &&
+					(CommonUtils.isTimeBetween(m_StartDate, m_EndDate, c.getM_UTCDate())))
+			{
+			 */	
+			// Row always one more since we add the title
+			row = sheet.createRow(result + rowNum);
+
+			HSSFCellStyle style = null;
+			String dateStr = null;
+			String trendRange = null;
+			Date   trendStartDate = c.getM_AnalyzerResultEntryInterval().getM_PeriodStart();
+			Date   trendEndDate   = c.getM_AnalyzerResultEntryInterval().getM_PeriodEnd();
+
+			int j = 0;
+
+			style = regularStyle;
+
+			//			private String[]                  m_CGM_Results  = {"Date", "Time", "CGM Value"};
+			// 	private String[]                  m_CGM_Results  = {"Date", "Trend Range", "Time", "CGM Value"};
+			// 	private String[]                  m_CGM_Results  = {"Date", "Trend Range", "Trend Profile Type", "Time", "CGM Value"};
+			// 	private String[]                  m_CGM_Results  = {"ID", "Date", "Trend Range", "Trend Profile Type", "Trend ID", "Time", "CGM Value"};
+
+
+
+			try {
+				dateStr = CommonUtils.convertDateString(c.getM_UTCDate(), dtf);
+
+				trendRange = new String(CommonUtils.convertDateString(trendStartDate, hrf) +
+						"H to " + CommonUtils.convertDateString(trendEndDate, hrf) + "H");
+
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
+			{
+				cell = row.createCell(j++);
+				cell.setCellValue(c.getM_ID());
+				cell.setCellStyle(style);
+			}
+
+			cell = row.createCell(j++);
+			cell.setCellValue(dateStr);
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(trendRange);
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_AnalyzerResultEntryInterval().getM_ProfileDirectionStr(mmol));
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_AnalyzerResultEntryInterval().getM_ID());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_UTCDate().toString());
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(mmol == true ? c.getM_BG() : c.getM_SGV());
+			cell.setCellStyle(mmol == true ? mmolStyle : style);
+
+			result++;
+		}
+		//}
+
+		return result; // How many actually added
+
+	}
+
+	private int addCGMEntryIntervals(HSSFWorkbook wb, Sheet sheet, int rowNum)
+	{
+		int result = 0;
+
+		int i = 0;
+
+		//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
+
+		Row row = null;
+		Cell cell = null;
+
+		// No particular format
+		HSSFCellStyle regularStyle = wb.createCellStyle();
+
+		HSSFCellStyle mmolStyle = wb.createCellStyle();
+		mmolStyle.setDataFormat(wb.createDataFormat().getFormat("#.#"));
+
+		ArrayList<AnalyzerResultEntryInterval> resultEntryIntervalList = m_AnalyzerEntries.getM_ResultEntryIntervals();
+
+		final String dtf = new String("dd/MM/yyyy");
+		final String hrf = new String("HH");
+
+		// Is preference for BG in mg/dL or mmol/L?
+
+		boolean mmol = PrefsNightScoutLoader.getInstance().getM_BGUnits() == 0 ? true : false;
+
+		// Add results from each list
+		for (AnalyzerResultEntryInterval c : resultEntryIntervalList) 
+		{
+			// Row always one more since we add the title
+			row = sheet.createRow(result + rowNum);
+
+			HSSFCellStyle style = null;
+			String dateStr = null;
+			String trendRange = null;
+			Date   trendStartDate = c.getM_PeriodStart();
+			Date   trendEndDate   = c.getM_PeriodEnd();
+
+			int j = 0;
+
+			style = regularStyle;
+
+			// 	private String[]                  m_CGM_EntryIntervals  = {"ID", "Date", "Trend Range", "Trend Profile Type", "Num CGM Entries"};
+			//  private String[]                  m_CGM_EntryIntervals  = {"ID", "Date", "Trend Range", "Trend Profile Type", "Trend Result Entry ID", "Num CGM Entries"};
+			//	private String[]                  m_CGM_EntryIntervals  = {"ID", "Date", "Trend Range", "Trend Profile Type", "Goes Hypo", "Goes Hyper", "Start Profile", "End Profile", "Trend Result Entry ID", "Num CGM Entries"};
+
+
+
+			try {
+				dateStr = CommonUtils.convertDateString(c.getM_PeriodStart(), dtf);
+
+				trendRange = new String(CommonUtils.convertDateString(trendStartDate, hrf) +
+						"H to " + CommonUtils.convertDateString(trendEndDate, hrf) + "H");
+
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
+			{
+				cell = row.createCell(j++);
+				cell.setCellValue(c.getM_ID());
+				cell.setCellStyle(style);
+			}
+
+			cell = row.createCell(j++);
+			cell.setCellValue(dateStr);
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(trendRange);
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_ProfileDirectionStr(mmol));
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_GoesHypo() == true ? "Yes" : "No");
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_GoesHyper() == true ? "Yes" : "No");
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(AnalyzerResultEntryInterval.getEntryProfileStr(c.getM_StartProfile()));
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(AnalyzerResultEntryInterval.getEntryProfileStr(c.getM_EndProfile()));
+			cell.setCellStyle(style);
+
+
+			if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
+			{
+				cell = row.createCell(j++);
+				cell.setCellValue( (c.getM_AnalyzerTrendResultEntry() == null ?
+						0 : c.getM_AnalyzerTrendResultEntry().getM_ID()) );
+				cell.setCellStyle(style);
+			}
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_DBResultEntries().size());
+			cell.setCellStyle(style);
+
+			result++;
+
+		}
+
+		return result; // How many actually added
+	}
+
+	private int addCGMTrendResultEntries(HSSFWorkbook wb, Sheet sheet, int rowNum)
+	{
+		int result = 0;
+
+		int i = 0;
+
+		//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
+
+		Row row = null;
+		Cell cell = null;
+
+		// No particular format
+		HSSFCellStyle regularStyle = wb.createCellStyle();
+
+		HSSFCellStyle mmolStyle = wb.createCellStyle();
+		mmolStyle.setDataFormat(wb.createDataFormat().getFormat("#.#"));
+
+		ArrayList<AnalyzerTrendResultEntry> trendResultList = m_AnalyzerEntries.getM_TrendResultEntries();
+
+		final String dtf = new String("dd/MM/yyyy");
+		final String hrf = new String("HH");
+
+		// Is preference for BG in mg/dL or mmol/L?
+
+		boolean mmol = PrefsNightScoutLoader.getInstance().getM_BGUnits() == 0 ? true : false;
+
+		// Add results from each list
+		for (AnalyzerTrendResultEntry c : trendResultList) 
+		{
+			// Row always one more since we add the title
+			row = sheet.createRow(result + rowNum);
+
+			HSSFCellStyle style = null;
+			String dateStr = null;
+			String trendRange = null;
+			int   trendStartHour = c.getM_StartHour();
+			int   trendEndHour   = c.getM_EndHour();
+
+			int j = 0;
+
+			style = regularStyle;
+
+			// private String[]                  m_CGM_TrendResultEntry  = {"ID", "Start Hour", "End Hour", "Trend Profile Type", "Num CGM Intervals"};
+			// private String[]                  m_CGM_TrendResultEntry  = {"ID", "Start Hour", "End Hour", "Trend Profile Type", "Goes Hypo", "Goes Hyper", "Start Profile", "End Profile", "Num CGM Intervals"};
+
+			if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
+			{
+				cell = row.createCell(j++);
+				cell.setCellValue(c.getM_ID());
+				cell.setCellStyle(style);
+			}
+
+			cell = row.createCell(j++);
+			cell.setCellValue(trendStartHour);
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(trendEndHour);
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_ProfileDirectionStr(mmol));
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_GoesHypo() == true ? "Yes" : "No");
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_GoesHyper() == true ? "Yes" : "No");
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(AnalyzerResultEntryInterval.getEntryProfileStr(c.getM_StartProfile()));
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(AnalyzerResultEntryInterval.getEntryProfileStr(c.getM_EndProfile()));
+			cell.setCellStyle(style);
+
+			cell = row.createCell(j++);
+			cell.setCellValue(c.getM_ResultEntryIntervals().size());
+			cell.setCellStyle(style);
+
+			result++;
+
+		}
+
+		return result; // How many actually added
+	}
+
+
+	private int addCGMTrends(String offset, AnalyzerTrendResultAggregateGroup group, 
+			HSSFWorkbook wb, Sheet sheet, int rowNum)
+	{
+		int result = 0;
+
+		boolean mmol = PrefsNightScoutLoader.getInstance().getM_BGUnits() == 0 ? true : false;
+
+		short colhypo_1   = HSSFColor.DARK_RED.index;
+		short colhypo_2   = HSSFColor.RED.index;
+		short col4to7_1   = HSSFColor.GREEN.index;
+		short col4to7_2   = HSSFColor.LIGHT_GREEN.index;
+		short col7to10_1  = HSSFColor.YELLOW.index;
+		short col7to10_2  = HSSFColor.LIGHT_YELLOW.index;
+		short col10to14_1 = HSSFColor.ORANGE.index;
+		short col10to14_2 = HSSFColor.LIGHT_ORANGE.index;
+		short colhyper_1  = HSSFColor.DARK_RED.index;
+		short colhyper_2  = HSSFColor.RED.index;
+
+		// -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** 
+		// Hypo Line
+		// -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** 
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.Hypo),    
+				group.getM_Hypo(), group.getM_HypoMaxCount(), 
+				colhypo_1, colhypo_2, wb, sheet, rowNum + result); 
+		result += addBlankCGMTrendsEntries(sheet, rowNum + result);	
+
+
+		// -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** 
+		// In Range Lines
+		// -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** 
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From4to7ThenDown),
+				group.getM_From4to7ThenDown(), group.getM_From4to7ThenDownMaxCount(), 
+				col4to7_1, col4to7_2, wb, sheet, rowNum + result); 
+
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From4to7UpThenDown),
+				group.getM_From4to7UpThenDown(), group.getM_From4to7UpThenDownMaxCount(), 
+				col4to7_1, col4to7_2, wb, sheet, rowNum + result); 
+
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From4to7ThenLevel),
+				group.getM_From4to7ThenLevel(), group.getM_From4to7ThenLevelMaxCount(), 
+				col4to7_1, col4to7_2, wb, sheet, rowNum + result); 
+
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From4to7ThenUp),
+				group.getM_From4to7ThenUp(), group.getM_From4to7ThenUpMaxCount(), 
+				col4to7_1, col4to7_2, wb, sheet, rowNum + result); 
+
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From4to7DownThenUp),
+				group.getM_From4to7DownThenUp(), group.getM_From4to7DownThenUpMaxCount(), 
+				col4to7_1, col4to7_2, wb, sheet, rowNum + result); 
+
+		result += addBlankCGMTrendsEntries(sheet, rowNum + result);	
+
+		// -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** 
+		// Just Outside Range Lines
+		// -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** 
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From7to10ThenDown),
+				group.getM_From7to10ThenDown(), group.getM_From7to10ThenDownMaxCount(), 
+				col7to10_1, col7to10_2, wb, sheet, rowNum + result); 
+
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From7to10UpThenDown),
+				group.getM_From7to10UpThenDown(), group.getM_From7to10UpThenDownMaxCount(), 
+				col7to10_1, col7to10_2, wb, sheet, rowNum + result); 
+
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From7to10ThenLevel),
+				group.getM_From7to10ThenLevel(), group.getM_From7to10ThenLevelMaxCount(), 
+				col7to10_1, col7to10_2, wb, sheet, rowNum + result); 
+
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From7to10ThenUp),
+				group.getM_From7to10ThenUp(), group.getM_From7to10ThenUpMaxCount(), 
+				col7to10_1, col7to10_2, wb, sheet, rowNum + result); 
+
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From7to10DownThenUp),
+				group.getM_From7to10DownThenUp(), group.getM_From7to10DownThenUpMaxCount(), 
+				col7to10_1, col7to10_2, wb, sheet, rowNum + result); 
+		result += addBlankCGMTrendsEntries(sheet, rowNum + result);	
+
+		// -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** 
+		// Further Outside Range Lines
+		// -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** 
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From10to14ThenDown),
+				group.getM_From10to14ThenDown(), group.getM_From10to14ThenDownMaxCount(), 
+				col10to14_1, col10to14_2, wb, sheet, rowNum + result); 
+
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From10to14UpThenDown),
+				group.getM_From10to14UpThenDown(), group.getM_From10to14UpThenDownMaxCount(), 
+				col10to14_1, col10to14_2, wb, sheet, rowNum + result); 
+
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From10to14ThenLevel),
+				group.getM_From10to14ThenLevel(), group.getM_From10to14ThenLevelMaxCount(), 
+				col10to14_1, col10to14_2, wb, sheet, rowNum + result); 
+
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From10to14ThenUp),
+				group.getM_From10to14ThenUp(), group.getM_From10to14ThenUpMaxCount(), 
+				col10to14_1, col10to14_2, wb, sheet, rowNum + result); 
+
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.From10to14DownThenUp),
+				group.getM_From10to14DownThenUp(), group.getM_From10to14DownThenUpMaxCount(), 
+				col10to14_1, col10to14_2, wb, sheet, rowNum + result); 
+		result += addBlankCGMTrendsEntries(sheet, rowNum + result);	
+
+		// -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** 
+		// Hyper Line
+		// -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** -- ** 
+		result += addCGMTrendsEntries(offset, 
+				AnalyzerResultEntryInterval.getProfileDirectionStr(mmol, 
+						AnalyzerResultEntryInterval.DBResultEntryProfileDirection.Hyper),    
+				group.getM_Hyper(), group.getM_HyperMaxCount(), 
+				colhyper_1, colhyper_2, wb, sheet, rowNum + result); 
+
+		return result;
+	}
+
+	private int addBlankCGMTrendsEntries(Sheet sheet, int rowNum)
+	{
+		int result = 0;		
+		sheet.createRow(result + rowNum);
+		// We've added one blank row
+		result++;	
+
+		return result;
+	}
+
+	private int addCGMTrendsEntries(String offset, String profile, 
+			ArrayList<AnalyzerTrendResultEntry> entries, 
+			int maxCount,
+			short colourIndex_1,
+			short colourIndex_2,
+			HSSFWorkbook wb, Sheet sheet, int rowNum)
+	{
+		int result = 0;
+
+		int  interval = PrefsNightScoutLoader.getInstance().getM_EntryAnalyzerIntervalHours();
+		int  blocks   = 24 / interval;
+
+		Row row = null;
+		Cell cell = null;
+
+		row = sheet.createRow(result + rowNum);
+
+		int j = 0;
+
+		HSSFCellStyle style = null;
+		HSSFCellStyle firstThirdStyle = wb.createCellStyle();
+		HSSFCellStyle secondThirdStyle = wb.createCellStyle();
+		HSSFCellStyle lastThirdStyle = wb.createCellStyle();
+
+		HSSFFont regularFont = wb.createFont();
+		HSSFFont styleFont = wb.createFont();
+		HSSFFont lastStyleFont = wb.createFont();
+
+
+		styleFont.setColor(HSSFColor.BLACK.index);
+		styleFont.setBold(false);
+		lastStyleFont.setColor(HSSFColor.WHITE.index);
+		lastStyleFont.setBold(true);
+
+		firstThirdStyle.setFont(styleFont);
+		secondThirdStyle.setFont(styleFont);
+		lastThirdStyle.setFont(lastStyleFont);
+
+
+		//		firstThirdStyle.setFillForegroundColor(HSSFColor.RED.index);
+		// Mild trend
+		firstThirdStyle.setFillForegroundColor(colourIndex_2);
+		//		firstThirdStyle.setFillPattern(HSSFCellStyle.SPARSE_DOTS);
+		firstThirdStyle.setFillPattern(HSSFCellStyle.FINE_DOTS);
+		//		firstThirdStyle.setFillPattern(HSSFCellStyle.DIAMONDS);
+
+		// Moderate trend
+		secondThirdStyle.setFillForegroundColor(colourIndex_2);
+		//		secondThirdStyle.setFillPattern(HSSFCellStyle.FINE_DOTS);
+		secondThirdStyle.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+
+		// Significant trend
+		lastThirdStyle.setFillForegroundColor(colourIndex_1);
+		lastThirdStyle.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+
+		// Add Profile Entry
+		cell = row.createCell(j++);
+		cell.setCellValue(profile);
+		cell.setCellStyle(style);
+
+		// Headers are dynamically added based on the interval configured
+		// Have 3 different shades based on whether the result is in
+		//  First third up to maxCount
+		//  Second third up to maxCount
+		//  Last third up to maxCount
+
+		for (int i = 0; i < 24; i += interval)
+		{
+			int count = 0;			
+
+			// Carefully scan the list looking for a matching entry with same start time.
+			for (AnalyzerTrendResultEntry e : entries)
+			{
+				if (e.getM_StartHour() == i)
+				{
+					count = e.getM_ResultEntryIntervals().size();
+					break;
+				}				
+			}
+
+			double frac = (double)count / (double)maxCount;
+
+			boolean firstThird  = (count == 0)                                ? false : (frac <= 0.3333333 ? true : false);
+			boolean secondThird = (count == 0 || firstThird)                  ? false : (frac <= 0.6666666 ? true : false);
+			boolean lastThird   = (count == 0 || firstThird  ||  secondThird) ? false : (frac >  0.6666666 ? true : false);
+
+
+			// Add Profile Count Entry
+			cell = row.createCell(j++);
+			cell.setCellValue(count);
+
+			if (count == 0)
+			{
+				cell.setCellStyle(style);
+			}
+			else if (firstThird == true)
+			{
+				cell.setCellStyle(style);
+				//				cell.setCellStyle(firstThirdStyle);
+			}
+			else if (secondThird == true)
+			{
+				cell.setCellStyle(style);
+				cell.setCellStyle(secondThirdStyle);
+			}
+			else if (lastThird == true)
+			{
+				cell.setCellStyle(lastThirdStyle);
+			}
+		}
+
+		// We've added one row
+		result++;	
+
+		return result;
+	}
+
+
+
+	//	private int addGuidanceUpdDownFlatSummary(HSSFWorkbook wb, Sheet sheet, int rowNum, 
+	//			int flats, int rises, int falls, String eventType, HSSFCellStyle style)
+	//	{
+	//		int	result = 0;
+	//		long daysBack      = PrefsNightScoutLoader.getInstance().getM_AnalyzerDaysBack();
+	//
+	//		String commentary1 = new String("");
+	//		String commentaryDirection = new String("");
+	//		String recommendation = new String("");
+	//
+	//		if ((rises > falls) && (rises > flats))
+	//		{
+	//			commentaryDirection = "of rise trends";
+	//			if ((rises / daysBack) > 0.5)  // > 50% is significant
+	//				//			if (Math.abs(rises - falls) > rises / 2)
+	//			{
+	//				commentary1 = "a very high recurrence (" + rises + " across " + daysBack + " days)";
+	//				if (falls > 0)
+	//				{
+	//					recommendation = "Despite the very strong pattern, there are still both falls (" + falls + ") as well as rises (" + rises + ") seen for " + eventType +
+	//							" use caution when considering any changes to basal or bolus as results might be inconclusive.";
+	//				}
+	//				else
+	//				{
+	//					recommendation = "Given there are no falls, this could be a strong pattern of rises (based on recurrence) and worth investigating changes for " + eventType;				
+	//				}
+	//
+	//			}
+	//			else if ((rises / daysBack) > 0.333)  // > 33% is significant
+	//				//			else if (Math.abs(rises - falls) > falls / 2)
+	//			{
+	//				commentary1 = "a high recurrence (" + rises + " across " + daysBack + " days)";
+	//				if (falls > 0)
+	//				{
+	//					recommendation = "Despite the strong pattern, there are still both falls (" + falls + ") as well as rises (" + rises + ") seen for " + eventType +
+	//							" use caution when considering any changes to basal or bolus as results might be inconclusive.";
+	//				}
+	//				else
+	//				{
+	//					recommendation = "Given there are no falls, this could be a strong pattern of rises (based on recurrence) and worth investigating changes for " + eventType;				
+	//				}
+	//
+	//			}
+	//
+	//			else
+	//			{
+	//				commentary1 = "a notable recurrence (" + rises + " across " + daysBack + " days)";
+	//				recommendation = "Given there are still both falls (" + falls + ") as well as rises (" + rises + ") seen for " + eventType +
+	//						" use caution when considering any changes to basal or bolus as results might be inconclusive.";
+	//			}
+	//
+	//		}
+	//		else if ((falls > rises) && (falls > flats))
+	//		{
+	//			commentaryDirection = "of fall trends" ;
+	//			if ((falls / daysBack) > 0.5)  // > 50% is significant
+	//			{
+	//				commentary1 = "a very high recurrence (" + falls + " across " + daysBack + " days)";
+	//				if (rises > 0)
+	//				{
+	//					recommendation = "Despite the very strong pattern, there are still both rises (" + rises + ") as well as falls (" + falls + ") seen for " + eventType +
+	//							" use caution when considering any changes to basal or bolus as results might be inconclusive.";
+	//				}
+	//				else
+	//				{
+	//					recommendation = "Given there are no rises, this could be a strong pattern of rises (based on recurrence) and worth investigating changes for " + eventType;				
+	//				}
+	//
+	//			}
+	//			//			else if (Math.abs(falls - rises) > rises / 2)
+	//			else if ((falls / daysBack) > 0.33)  // > 33% is significant			
+	//			{
+	//				commentary1 = "a high recurrence (" + falls + " across " + daysBack + " days)";
+	//				if (rises > 0)
+	//				{
+	//					recommendation = "Despite the strong pattern, there are still both rises (" + rises + ") as well as falls (" + falls + ") seen for " + eventType +
+	//							" use caution when considering any changes to basal or bolus as results might be inconclusive.";
+	//				}
+	//				else
+	//				{
+	//					recommendation = "Given there are no rises, this could be a strong pattern of rises (based on recurrence) and worth investigating changes for " + eventType;				
+	//				}
+	//
+	//			}
+	//
+	//			else
+	//			{
+	//				commentary1 = "a notable recurrence (" + falls + " across " + daysBack + " days)";
+	//				recommendation = "Given there are still both rises (" + rises + ") as well as falls (" + falls + ") seen for " + eventType +
+	//						" use caution when considering any changes to basal or bolus as results might be inconclusive.";
+	//			}
+	//		}
+	//		else if ((flats > rises) && (flats > falls))
+	//		{
+	//			commentaryDirection = "of flat trends";
+	//			recommendation = "Flat results are good (as long as the start is is range!).";
+	//		}
+	//		else
+	//		{
+	//			commentaryDirection = "a very even distribution.  Same number of rise, fall and flat trends";
+	//			recommendation = "Given the equal distribution, it's difficult to determine what if any change is needed here.";
+	//		}
+	//
+	//
+	//		rowNum += addParameterValue("High Level Analysis - " + eventType, "For all trend results starting at " + eventType + " there is " + commentary1 +
+	//				" " + commentaryDirection, recommendation, sheet, rowNum, style);
+	//
+	//		result++;
+	//
+	//		return result;
+	//	}
 
 	private int addDaySummaries(ArrayList<AnalyzerDaySummary> daySummaryList, 
 			HSSFWorkbook wb, Sheet sheet, int rowNum)
@@ -2697,7 +4022,7 @@ public class Analyzer extends DataExportExcel
 						(!res.isM_DinnerCarbs()    ? "Dinner "    : "");
 				missingMealCarbs = (missingMealCarbs.equals("") ? "n/a" : missingMealCarbs);
 
-				if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions())
+				if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
 				{
 					cell = row.createCell(j++);
 					cell.setCellValue(res.getM_ID());
@@ -2739,6 +4064,13 @@ public class Analyzer extends DataExportExcel
 		double  analyzerLunchChangeTrendRatio     = PrefsNightScoutLoader.getInstance().getM_AnalyzerLunchChangeTrendRatio();
 		double  analyzerDinnerChangeTrendRatio    = PrefsNightScoutLoader.getInstance().getM_AnalyzerDinnerChangeTrendRatio();
 
+		boolean analyzeBreakfast                  = PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeBreakfast();
+		boolean analyzeLunch                      = PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeLunch();
+		boolean analyzeDinner                     = PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeDinner();
+		boolean analyzeOvernight                  = PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeOvernight();
+
+		boolean proceed                           = true;
+
 		ArrayList<AnalyzerSingleResult> applicableIndividualList = null;
 
 		ArrayList<AnalyzerTrendResult>  trendResultList          = null;
@@ -2753,23 +4085,27 @@ public class Analyzer extends DataExportExcel
 			skippedMealResultList    = m_SkippedBreakfastResults;
 			trendResultList          = m_CombinedTrendResults; // m_PreToPostBreakfastResults;
 			trendRatio               = analyzerBreakfastChangeTrendRatio;
+			proceed                  = analyzeBreakfast;
 			break;
 		case LunchTime:
 			applicableIndividualList = m_CombinedSingleResults; // m_LunchResults;
 			skippedMealResultList    = m_SkippedLunchResults;
 			trendResultList          = m_CombinedTrendResults; // m_PreToPostLunchResults;
 			trendRatio               = analyzerLunchChangeTrendRatio;
+			proceed                  = analyzeLunch;
 			break;
 		case DinnerTime:
 			applicableIndividualList = m_CombinedSingleResults; // m_DinnerResults;
 			skippedMealResultList    = m_SkippedDinnerResults;
 			trendResultList          = m_CombinedTrendResults; // m_PreToPostDinnerResults;
 			trendRatio               = analyzerDinnerChangeTrendRatio;
+			proceed                  = analyzeDinner;
 			break;
 		case BedTime:
 			applicableIndividualList = m_CombinedSingleResults; // m_BedTimeResults;
 			trendResultList          = m_CombinedTrendResults; // m_OvernightResults;
 			trendRatio               = analyzerOvernightChangeTrendRatio;
+			proceed                  = analyzeOvernight;
 			break;
 
 		default:
@@ -2777,61 +4113,68 @@ public class Analyzer extends DataExportExcel
 			break;
 		}
 
-		categorizeResultNew(singleResult, timeSlot, applicableIndividualList, trendRatio, trendResultList, skippedMealResultList);
+		if (proceed)
+		{
+			categorizeResultNew(singleResult, timeSlot, applicableIndividualList, trendRatio, trendResultList, skippedMealResultList);
+		}
+		else
+		{
+			m_Logger.log(Level.FINE, "<"+this.getClass().getName()+">" + ". Analyzer not included for all meal times (see Settings).  Trend Results not being captured");
+		}
 
 	}
 
 
-//	private void categorizeResult(DBResult result)
-//	{
-//		// 1 Get timeslot for result
-//		DBResult.TimeSlot timeSlot = result.getDBResultTimeSlot();  // FAILED !!!
-//
-//		double  analyzerOvernightChangeTrendRatio = PrefsNightScoutLoader.getInstance().getM_AnalyzerOvernightChangeTrendRatio();
-//		double  analyzerBreakfastChangeTrendRatio = PrefsNightScoutLoader.getInstance().getM_AnalyzerBreakfastChangeTrendRatio();
-//		double  analyzerLunchChangeTrendRatio     = PrefsNightScoutLoader.getInstance().getM_AnalyzerLunchChangeTrendRatio();
-//		double  analyzerDinnerChangeTrendRatio    = PrefsNightScoutLoader.getInstance().getM_AnalyzerDinnerChangeTrendRatio();
-//
-//		ArrayList<AnalyzerSingleResult> applicableIndividualList = null;
-//
-//		ArrayList<AnalyzerTrendResult>  trendResultList          = null;
-//		ArrayList<AnalyzerTrendResult>  skippedMealResultList    = null;
-//
-//		double                  trendRatio               = 0.0;
-//
-//		switch (timeSlot)
-//		{
-//		case BreakfastTime: 
-//			applicableIndividualList = m_CombinedSingleResults; // m_BreakfastResults;
-//			skippedMealResultList    = m_SkippedBreakfastResults;
-//			trendResultList          = m_CombinedTrendResults; // m_PreToPostBreakfastResults;
-//			trendRatio               = analyzerBreakfastChangeTrendRatio;
-//			break;
-//		case LunchTime:
-//			applicableIndividualList = m_CombinedSingleResults; // m_LunchResults;
-//			skippedMealResultList    = m_SkippedLunchResults;
-//			trendResultList          = m_CombinedTrendResults; // m_PreToPostLunchResults;
-//			trendRatio               = analyzerLunchChangeTrendRatio;
-//			break;
-//		case DinnerTime:
-//			applicableIndividualList = m_CombinedSingleResults; // m_DinnerResults;
-//			skippedMealResultList    = m_SkippedDinnerResults;
-//			trendResultList          = m_CombinedTrendResults; // m_PreToPostDinnerResults;
-//			trendRatio               = analyzerDinnerChangeTrendRatio;
-//			break;
-//		case BedTime:
-//			applicableIndividualList = m_CombinedSingleResults; // m_BedTimeResults;
-//			trendResultList          = m_CombinedTrendResults; // m_OvernightResults;
-//			trendRatio               = analyzerOvernightChangeTrendRatio;
-//			break;
-//
-//		default:
-//
-//			break;
-//		}
-//
-//		categorizeResult(result, timeSlot, applicableIndividualList, trendRatio, trendResultList, skippedMealResultList);
-//	}
+	//	private void categorizeResult(DBResult result)
+	//	{
+	//		// 1 Get timeslot for result
+	//		DBResult.TimeSlot timeSlot = result.getDBResultTimeSlot();  // FAILED !!!
+	//
+	//		double  analyzerOvernightChangeTrendRatio = PrefsNightScoutLoader.getInstance().getM_AnalyzerOvernightChangeTrendRatio();
+	//		double  analyzerBreakfastChangeTrendRatio = PrefsNightScoutLoader.getInstance().getM_AnalyzerBreakfastChangeTrendRatio();
+	//		double  analyzerLunchChangeTrendRatio     = PrefsNightScoutLoader.getInstance().getM_AnalyzerLunchChangeTrendRatio();
+	//		double  analyzerDinnerChangeTrendRatio    = PrefsNightScoutLoader.getInstance().getM_AnalyzerDinnerChangeTrendRatio();
+	//
+	//		ArrayList<AnalyzerSingleResult> applicableIndividualList = null;
+	//
+	//		ArrayList<AnalyzerTrendResult>  trendResultList          = null;
+	//		ArrayList<AnalyzerTrendResult>  skippedMealResultList    = null;
+	//
+	//		double                  trendRatio               = 0.0;
+	//
+	//		switch (timeSlot)
+	//		{
+	//		case BreakfastTime: 
+	//			applicableIndividualList = m_CombinedSingleResults; // m_BreakfastResults;
+	//			skippedMealResultList    = m_SkippedBreakfastResults;
+	//			trendResultList          = m_CombinedTrendResults; // m_PreToPostBreakfastResults;
+	//			trendRatio               = analyzerBreakfastChangeTrendRatio;
+	//			break;
+	//		case LunchTime:
+	//			applicableIndividualList = m_CombinedSingleResults; // m_LunchResults;
+	//			skippedMealResultList    = m_SkippedLunchResults;
+	//			trendResultList          = m_CombinedTrendResults; // m_PreToPostLunchResults;
+	//			trendRatio               = analyzerLunchChangeTrendRatio;
+	//			break;
+	//		case DinnerTime:
+	//			applicableIndividualList = m_CombinedSingleResults; // m_DinnerResults;
+	//			skippedMealResultList    = m_SkippedDinnerResults;
+	//			trendResultList          = m_CombinedTrendResults; // m_PreToPostDinnerResults;
+	//			trendRatio               = analyzerDinnerChangeTrendRatio;
+	//			break;
+	//		case BedTime:
+	//			applicableIndividualList = m_CombinedSingleResults; // m_BedTimeResults;
+	//			trendResultList          = m_CombinedTrendResults; // m_OvernightResults;
+	//			trendRatio               = analyzerOvernightChangeTrendRatio;
+	//			break;
+	//
+	//		default:
+	//
+	//			break;
+	//		}
+	//
+	//		categorizeResult(result, timeSlot, applicableIndividualList, trendRatio, trendResultList, skippedMealResultList);
+	//	}
 
 	private void categorizeResultNew(AnalyzerSingleResult singleResult, 
 			DBResult.TimeSlot timeSlot,
@@ -2865,38 +4208,38 @@ public class Analyzer extends DataExportExcel
 	}
 
 
-//	private void categorizeResult(DBResult dbResult, 
-//			DBResult.TimeSlot timeSlot,
-//
-//			ArrayList<AnalyzerSingleResult> applicableIndividualList,
-//			double trendRatio,
-//
-//			ArrayList<AnalyzerTrendResult> trendResultList,
-//			ArrayList<AnalyzerTrendResult> skippedMealResultList)
-//	{
-//		// David 23 Jul 2016
-//		// Try something different.
-//		// If the first bg is hypo then reduce time accordingly. 
-//		int minMins = PrefsNightScoutLoader.getInstance().getM_AnalyzerMinMinsForTrendResults();
-//
-//		// If the trend exists and first part was hypo, then reduce this down
-//		if (m_CurrentTrendResult != null && 
-//				m_CurrentTrendResult.getM_AnalyzerSingleResult1().getM_DBResult().getM_CP_Glucose()  <= PrefsNightScoutLoader.getInstance().getM_AnalyzerLowRangeThreshold())
-//		{
-//			minMins = 15;
-//		}
-//
-//		m_CurrentTrendResult     = categorizeResult(dbResult, 
-//				timeSlot, 
-//				applicableIndividualList, 
-//				trendRatio, 
-//				trendResultList, 
-//				minMins, 
-//				m_CurrentTrendResult);
-//
-//		// If the trend is complete, we are in a meal and there's no carbs then proceed
-//		identifySkippedResult(m_CurrentTrendResult, skippedMealResultList);
-//	}
+	//	private void categorizeResult(DBResult dbResult, 
+	//			DBResult.TimeSlot timeSlot,
+	//
+	//			ArrayList<AnalyzerSingleResult> applicableIndividualList,
+	//			double trendRatio,
+	//
+	//			ArrayList<AnalyzerTrendResult> trendResultList,
+	//			ArrayList<AnalyzerTrendResult> skippedMealResultList)
+	//	{
+	//		// David 23 Jul 2016
+	//		// Try something different.
+	//		// If the first bg is hypo then reduce time accordingly. 
+	//		int minMins = PrefsNightScoutLoader.getInstance().getM_AnalyzerMinMinsForTrendResults();
+	//
+	//		// If the trend exists and first part was hypo, then reduce this down
+	//		if (m_CurrentTrendResult != null && 
+	//				m_CurrentTrendResult.getM_AnalyzerSingleResult1().getM_DBResult().getM_CP_Glucose()  <= PrefsNightScoutLoader.getInstance().getM_AnalyzerLowRangeThreshold())
+	//		{
+	//			minMins = 15;
+	//		}
+	//
+	//		m_CurrentTrendResult     = categorizeResult(dbResult, 
+	//				timeSlot, 
+	//				applicableIndividualList, 
+	//				trendRatio, 
+	//				trendResultList, 
+	//				minMins, 
+	//				m_CurrentTrendResult);
+	//
+	//		// If the trend is complete, we are in a meal and there's no carbs then proceed
+	//		identifySkippedResult(m_CurrentTrendResult, skippedMealResultList);
+	//	}
 
 	private void identifySkippedResult(AnalyzerTrendResult trendResult, ArrayList<AnalyzerTrendResult>  skippedMealResultList)
 	{
@@ -2948,13 +4291,13 @@ public class Analyzer extends DataExportExcel
 	{	
 		//AnalyzerTrendResult result = null;
 
-//		double  analyzerHighThreshold                = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThreshold();
-//		double  analyzerHighThresholdRelevanceFactor = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThresholdRelevanceFactor();
-//		double  analyzerLowThreshold                 = PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThreshold();
-//		double  analyzerLowThresholdRelevanceFactor  = PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThresholdRelevanceFactor();
+		//		double  analyzerHighThreshold                = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThreshold();
+		//		double  analyzerHighThresholdRelevanceFactor = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThresholdRelevanceFactor();
+		//		double  analyzerLowThreshold                 = PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThreshold();
+		//		double  analyzerLowThresholdRelevanceFactor  = PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThresholdRelevanceFactor();
 
 		double  analyzerLowRangeThreshold            = PrefsNightScoutLoader.getInstance().getM_AnalyzerLowRangeThreshold();
-//		double  analyzerHighRangeThreshold           = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighRangeThreshold();
+		//		double  analyzerHighRangeThreshold           = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighRangeThreshold();
 
 		String  analyzerBedTrendStartStartTime       = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartStartTime();
 		String  analyzerBedTrendStartEndTime         = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartEndTime();
@@ -3086,212 +4429,212 @@ public class Analyzer extends DataExportExcel
 	}
 
 
-//	private AnalyzerTrendResult categorizeResult(DBResult dbResult, 
-//			DBResult.TimeSlot timeSlot,
-//
-//			ArrayList<AnalyzerSingleResult> applicableIndividualList,
-//			double trendRatio,
-//
-//			ArrayList<AnalyzerTrendResult> trendResultList,
-//			int                            minDiffMins,
-//			AnalyzerTrendResult            trendResult)
-//	{	
-//		double  analyzerHighThreshold                = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThreshold();
-//		double  analyzerHighThresholdRelevanceFactor = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThresholdRelevanceFactor();
-//		double  analyzerLowThreshold                 = PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThreshold();
-//		double  analyzerLowThresholdRelevanceFactor  = PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThresholdRelevanceFactor();
-//
-//		double  analyzerLowRangeThreshold            = PrefsNightScoutLoader.getInstance().getM_AnalyzerLowRangeThreshold();
-//		double  analyzerHighRangeThreshold           = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighRangeThreshold();
-//
-//		String  analyzerBedTrendStartStartTime       = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartStartTime();
-//		String  analyzerBedTrendStartEndTime         = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartEndTime();
-//		//		String  analyzerBedTrendEndStartTime         = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendEndStartTime();
-//		//		String  analyzerBedTrendEndEndTime           = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendEndEndTime();
-//
-//
-//		// Construct a AnalyzerSingleResult and add to appropriate list
-//		Double  bgResult = dbResult.getM_CP_Glucose();
-//
-//		// See whether this is a temp basal for some extra colour on analysis
-//		//		Double basalResult = dbResult.getM_CP_BasalValue();
-//
-//		// THe result might not actually have a bg (example Temp Basal)
-//		// Therefore, see if mid way through a trend and add commentary accordingly
-//
-//		// Only really proceed if this is a BG result
-//
-//		if (bgResult != null)
-//		{
-//			L0AnalyzerSingleResultEnum singleResultEnum = L0AnalyzerSingleResultEnum.inRange;
-//			long relevance   = 0;
-//			double A         = 0.0;
-//			double B         = 0.0;
-//
-//			if (bgResult > analyzerHighThreshold)
-//			{
-//				singleResultEnum = L0AnalyzerSingleResultEnum.tooHigh;
-//			}
-//			else if (bgResult > analyzerHighRangeThreshold)
-//			{
-//				singleResultEnum = L0AnalyzerSingleResultEnum.aboveRange;
-//			}
-//			else if (bgResult < analyzerLowThreshold)
-//			{
-//				singleResultEnum = L0AnalyzerSingleResultEnum.tooLow;
-//			}
-//			else if (bgResult < analyzerLowRangeThreshold)
-//			{
-//				singleResultEnum = L0AnalyzerSingleResultEnum.belowRange;
-//			}
-//			else
-//			{
-//				singleResultEnum = L0AnalyzerSingleResultEnum.inRange;
-//				// In range?  always 1...
-//				relevance =  1;
-//			}
-//
-//
-//			if ((singleResultEnum == L0AnalyzerSingleResultEnum.tooHigh) ||
-//					(singleResultEnum == L0AnalyzerSingleResultEnum.aboveRange))
-//			{
-//				A         = analyzerHighRangeThreshold;  // Top of normal range
-//				B         = analyzerHighThresholdRelevanceFactor * analyzerHighThreshold;
-//
-//				// http://mathforum.org/library/drmath/view/60433.html
-//				relevance =  bgResult > B ? 10 : (long)(1 + (bgResult - A) * (10 - 1)/(B - A));
-//			}
-//			if ((singleResultEnum == L0AnalyzerSingleResultEnum.tooLow) ||
-//					(singleResultEnum == L0AnalyzerSingleResultEnum.belowRange))
-//			{
-//				A         = analyzerLowThresholdRelevanceFactor * analyzerLowThreshold;  // Top of normal range
-//				B         = analyzerLowRangeThreshold;  // Always 4.0
-//
-//				// http://mathforum.org/library/drmath/view/60433.html
-//				relevance =  bgResult < A ? 10 : 10 - ((long)(1 + (bgResult - A) * (10 - 1)/(B - A)));
-//			}
-//
-//
-//			AnalyzerSingleResult singleResult = new AnalyzerSingleResult(singleResultEnum, dbResult, timeSlot);
-//			singleResult.setM_ReasonForDiscard("Just Created");
-//
-//
-//			buildDaySummary(singleResult);
-//
-//			singleResult.setM_RelevanceScore(relevance);
-//			applicableIndividualList.add(singleResult);
-//
-//			// A result can be either the start of a trend or the end of a trend, but not both.
-//			// Two trend results can span different time slot periods too.
-//
-//			if (trendResult != null)
-//			{
-//				boolean stored = trendResult.checkForResult(singleResult, minDiffMins, trendRatio);
-//				if (!stored)
-//				{
-//					// Check whether bg1 was discarded too.  If so, then remove
-//					// this trend result and start again.
-//					if (trendResult.getM_AnalyzerSingleResult1() == null)
-//					{
-//						singleResult.setM_ReasonForDiscard("Trend Result - checkForResult - returned Not Stored");
-//						trendResultList.remove(trendResult);
-//						trendResult = null;
-//					}
-//
-//				}
-//				else
-//				{
-//					// Reset to null to collect next result as a trend
-//					trendResult = null;
-//					singleResult.setM_ReasonForDiscard("Should have been Stored as #2");
-//				}
-//			}
-//			else
-//			{
-//				// We should really only store a trend result under the following circumstances:
-//				//  1 First result is a hypo - we're interested in what happens for hypo management
-//				//  2 First BG is within range - we're interested in excursions out of range
-//
-//
-//				// Originally
-//				//   1 First BG has no associated insulin or carbs
-//				//   2 First BG has associated insulin AND carbs
-//				//   3 BG is within range - we're interested in excursions out of range really.
-//
-//				// Let's just store all of them!
-//
-//				// David 20 Jul 2016
-//				// Thought of another situation
-//				//   We have a previous trend that looks like a skip meal
-//				//   However, this single result is same meal period and includes carbs
-//				//   Then we want to switch BG 2 out and replace with this and actually not create a new trend with this one
-//				//   Makes sense???  Good.
-//				//
-//				// Leading to other possibilities here:
-//				//   Revised Trend Detection Algorithm
-//				//    Currently - Take result, look at next.  If less than threshold then restart from 2nd result.
-//				//   Instead:
-//				//    Look at result then next.  If next is less than threshold, add to an internal Trend skipped result list and get next
-//				//    
-//
-//
-//				AnalyzerTrendResult prevAnalyzerTrendResult = trendResultList.size() > 1 ? trendResultList.get(trendResultList.size() - 1) : null;
-//				boolean usedAsAlternate = false;
-//
-//				if (prevAnalyzerTrendResult != null)
-//				{
-//					usedAsAlternate = prevAnalyzerTrendResult.checkForAlternateEndResult(singleResult, minDiffMins, trendRatio);										
-//				}
-//
-//				// However, only store bed results if between the start and end times configured.
-//				if (usedAsAlternate == false && timeSlot == DBResult.TimeSlot.BedTime)
-//				{
-//					try {
-//						if (CommonUtils.isTimeBetween(analyzerBedTrendStartStartTime, 
-//								analyzerBedTrendStartEndTime,
-//								singleResult.getM_DBResult().getM_Time()))
-//						{
-//							trendResult = new AnalyzerTrendResult(singleResult, AnalyzerTrendResultTypeEnum.overnightTrendType);
-//							trendResultList.add(trendResult);
-//							singleResult.setM_ReasonForDiscard("Should have been Stored as #1 - Overnight");
-//						}
-//
-//						else
-//						{
-//							if (prevAnalyzerTrendResult != null)
-//							{
-//								prevAnalyzerTrendResult.addInterveningResult(singleResult);
-//								singleResult.setM_ReasonForDiscard(singleResult.getM_ReasonForDiscard() 
-//										+ " Overnight BG after overnight start time range");
-//							}
-//							else
-//							{
-//								singleResult.setM_ReasonForDiscard("No BG to start overnight trend.  This result is after overnight start time range");
-//							}
-//						}
-//
-//						// Note that we can actually skip results here without keeping a record of them
-//						// as we do once we've got the 1st result
-//
-//					} 
-//					catch (ParseException e) 
-//					{
-//						m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + ". Exception checking date ranges. " + e.getMessage());
-//					}
-//				}
-//				else if (usedAsAlternate == false)
-//				{
-//					singleResult.setM_ReasonForDiscard("Should have been Stored as #1 - Meal or hypo");
-//					trendResult = new AnalyzerTrendResult(singleResult, 
-//							bgResult < analyzerLowRangeThreshold ? AnalyzerTrendResultTypeEnum.hypoTrendType :
-//								AnalyzerTrendResultTypeEnum.mealTrendType);
-//					trendResultList.add(trendResult);
-//				}
-//			}
-//		}
-//
-//		return trendResult;
-//	}
+	//	private AnalyzerTrendResult categorizeResult(DBResult dbResult, 
+	//			DBResult.TimeSlot timeSlot,
+	//
+	//			ArrayList<AnalyzerSingleResult> applicableIndividualList,
+	//			double trendRatio,
+	//
+	//			ArrayList<AnalyzerTrendResult> trendResultList,
+	//			int                            minDiffMins,
+	//			AnalyzerTrendResult            trendResult)
+	//	{	
+	//		double  analyzerHighThreshold                = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThreshold();
+	//		double  analyzerHighThresholdRelevanceFactor = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThresholdRelevanceFactor();
+	//		double  analyzerLowThreshold                 = PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThreshold();
+	//		double  analyzerLowThresholdRelevanceFactor  = PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThresholdRelevanceFactor();
+	//
+	//		double  analyzerLowRangeThreshold            = PrefsNightScoutLoader.getInstance().getM_AnalyzerLowRangeThreshold();
+	//		double  analyzerHighRangeThreshold           = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighRangeThreshold();
+	//
+	//		String  analyzerBedTrendStartStartTime       = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartStartTime();
+	//		String  analyzerBedTrendStartEndTime         = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartEndTime();
+	//		//		String  analyzerBedTrendEndStartTime         = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendEndStartTime();
+	//		//		String  analyzerBedTrendEndEndTime           = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendEndEndTime();
+	//
+	//
+	//		// Construct a AnalyzerSingleResult and add to appropriate list
+	//		Double  bgResult = dbResult.getM_CP_Glucose();
+	//
+	//		// See whether this is a temp basal for some extra colour on analysis
+	//		//		Double basalResult = dbResult.getM_CP_BasalValue();
+	//
+	//		// THe result might not actually have a bg (example Temp Basal)
+	//		// Therefore, see if mid way through a trend and add commentary accordingly
+	//
+	//		// Only really proceed if this is a BG result
+	//
+	//		if (bgResult != null)
+	//		{
+	//			L0AnalyzerSingleResultEnum singleResultEnum = L0AnalyzerSingleResultEnum.inRange;
+	//			long relevance   = 0;
+	//			double A         = 0.0;
+	//			double B         = 0.0;
+	//
+	//			if (bgResult > analyzerHighThreshold)
+	//			{
+	//				singleResultEnum = L0AnalyzerSingleResultEnum.tooHigh;
+	//			}
+	//			else if (bgResult > analyzerHighRangeThreshold)
+	//			{
+	//				singleResultEnum = L0AnalyzerSingleResultEnum.aboveRange;
+	//			}
+	//			else if (bgResult < analyzerLowThreshold)
+	//			{
+	//				singleResultEnum = L0AnalyzerSingleResultEnum.tooLow;
+	//			}
+	//			else if (bgResult < analyzerLowRangeThreshold)
+	//			{
+	//				singleResultEnum = L0AnalyzerSingleResultEnum.belowRange;
+	//			}
+	//			else
+	//			{
+	//				singleResultEnum = L0AnalyzerSingleResultEnum.inRange;
+	//				// In range?  always 1...
+	//				relevance =  1;
+	//			}
+	//
+	//
+	//			if ((singleResultEnum == L0AnalyzerSingleResultEnum.tooHigh) ||
+	//					(singleResultEnum == L0AnalyzerSingleResultEnum.aboveRange))
+	//			{
+	//				A         = analyzerHighRangeThreshold;  // Top of normal range
+	//				B         = analyzerHighThresholdRelevanceFactor * analyzerHighThreshold;
+	//
+	//				// http://mathforum.org/library/drmath/view/60433.html
+	//				relevance =  bgResult > B ? 10 : (long)(1 + (bgResult - A) * (10 - 1)/(B - A));
+	//			}
+	//			if ((singleResultEnum == L0AnalyzerSingleResultEnum.tooLow) ||
+	//					(singleResultEnum == L0AnalyzerSingleResultEnum.belowRange))
+	//			{
+	//				A         = analyzerLowThresholdRelevanceFactor * analyzerLowThreshold;  // Top of normal range
+	//				B         = analyzerLowRangeThreshold;  // Always 4.0
+	//
+	//				// http://mathforum.org/library/drmath/view/60433.html
+	//				relevance =  bgResult < A ? 10 : 10 - ((long)(1 + (bgResult - A) * (10 - 1)/(B - A)));
+	//			}
+	//
+	//
+	//			AnalyzerSingleResult singleResult = new AnalyzerSingleResult(singleResultEnum, dbResult, timeSlot);
+	//			singleResult.setM_ReasonForDiscard("Just Created");
+	//
+	//
+	//			buildDaySummary(singleResult);
+	//
+	//			singleResult.setM_RelevanceScore(relevance);
+	//			applicableIndividualList.add(singleResult);
+	//
+	//			// A result can be either the start of a trend or the end of a trend, but not both.
+	//			// Two trend results can span different time slot periods too.
+	//
+	//			if (trendResult != null)
+	//			{
+	//				boolean stored = trendResult.checkForResult(singleResult, minDiffMins, trendRatio);
+	//				if (!stored)
+	//				{
+	//					// Check whether bg1 was discarded too.  If so, then remove
+	//					// this trend result and start again.
+	//					if (trendResult.getM_AnalyzerSingleResult1() == null)
+	//					{
+	//						singleResult.setM_ReasonForDiscard("Trend Result - checkForResult - returned Not Stored");
+	//						trendResultList.remove(trendResult);
+	//						trendResult = null;
+	//					}
+	//
+	//				}
+	//				else
+	//				{
+	//					// Reset to null to collect next result as a trend
+	//					trendResult = null;
+	//					singleResult.setM_ReasonForDiscard("Should have been Stored as #2");
+	//				}
+	//			}
+	//			else
+	//			{
+	//				// We should really only store a trend result under the following circumstances:
+	//				//  1 First result is a hypo - we're interested in what happens for hypo management
+	//				//  2 First BG is within range - we're interested in excursions out of range
+	//
+	//
+	//				// Originally
+	//				//   1 First BG has no associated insulin or carbs
+	//				//   2 First BG has associated insulin AND carbs
+	//				//   3 BG is within range - we're interested in excursions out of range really.
+	//
+	//				// Let's just store all of them!
+	//
+	//				// David 20 Jul 2016
+	//				// Thought of another situation
+	//				//   We have a previous trend that looks like a skip meal
+	//				//   However, this single result is same meal period and includes carbs
+	//				//   Then we want to switch BG 2 out and replace with this and actually not create a new trend with this one
+	//				//   Makes sense???  Good.
+	//				//
+	//				// Leading to other possibilities here:
+	//				//   Revised Trend Detection Algorithm
+	//				//    Currently - Take result, look at next.  If less than threshold then restart from 2nd result.
+	//				//   Instead:
+	//				//    Look at result then next.  If next is less than threshold, add to an internal Trend skipped result list and get next
+	//				//    
+	//
+	//
+	//				AnalyzerTrendResult prevAnalyzerTrendResult = trendResultList.size() > 1 ? trendResultList.get(trendResultList.size() - 1) : null;
+	//				boolean usedAsAlternate = false;
+	//
+	//				if (prevAnalyzerTrendResult != null)
+	//				{
+	//					usedAsAlternate = prevAnalyzerTrendResult.checkForAlternateEndResult(singleResult, minDiffMins, trendRatio);										
+	//				}
+	//
+	//				// However, only store bed results if between the start and end times configured.
+	//				if (usedAsAlternate == false && timeSlot == DBResult.TimeSlot.BedTime)
+	//				{
+	//					try {
+	//						if (CommonUtils.isTimeBetween(analyzerBedTrendStartStartTime, 
+	//								analyzerBedTrendStartEndTime,
+	//								singleResult.getM_DBResult().getM_Time()))
+	//						{
+	//							trendResult = new AnalyzerTrendResult(singleResult, AnalyzerTrendResultTypeEnum.overnightTrendType);
+	//							trendResultList.add(trendResult);
+	//							singleResult.setM_ReasonForDiscard("Should have been Stored as #1 - Overnight");
+	//						}
+	//
+	//						else
+	//						{
+	//							if (prevAnalyzerTrendResult != null)
+	//							{
+	//								prevAnalyzerTrendResult.addInterveningResult(singleResult);
+	//								singleResult.setM_ReasonForDiscard(singleResult.getM_ReasonForDiscard() 
+	//										+ " Overnight BG after overnight start time range");
+	//							}
+	//							else
+	//							{
+	//								singleResult.setM_ReasonForDiscard("No BG to start overnight trend.  This result is after overnight start time range");
+	//							}
+	//						}
+	//
+	//						// Note that we can actually skip results here without keeping a record of them
+	//						// as we do once we've got the 1st result
+	//
+	//					} 
+	//					catch (ParseException e) 
+	//					{
+	//						m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + ". Exception checking date ranges. " + e.getMessage());
+	//					}
+	//				}
+	//				else if (usedAsAlternate == false)
+	//				{
+	//					singleResult.setM_ReasonForDiscard("Should have been Stored as #1 - Meal or hypo");
+	//					trendResult = new AnalyzerTrendResult(singleResult, 
+	//							bgResult < analyzerLowRangeThreshold ? AnalyzerTrendResultTypeEnum.hypoTrendType :
+	//								AnalyzerTrendResultTypeEnum.mealTrendType);
+	//					trendResultList.add(trendResult);
+	//				}
+	//			}
+	//		}
+	//
+	//		return trendResult;
+	//	}
 
 	private AnalyzerSingleResult buildAnalyzerSingleResult(DBResult res)
 	{
@@ -3305,8 +4648,8 @@ public class Analyzer extends DataExportExcel
 		double  analyzerLowRangeThreshold            = PrefsNightScoutLoader.getInstance().getM_AnalyzerLowRangeThreshold();
 		double  analyzerHighRangeThreshold           = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighRangeThreshold();
 
-//		String  analyzerBedTrendStartStartTime       = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartStartTime();
-//		String  analyzerBedTrendStartEndTime         = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartEndTime();
+		//		String  analyzerBedTrendStartStartTime       = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartStartTime();
+		//		String  analyzerBedTrendStartEndTime         = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartEndTime();
 		//		String  analyzerBedTrendEndStartTime         = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendEndStartTime();
 		//		String  analyzerBedTrendEndEndTime           = PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendEndEndTime();
 

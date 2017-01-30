@@ -140,6 +140,15 @@ class AnalyzerTrendResult
 
 		return result;
 	}
+	
+	public boolean isWanted()
+	{
+		boolean result = true;
+		
+		
+		
+		return result;
+	}
 
 
 	public boolean isRecurringTrendResult(AnalyzerTrendResult res)

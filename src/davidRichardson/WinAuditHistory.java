@@ -125,7 +125,7 @@ public class WinAuditHistory extends JFrame
 
 		this.setResizable(true);
 
-		m_WinAuditLog = new WinAuditLogForm(this, "Nightscout Loader " + Version.getInstance().getM_Version() + " - Audit Log");
+		m_WinAuditLog = new WinAuditLogForm(this, "Nightscout Loader " + Version.getInstance().getM_Version() + " - Audit History - Audit Log");
 
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
@@ -185,7 +185,7 @@ public class WinAuditHistory extends JFrame
 			@Override
 			public void mouseClicked(MouseEvent arg0) 
 			{
-				Boolean advancedOptions = PrefsNightScoutLoader.getInstance().isM_AdvancedOptions();
+				Boolean advancedOptions = PrefsNightScoutLoader.getInstance().isM_AdvancedSettings();
 
 				m_Logger.log(Level.FINER, "NightScoutLoader.ActionMenuHandler: Adv: " + advancedOptions);
 
@@ -294,7 +294,7 @@ public class WinAuditHistory extends JFrame
 	synchronized public void updateGrid()
 	{
 		boolean allShown = PrefsNightScoutLoader.getInstance().isM_AuditLogAllShown();
-		Boolean advancedOptions = PrefsNightScoutLoader.getInstance().isM_AdvancedOptions();
+		Boolean advancedOptions = PrefsNightScoutLoader.getInstance().isM_AdvancedSettings();
 
 		m_mntmFilterAuditLog.setText(allShown ? "Switch to Active Only" : "Switch to All"); 
 		m_mntmFilterAuditLog.setEnabled(advancedOptions);

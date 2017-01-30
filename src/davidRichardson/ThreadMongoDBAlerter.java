@@ -32,7 +32,7 @@ public abstract class ThreadMongoDBAlerter implements Runnable
 	}
 
 	// Data Loader used by thread
-	protected DataLoadNightScout     m_DataLoader;
+	protected DataLoadNightScoutTreatments     m_DataLoader;
 	protected Date                   m_LastResultAt;
 	protected Date                   m_CurrentResultAt;
 	protected String                 m_CurrentResultBy;
@@ -119,7 +119,7 @@ public abstract class ThreadMongoDBAlerter implements Runnable
 	{
 		m_LoadRunning     = true;  // Initialise the thread in running state
 		m_LoadThread      = new Thread(this);
-		m_DataLoader      = new DataLoadNightScout();
+		m_DataLoader      = new DataLoadNightScoutTreatments();
 		m_LastResultAt    = new Date(0); // Initialized to epoch time
 		m_CurrentResultAt = new Date(0); // Initialized to epoch time
 		m_CurrentResultBy = new String();

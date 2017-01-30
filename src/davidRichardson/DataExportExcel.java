@@ -41,7 +41,7 @@ public class DataExportExcel
 	// Idea from:
 	// https://gugiaji.wordpress.com/2013/12/24/exporting-java-defaulttablemodel-to-excel-example/
 
-	private String[]                  m_Options_ColNames    = {"Parameter", "Value", "Notes" };
+	private String[]                  m_Settings_ColNames    = {"Parameter", "Value", "Notes" };
 
 	
 	public DataExportExcel()
@@ -54,7 +54,7 @@ public class DataExportExcel
 		HSSFWorkbook wb = new HSSFWorkbook();
 
 		writeTreatmentDataToExcel(dtm, wb);
-		writeOptionsToExcel(wb);
+		writeSettingsToExcel(wb);
 
 		FileOutputStream out = new FileOutputStream(filename);
 		wb.write(out);
@@ -87,12 +87,12 @@ public class DataExportExcel
 	}
 	
 	
-	protected void writeOptionsToExcel(HSSFWorkbook wb)
+	protected void writeSettingsToExcel(HSSFWorkbook wb)
 	{
-		Sheet sheet = wb.createSheet("Options");
+		Sheet sheet = wb.createSheet("Settings");
 		sheet.createFreezePane(0,1);
 
-		writeColumnHeaderRow(wb, sheet, m_Options_ColNames);
+		writeColumnHeaderRow(wb, sheet, m_Settings_ColNames);
 
 		// Now just add the rows one at a time...
 
@@ -109,7 +109,7 @@ public class DataExportExcel
 		} 
 		catch (ParseException e) 
 		{
-			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+"> writeOptionsToExcel " + ". Unable to convert current time for output");
+			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+"> writeSettingsToExcel " + ". Unable to convert current time for output");
 		}
 
 		rowNum += addParameterValue("Nightscout Loader Version Number", Version.getInstance().getM_Version(), "Author: " + Version.getInstance().getM_Author(), sheet, rowNum);
@@ -127,12 +127,12 @@ public class DataExportExcel
 		rowNum += addParameterValue("BG UNITS", PrefsNightScoutLoader.getInstance().getM_BGUnits() == 0 ? "mmol/L" : "mg/dL", "KEY parameter in determining how your results are interpreted.  Please set accordingly!", sheet, rowNum);
 		rowNum += addParameterValue("MongoDB Database", PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB(), "Nightscout MongoDB Database Name", sheet, rowNum);
 		rowNum += addParameterValue("MongoDB Meter Collection", PrefsNightScoutLoader.getInstance().getM_NightscoutMongoCollection(), "Nightscout MongoDB Collection Name", sheet, rowNum);
-		rowNum += addParameterValue("Advanced Options", PrefsNightScoutLoader.getInstance().isM_AdvancedOptions() ? "True" : "False", "Advanced Options in the Options tab.  If set to false, then all parameters are either default or unchanged from before", sheet, rowNum);
+		rowNum += addParameterValue("Advanced Settings", PrefsNightScoutLoader.getInstance().isM_AdvancedSettings() ? "True" : "False", "Advanced Settings in the Settings tab.  If set to false, then all parameters are either default or unchanged from before", sheet, rowNum);
 
-		if (PrefsNightScoutLoader.getInstance().isM_AdvancedOptions() == true)
+		if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings() == true)
 		{
 			rowNum += addParameterValue("", "", "", sheet, rowNum);		
-			rowNum += addParameterValue("** Advanced Features **", "", "The next block are the advanced features on Options panel", sheet, rowNum);		
+			rowNum += addParameterValue("** Advanced Features **", "", "The next block are the advanced features on Settings panel", sheet, rowNum);		
 			rowNum += addParameterValue("Timezone", PrefsNightScoutLoader.getInstance().getM_Timezone(), "Application knows which timezone it runs from.  This parameter can force it to think it is somewhere else.", sheet, rowNum);
 			rowNum += addParameterValue("Input Date Format", PrefsNightScoutLoader.getInstance().getM_InputDateFormat(), "BEWARE anything other than Default - Setting incorrectly can lead to unexpected behaviour.  Allows customizations for input files where day/month are reversed.", sheet, rowNum);
 
@@ -157,17 +157,15 @@ public class DataExportExcel
 		rowNum += addParameterValue("Last Analysis File", PrefsNightScoutLoader.getInstance().getM_AnalysisFilePath(), "Path to last used Analysis Results File.  (Probably this file!)", sheet, rowNum);
 
 		rowNum += addParameterValue("", "", "", sheet, rowNum);		
-		rowNum += addParameterValue("** Adhoc internal values **", "", "The next block are internal references to last various parameters not exposed on Options panel", sheet, rowNum);		
+		rowNum += addParameterValue("** Adhoc internal values **", "", "The next block are internal references to last various parameters not exposed on Settings panel", sheet, rowNum);		
 		rowNum += addParameterValue("MongoDB Sensor Collection", PrefsNightScoutLoader.getInstance().getM_NightscoutSensorMongoCollection(), "Not exposed.  Internally used to identify name of collection for sensor heartbeats", sheet, rowNum);
 		rowNum += addParameterValue("MongoDB Database (Development only)", PrefsNightScoutLoader.getInstance().getM_MongoMeterDB(), "Nightscout MongoDB Database Name used to hold SQL Server data during development", sheet, rowNum);
 		rowNum += addParameterValue("MongoDB Audit Collection", PrefsNightScoutLoader.getInstance().getM_NightscoutAuditCollection(), "Not exposed.  Internally used to identify name of new collection for Nightscout Loader historic loads", sheet, rowNum);
-		rowNum += addParameterValue("Attempt Diasend Temp Basals", PrefsNightScoutLoader.getInstance().isM_AttemptDiasendTempBasals() ? "True" : "False", "Diasend temp basals have to be inferred and the logic is not too accurate.  This disables until I can persuade Diased to improve their exports", sheet, rowNum);
+		rowNum += addParameterValue("Attempt Diasend Temp Basals", PrefsNightScoutLoader.getInstance().isM_InferDiasendTempBasals() ? "True" : "False", "Diasend temp basals have to be inferred and the logic is not too accurate.  This disables until I can persuade Diased to improve their exports", sheet, rowNum);
 		rowNum += addParameterValue("Show All results in Audit History Window", PrefsNightScoutLoader.getInstance().isM_AuditLogAllShown() ? "True" : "False", "The simple Audit view hides all activity.  This flag controls this", sheet, rowNum);
 
-		autoSizeColumns(sheet, m_Options_ColNames);
+		autoSizeColumns(sheet, m_Settings_ColNames);
 	}
-
-
 	
 	// Used by Analyzer
 	protected int addParameterValue(String parName, Double parValue, String notes, Sheet sheet, int rowNum)
@@ -386,6 +384,8 @@ public class DataExportExcel
 	
 	protected void writeColumnHeaderRow(HSSFWorkbook wb, Sheet sheet, String[] colNames)
 	{
+		sheet.createFreezePane(0,1);
+
 		Row row = null;
 		Cell cell = null;
 

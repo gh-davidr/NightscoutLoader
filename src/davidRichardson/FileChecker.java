@@ -10,7 +10,8 @@ public class FileChecker
 
 		Medtronic,
 		Diasend,
-		OmniPod
+		OmniPod,
+		RocheSQLExtract,
 	}
 
 	public static String getFileTypeStr(FileCheckType fct)
@@ -23,6 +24,7 @@ public class FileChecker
 		case Medtronic : result = "Medtronic"; break;
 		case Diasend : result = "Diasend"; break;
 		case OmniPod : result = "OmniPod"; break;
+		case RocheSQLExtract : result = "Roche SQL Extract"; break;
 
 		default : result = "UNKNOWN"; break;
 		}
@@ -47,6 +49,10 @@ public class FileChecker
 			if (isMedtronic(filename))
 			{
 				result = FileChecker.FileCheckType.Medtronic;
+			}
+			else if (isRocheCSV(filename))
+			{
+				result = FileChecker.FileCheckType.RocheSQLExtract;
 			}
 		}
 		else if (filename.contains(".ibf") && isOmniPod(filename))
@@ -95,4 +101,11 @@ public class FileChecker
 		return result;
 	}
 
+	private static boolean isRocheCSV(String fileName)
+	{
+		boolean result = DataLoadRocheCSV.isRoche(fileName);
+		return result;
+	}
+
+	
 }

@@ -3,8 +3,10 @@ package davidRichardson;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 //import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.logging.Level;
@@ -171,7 +173,7 @@ public class CommonUtils
 		String endTimeOnDate    = new String(df.format(dateTime)) +  " " + endTime;
 
 		Date baseDate = convertDateString(dateTimeStr, "dd/MM/yyyy hh:mm");
-		Date startCompDate = convertDateString(startTimeOnDate,  "dd/MM/yyyy hh:mm");
+ 		Date startCompDate = convertDateString(startTimeOnDate,  "dd/MM/yyyy hh:mm");
 		Date endCompDate   = convertDateString(endTimeOnDate,  "dd/MM/yyyy hh:mm");
 
 		result = ((startCompDate.before(baseDate) || startCompDate.equals(baseDate)) &&
@@ -181,6 +183,21 @@ public class CommonUtils
 		return result;
 	}
 
+	
+	// Used for Analyzer bedtime checks
+	// Between means start <= time < end
+	static boolean isTimeBetween(Date startTime, Date endTime, Date dateTime)
+	{
+		boolean result = false;
+
+		result = ((startTime.before(dateTime) || startTime.equals(dateTime)) &&
+				(endTime.after(dateTime)))
+				? true : false;
+
+		return result;
+	}
+
+	
 	static boolean isDateTheSame(Date d1, Date d2)
 	{
 		boolean result = false;
@@ -192,7 +209,57 @@ public class CommonUtils
 
 		return result;
 	}
+	
+	static Date addDaysToDate(Date dt, int numDays)
+	{
+		Date result = new Date(0);
+		
+		Calendar c = Calendar.getInstance();
+		c.setTime(dt);
+		c.add(Calendar.DATE, numDays); // Add one day
+		result = c.getTime();
+		
+		return result;
+	}
 
+	static int get24Hour(Date dt)
+	{
+		int result = 0;
+
+		Calendar calendar = GregorianCalendar.getInstance(); // creates a new calendar instance
+		calendar.setTime(dt);   // assigns calendar to given date 
+		result = calendar.get(Calendar.HOUR_OF_DAY); // gets hour in 24h format
+//		calendar.get(Calendar.HOUR);        // gets hour in 12h format
+//		calendar.get(Calendar.MONTH);       // gets month number, NOTE this is zero based!
+		
+		return result;
+	}
+	
+	static Date setDateToParticularHour(Date dt, int hour)
+	{
+		Date result = new Date(0);
+		
+		Calendar cal = Calendar.getInstance();       // get calendar instance
+		cal.setTime(dt);                             // set cal to date
+		cal.set(Calendar.HOUR_OF_DAY, hour);         // set hour to midnight
+		cal.set(Calendar.MINUTE, 0);                 // set minute in hour
+		cal.set(Calendar.SECOND, 0);                 // set second in minute
+		cal.set(Calendar.MILLISECOND, 0);            // set millis in second
+		result = cal.getTime();                      // actually computes the new Date
+		
+		return result;
+	}
+	
+	static int getMinutesFromDate(Date dt)
+	{
+		int result = 0;
+		
+		Calendar cal = Calendar.getInstance();       // get calendar instance
+		cal.setTime(dt);                             // set cal to date
+
+		result = cal.get(Calendar.MINUTE);
+		return result;
+	}
 
 	static long timeDiffInMinutes(Date d1, Date d2)
 	{
@@ -205,6 +272,9 @@ public class CommonUtils
 		return result;
 	}
 
+	// Copied from DBResultNightscout 01 Dec 2016
+	
+/*	
 	public static Date convertNSZDateString(String dateStr) throws ParseException
 	{ 
 		final String z     = new String("Z");
@@ -247,12 +317,13 @@ public class CommonUtils
 
 	}
 
+*/
 	public static String convertNSZDateString(Date date) throws ParseException
 	{ 
 		String result = convertDateString(date, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 		return result;
 	}
-	
+/*	
 	public static Date convertNSDateString(String dateStr) throws ParseException
 	{
 		Date result = convertDateString(dateStr, "yyyy-MM-dd HH:mm:ss.S");
@@ -271,6 +342,7 @@ public class CommonUtils
 		return result;
 	}
 	
+*/
 	public static String convertDateString(Date date, String format) throws ParseException
 	{
 		String result = new String("");
@@ -279,7 +351,7 @@ public class CommonUtils
 
 		return result;
 	}
-
+/*
 	public static String getIDStr(DBObject rs, String fieldName)
 	{
 		String result = new String();
@@ -328,6 +400,7 @@ public class CommonUtils
 		return result;		
 	}
 
+*/	
 	public static Date getFieldDate(DBObject rs, String fieldName)
 	{
 		Date result = new Date(0);
@@ -366,5 +439,129 @@ public class CommonUtils
 
 		return result;
 	}
+	
+	public static String getIDStr(DBObject rs, String fieldName)
+	{
+		String result = new String();
+		if (rs.containsField(fieldName))
+		{
+			result = rs.get(fieldName).toString();
+		}
+		return result;		
+	}
+
+
+	public static String getFieldStr(DBObject rs, String fieldName)
+	{
+		String result = new String();
+		if (rs.containsField(fieldName))
+		{
+			result = (String)rs.get(fieldName);
+		}
+		return result;		
+	}
+
+	public static Double getFieldDouble(DBObject rs, String fieldName)
+	{
+		Double result = null;
+		if (rs.containsField(fieldName))
+		{
+			try
+			{
+				result = new Double(((Number)rs.get(fieldName)).doubleValue());
+			}
+			catch(Exception e)
+			{
+				m_Logger.log(Level.WARNING, "DBResultNightScout Caught exception parsing field " + fieldName + " number "+e.toString() + rs.toString());
+			}
+		}
+		return result;		
+	}
+
+	public static int getFieldInt(DBObject rs, String fieldName)
+	{
+		int result = 0;
+		if (rs.containsField(fieldName))
+		{
+			result = (int)rs.get(fieldName);
+		}
+		return result;		
+	}
+
+	public static long getFieldLong(DBObject rs, String fieldName)
+	{
+		long result = 0;
+		if (rs.containsField(fieldName))
+		{
+			result = (long)rs.get(fieldName);
+		}
+		return result;		
+	}
+
+	public static Date convertNSZDateString(String dateStr) throws ParseException
+	{ 
+		final String z     = new String("Z");
+		final String pls   = new String("+");
+		final String am    = new String("am");
+		final String pm    = new String("pm");
+		final String slash = new String("/");
+		final String dot   = new String(".");
+		
+		final String happ  = new String("0000");
+		
+		if (dateStr.contains(z))
+		{
+			Date result = convertDateString(dateStr, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+			return result;
+		}
+		else if (dateStr.contains(pls))
+		{
+			// HappApp seems to use a different notation here
+
+/*			Pattern happAppPattern = Pattern.compile("([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]+0000)");
+			Matcher happAppMatcher = happAppPattern.matcher(dateStr);
+
+			if (happAppMatcher.find())*/
+			if (dateStr.contains(happ) && !dateStr.contains(dot))
+			{
+				Date result = convertDateString(dateStr, "yyyy-MM-dd'T'HH:mm'+0000'");
+				return result;
+			}
+			else
+			{
+				Date result = convertDateString(dateStr, "yyyy-MM-dd'T'HH:mm:ss.SSS'+000'");
+				return result;
+			}
+		}
+		else if (dateStr.contains(slash) && (dateStr.contains(am) || dateStr.contains(pm)))
+		{
+			Date result = convertDateString(dateStr, "dd/MM/yyyy HH:mm:ss aa");
+			return result;			
+		}
+		else
+		{
+			Date result = convertDateString(dateStr, "yyyy-MM-dd'T'HH:mm:ss.SSS");
+			return result;
+		}
+	}
+
+	public static Date convertNSDateString(String dateStr) throws ParseException
+	{
+		Date result = convertDateString(dateStr, "yyyy-MM-dd HH:mm:ss.S");
+		return result;
+	}
+
+	public static Date convertDateString(String dateStr, String format) throws ParseException
+	{
+		Date result = new Date(0);
+		final DateFormat nsformat   = new SimpleDateFormat(format, Locale.ENGLISH);
+		if (dateStr.length() > 0)
+		{
+			result = nsformat.parse(dateStr);  
+		}
+
+		return result;
+	}
+
 
 }

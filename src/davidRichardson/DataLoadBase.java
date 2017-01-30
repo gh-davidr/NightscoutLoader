@@ -77,10 +77,10 @@ public abstract class DataLoadBase
 				{
 					if (pendingRes.pending())
 					{
-						boolean merged = pendingRes.merge(res);
+						DBResult.MergeResult merged = pendingRes.merge(res);
 						
 						// Is the merge complete?
-						if (!pendingRes.pending())
+						if (merged == DBResult.MergeResult.Merged && !pendingRes.pending())
 						{
 							// Store current pending item
 							resultTreatments.add(pendingRes);
@@ -88,17 +88,35 @@ public abstract class DataLoadBase
 							pendingResAdded = true;
 						}
 						
-						if (!merged)
+						else if (merged == DBResult.MergeResult.TooDistant)
 						{
+							// David 14 Oct 2016
+							// Store current pending item
+							resultTreatments.add(pendingRes);
+							// David 14 Oct 2016
+
 							// Res is potentially of interest so keep it & check
 							pendingRes = new DBResult(res, getDevice());
 							readyForNextRes = false;
+						}
+						
+						// New case.  FOr example Medtronic Temp Basal in middle of bg carb & ins
+						else if (merged == DBResult.MergeResult.CantMerge)
+						{
+							// Create a CP result and store it.
+							resultTreatments.add(new DBResult(res, getDevice()));
+						}
+						
+						else if (merged == DBResult.MergeResult.Duplicate)
+						{
+							; // Don't convert the raw result and allow to slip away quietly...
 						}
 					}
 					else if (pendingRes != null && pendingResAdded == false)
 					{
 						resultTreatments.add(pendingRes);
 						readyForNextRes = true;
+						pendingResAdded = true;
 					}					
 				}
 				else
@@ -111,7 +129,7 @@ public abstract class DataLoadBase
 		}
 		
 		// Store last result
-		if (pendingRes != null /*&& pendingResAdded == false*/)
+		if (pendingRes != null && pendingResAdded == false)
 		{
 			resultTreatments.add(pendingRes);
 		}

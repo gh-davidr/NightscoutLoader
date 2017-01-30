@@ -2,7 +2,7 @@ package davidRichardson;
 
 import java.util.Comparator;
 
-public class ResultFromDBComparator implements Comparator<DBResult> 
+public class ResultFromDBComparator implements Comparator<DBResultInterface> 
 {		
 	private boolean m_DescendingSort = true;
 	ResultFromDBComparator()
@@ -14,7 +14,7 @@ public class ResultFromDBComparator implements Comparator<DBResult>
 		m_DescendingSort = descendingSort;
 	}
 	
-	public int compare(DBResult p1, DBResult p2) 
+	public int compare(DBResultInterface p1, DBResultInterface p2) 
 	{
 		int  result     = 0;
 		long p1_millies = p1.getM_EpochMillies();
@@ -36,4 +36,5 @@ public class ResultFromDBComparator implements Comparator<DBResult>
 		}
 		return result;
 	}
+	
 }

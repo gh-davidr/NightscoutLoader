@@ -14,7 +14,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-public class DBResult 
+public class DBResult implements DBResultInterface
 {
 
 	protected static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());
@@ -35,7 +35,16 @@ public class DBResult
 		LunchTime,
 		DinnerTime,
 		BedTime
-	}
+	};
+	
+	// Need to return more that true/false back from merge
+	enum MergeResult
+	{
+		Merged,     // Raw result can merge
+		TooDistant, // Raw result is part of another result
+		Duplicate,
+		CantMerge   // Raw result is completely different
+	};
 
 	// Work out which time the result falls into
 	public TimeSlot getDBResultTimeSlot()
@@ -529,10 +538,19 @@ public class DBResult
 		if (m_ProximityCheck == true)
 		{
 			// How many minutes apart two entries can be before being considered proximity/duplicate
-			int     proximityMinutes = PrefsNightScoutLoader.getInstance().getM_ProximityMinutes();
-			int     bgCarbsInsulin   = PrefsNightScoutLoader.getInstance().getM_ProximityValueCheck();
-			boolean typeCheck        = PrefsNightScoutLoader.getInstance().isM_ProximityTypeCheck();
+			int     proximityMinutes    = PrefsNightScoutLoader.getInstance().getM_ProximityMinutes();
+			int     checkType           = PrefsNightScoutLoader.getInstance().getM_ProximityCheckType();
 
+//			boolean typeCheck           = PrefsNightScoutLoader.getInstance().isM_ProximityTypeCheck();
+			boolean typeCheck           = checkType == 0 ? false : true;
+			boolean checkBGValue        = PrefsNightScoutLoader.getInstance().isM_CompareBGInProximityCheck();
+			boolean checkCarbValue      = PrefsNightScoutLoader.getInstance().isM_CompareCarbInProximityCheck();
+			boolean checkInsulinValue   = PrefsNightScoutLoader.getInstance().isM_CompareInsulinInProximityCheck();
+			
+			int     checkBGValueDP      = PrefsNightScoutLoader.getInstance().getM_BGDecPlacesProximityCheck();
+			int     checkCarbValueDP    = PrefsNightScoutLoader.getInstance().getM_CarbDecPlacesProximityCheck();
+			int     checkInsulinValueDP = PrefsNightScoutLoader.getInstance().getM_InsulinDecPlacesProximityCheck();
+			
 			// Since we may have 2 adjacent readings either side of the mid point of proximityMinutes, we do a second
 			// pass looking for proximity matches but this time slide the time forward by half the proximityMinutes
 			if (m_ProximityCheckSecondPass == true)
@@ -558,18 +576,19 @@ public class DBResult
 				time = timeUp;
 			}
 			
-			// Include BG result too
-			if (bgCarbsInsulin == 2 && this.getM_CP_Glucose() != null)
+			// Based on preferences, include the BG, Carb and Insulin formatted
+			// again to preference decimal places for each parameter
+			if (checkBGValue == true && this.getM_CP_Glucose() != null)
 			{
-				details = ":BG: " + getM_CP_Glucose().toString();
+				details += " :BG: " + String.format("%." + checkBGValueDP + "f", getM_CP_Glucose());
 			}
-			else if (bgCarbsInsulin == 3 && this.getM_CP_Carbs() != null)
+		    if (checkCarbValue == true && this.getM_CP_Carbs() != null)
 			{
-				details = ":CARBS: " + getM_CP_Carbs().toString();
+				details += " :CARBS: " + String.format("%." + checkCarbValueDP + "f", getM_CP_Carbs());
 			}
-			else if (bgCarbsInsulin == 4 && this.getM_CP_Insulin() != null)
+		    if (checkInsulinValue == true && this.getM_CP_Insulin() != null)
 			{
-				details = ":INSULIN: " + getM_CP_Insulin().toString();
+		    	details += " :INSULIN: " + String.format("%." + checkInsulinValueDP + "f", getM_CP_Insulin());
 			}
 			
 		    result = new String((typeCheck == true ? getM_CP_EventType() : "" ) + String.format("%d", time) + details);
@@ -634,6 +653,44 @@ public class DBResult
 		result = id.hashCode();
 		return result; 
 	}
+	
+	protected Date parseFileDate(String date)
+	{
+		Date result = new Date(0);
+		// One of a couple of formats
+		
+		// 15 Jun 2016
+		// Bug found by Melanie Cragg in Australia 14 Jun 2016
+		// Medtronic dates were all being stored as January
+		// Andy's original file masked this issue as his data was all January!!!
+//		DateFormat dashformat  = new SimpleDateFormat("dd-mm-yyyy", Locale.ENGLISH);
+//		DateFormat slashformat = new SimpleDateFormat("dd/mm/yyyy", Locale.ENGLISH);
+		
+		final String defDashFormat  = new String("dd-MM-yy");
+		final String defSlashFormat = new String("dd/MM/yy");
+		String prefDateFormat       = PrefsNightScoutLoader.getInstance().getM_InputDateFormat();
+		DateFormat dashformat       = new SimpleDateFormat((prefDateFormat.contains("-")  ?  prefDateFormat : defDashFormat), Locale.ENGLISH);
+		DateFormat slashformat      = new SimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat), Locale.ENGLISH);
+		
+		try
+		{
+			if (date.contains("/"))
+			{
+				result = slashformat.parse(date);
+			}
+			else if (date.contains("-"))
+			{
+				result = dashformat.parse(date);
+			}
+		}
+		catch (ParseException e) 
+		{
+   	    	m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "parseFileDate - Unexpected error parsing date: " + date);
+		}
+
+		return result;
+	}
+
 
 	//	Read more: http://javarevisited.blogspot.com/2011/02/how-to-write-equals-method-in-java.html#ixzz3xisun9v6	
 	public String toString()
@@ -814,7 +871,7 @@ public class DBResult
 				// I didn;t manage to correctly get duration for multi-wave for Roche
 				// So protect this from nulls that come back.
 				// Less important to me now that Dawn's on an omnipod
-				if (res.getM_Duration() != null)
+				if (res.getM_Duration() != null && !res.getM_Duration().equals(""))
 				{
 					m_CP_Duration = new Double(Double.parseDouble(res.getM_Duration()));
 				}
@@ -839,9 +896,11 @@ public class DBResult
 				m_CP_EventType = "Temp Basal End";
 			}
 
-			// Basal rate provided but we convert to a start basal
+			// Basal rate provided (Diasend) but we convert to a start basal
 			// The merge will set the duration and percent is supplied externally.
-			else if (resType.equals("Basal"))
+			else if (resType.equals("Basal") && 
+					// Only if we are inferring temp basals
+					PrefsNightScoutLoader.getInstance().isM_InferDiasendTempBasals())
 			{
 				m_CP_EventType = "Temp Basal";
 				m_CP_Duration = new Double(0);
@@ -904,9 +963,10 @@ public class DBResult
 		return result;
 	}
 
-	public boolean merge(DBResult res)
+	
+	public MergeResult merge(DBResult res)
 	{
-		boolean result = true;  // Assume that the result is in close proximity
+		MergeResult result = MergeResult.Merged;  // Assume that the result cannot be merged
 
 		// 17 Apr 016
 		// Try a big try
@@ -1007,6 +1067,25 @@ public class DBResult
 					m_Ins = true;
 
 				}
+
+				// Check for duplicate.  Sometimes see this with Medtronic results
+				else if ((resType.equals("BG") && m_BG && m_CP_Glucose.equals(Double.parseDouble(res.m_Result)) ||
+						(resType.equals("Carbs") && m_Carb && m_CP_Carbs.equals(Double.parseDouble(res.m_Result))) ||
+						(resType.equals("Standard Bolus") || resType.equals("Pen Units") || 
+								resType.equals("MultiWave") || resType.equals("Extended Bolus Start") ) && m_Ins && m_CP_Insulin.equals(Double.parseDouble(res.m_Result)))
+						)
+				{
+					result = MergeResult.Duplicate;
+				}
+
+				// David 14 Oct 2016
+				// So the results are in close proximity, but we've not really merged anything
+				else
+				{
+					// Return false so the current mergee gets converted to a candidate
+					result = MergeResult.CantMerge;					
+				}
+				// David 14 Oct 2016
 			}
 
 			// Could be either side of a long running temp basal
@@ -1037,7 +1116,7 @@ public class DBResult
 				m_Ins = false;
 
 				// Return false so the current mergee gets converted to a candidate
-				result = false;
+				result = MergeResult.TooDistant;
 			}
 
 		}
@@ -1053,6 +1132,166 @@ public class DBResult
 
 		return result;
 	}
+
+	
+//	public boolean merge(DBResult res)
+//	{
+//		boolean result = true;  // Assume that the result is in close proximity
+//
+//		// 17 Apr 016
+//		// Try a big try
+//		try
+//		{
+//
+//			// Compare time of current object with the merge.
+//			// If less than a minute then it could be a merge
+//			Date thisTime = this.getM_Time();
+//			Date resTime  = res.getM_Time();
+//
+//			/*		long maxDiffBetweenSameMealEvent  = 1000 * 60 * 30; // Allow up to half an hour between BG, Carbs & Ins
+//		long maxDiffBetweenSameCorrection = 1000 * 60 * 5;  // Allow up to 5 mins between BG & Ins
+//			 */
+//			long maxDiffBetweenSameMealEvent  = 1000 * 60 * 
+//					// Get Preference Value now
+//					PrefsNightScoutLoader.getInstance().getM_MaxMinsBetweenSameMealEvent();
+//			long maxDiffBetweenSameCorrection = 1000 * 60 * 
+//					// Get Preference Value now
+//					PrefsNightScoutLoader.getInstance().getM_MaxMinsBetweenSameCorrectionEvent();
+//
+//			long diffMillies = resTime.getTime() - thisTime.getTime();
+//
+//			if ((diffMillies <= maxDiffBetweenSameCorrection) || (diffMillies <= maxDiffBetweenSameMealEvent && m_Carb))
+//			{
+//				// Add the notes from the other item with optional separator
+//				m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + res.getM_Notes();
+//
+//				// First, assume it's a Carb Correction as we are merging two results.
+//				String resType = res.getM_ResultType();
+//
+//				if (resType.equals("BG") && !m_BG) // Last check in case results out of sequence
+//				{
+//					m_BG = true;
+//					m_CP_Glucose = new Double(Double.parseDouble(res.m_Result));
+//				}
+//				else if (resType.equals("Carbs") && !m_Carb)
+//				{
+//					m_Carb = true;
+//					m_CP_Carbs = new Double(Double.parseDouble(res.m_Result));
+//					// However, if we see a Carb then it must be a Meal Bolus instead
+//					m_CP_EventType = "Meal Bolus";
+//
+//					// We can work out the Carbs time in Mins by assuming meal began at the time of first event
+//					m_CP_CarbsTime = (double)(diffMillies / (1000 * 60));
+//				}
+//				else if (resType.equals("Standard Bolus") && !m_Ins)
+//				{
+//					m_Ins = true;
+//					m_CP_Insulin = Double.parseDouble(res.m_Result);
+//				}
+//				else if (resType.equals("Pen Units")  && !m_Ins)
+//				{
+//					m_Ins = true;
+//					if (!m_Carb && m_BG)
+//					{
+//						m_Corr = true; // Allow a BG first then Ins
+//					}
+//					m_CP_EventType = "Correction Bolus";
+//					m_CP_Insulin = Double.parseDouble(res.getM_Result());
+//					m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + "PenBolus";
+//				}
+//
+//				else if (resType.equals("MultiWave") && !m_Ins)
+//				{
+//					m_Ins = true;
+//					if (!m_Carb && m_BG)
+//					{
+//						m_Corr = true; // Allow a BG first then Ins
+//					}
+//					m_CP_Insulin = Double.parseDouble(res.m_Result);
+//					m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + "PumpMultiWave";
+//				}
+//				/*
+//				 * Looks like extended is not supported
+//				 */
+//				/* But let's store it as a NOTE for now
+//				 */
+//				else if (resType.equals("Extended Bolus Start"))
+//				{
+//					m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + "Extended Bolus " + res.getM_Duration() + " Mins";
+//					m_CP_Duration = Double.parseDouble(res.getM_Duration());
+//
+//					// If we already have insulin amount, then add the amounts together.
+//					if (m_Ins)
+//					{
+//						Double totIns = this.getM_CP_Insulin() + Double.parseDouble(res.getM_Result());
+//
+//						m_CP_Insulin = totIns;
+//
+//						m_CP_Notes += "(Insulin Combined. " + res.getM_Result() + "u Extended)";
+//					}
+//					else
+//					{
+//						m_CP_Insulin = Double.parseDouble(res.m_Result);
+//					}
+//
+//					m_Ins = true;
+//
+//				}
+//				
+//				// David 14 Oct 2016
+//				// So the results are in close proximity, but we've not really merged anything
+//				else
+//				{
+//					// Return false so the current mergee gets converted to a candidate
+//					result = false;					
+//				}
+//				// David 14 Oct 2016
+//			}
+//
+//			// Could be either side of a long running temp basal
+//			else if (m_TmpBasal == true && res.getM_ResultType().equals("Basal"))
+//			{
+//				// Get duration from time differences
+//				Double diffMilliesDbl = new Double(diffMillies);
+//
+//				// Round to nearest whole number
+//				m_CP_Duration = Math.round(diffMilliesDbl / ( 60000.0 )) * 1.0; // Convert duration to minutes.
+//
+//				m_TmpBasal = false;
+//			}
+//
+//			else
+//			{
+//				// Check if we need to change the type first ...
+//
+//				// BG & Insulin is a correction!
+//				if (m_BG && m_Ins && !m_Carb)
+//				{
+//					m_CP_EventType = "Correction Bolus";
+//				}
+//				// Result is outside what we expect, so reset previous pending flags
+//				// so this gets stored.
+//				m_BG = false;
+//				m_Carb = false;
+//				m_Ins = false;
+//
+//				// Return false so the current mergee gets converted to a candidate
+//				result = false;
+//			}
+//
+//		}
+//		catch (Exception e) 
+//		{
+//			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+"> DBResult " +
+//					" Exception caught merging DBResult for Care Portal from Raw data: " + res.toString()
+//					+ res.rawToString() + " DURATION is " + res.getM_Duration());
+//		}
+//		finally
+//		{
+//		}
+//
+//		return result;
+//	}
 
 
 	public BasicDBObject createNightScoutObject()
@@ -1464,6 +1703,7 @@ public class DBResult
 	/**
 	 * @return the m_EpochMillies
 	 */
+	@Override
 	public long getM_EpochMillies() {
 		return m_EpochMillies;
 	}

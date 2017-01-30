@@ -7,6 +7,7 @@ import javax.swing.JPanel;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
+import javax.swing.border.BevelBorder;
 import javax.swing.JTextField;
 //import javax.swing.JTextArea;
 //import javax.swing.JScrollPane;
@@ -54,6 +55,9 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
 import java.awt.Color;
 import java.awt.Font;
+import javax.swing.JSlider;
+import javax.swing.JComboBox;
+import javax.swing.DefaultComboBoxModel;
 
 
 public class WinAnalyzer extends JDialog {
@@ -80,7 +84,7 @@ public class WinAnalyzer extends JDialog {
 	private JLabel lblHighRangeThreshold;
 
 	//	private DataLoadRoche m_SQLServerLoader;
-	//	private DataLoadNightScout   m_MongoDBLoader;
+	//	private DataLoadNightScoutTreatments   m_MongoDBLoader;
 
 	private JLabel lblDaysBack;
 	private JLabel lblHighThreshold;
@@ -102,10 +106,15 @@ public class WinAnalyzer extends JDialog {
 	private JLabel lblBedTrendEndStartTime;
 	private JLabel lblBedTrendEndEndTime;
 	private JLabel lblBadNightStartTime;
-	private JButton button_2;
+	private JButton btnResetToDefaults;
 	private JLabel lblBadNightEndTime;
 	private JRadioButton rdbtnCompressMealTrends;
 	private JRadioButton rdbtnTotalRecurringTrendsOnly;
+	private JRadioButton rdbtnIncludeBreakfast;
+	private JRadioButton rdbtnIncludeLunch;
+	private JRadioButton rdbtnIncludeDinner;
+	private JRadioButton rdbtnIncludeOvernight;
+
 
 	private JButton m_AnaylzeButton;
 	private JTextField tf_BGUnits;
@@ -122,20 +131,26 @@ public class WinAnalyzer extends JDialog {
 	private JSpinner sp_DaysBack;
 	private JSpinner sp_StartDate;
 	private JSpinner sp_EndDate;
-	
+	private JSpinner sp_CGMTrendIntervalDuration;
+
 	private JDatePickerImpl jp_StartDate;
 	private JDatePickerImpl jp_EndDate;
 
 	private JLabel lblStartDate;
 	private JLabel lblEndDate;
-	
+
 	private boolean m_SettingDatesOrDays = false;
-	
+
 	private Date    m_MostRecentResultDate = new Date(0);
 	private Date    m_OldestResultDate     = new Date(0);
 	private String  m_MostRecentResultDateStr = new String("");
 	private String  m_OldestResultDateStr     = new String("");
-	
+	private JButton btnCGMDates;
+
+	private WinCGMRanges m_WinCGMRanges = null;
+	private JComboBox<String> cb_ExcelOutputLevel;
+	private JLabel lblCgmTrendHour;
+
 	/**
 	 * Launch the application.
 	 */
@@ -164,10 +179,10 @@ public class WinAnalyzer extends JDialog {
 		setIconImage(img.getImage());
 
 		//		m_SQLServerLoader = new DataLoadRoche();
-		//		m_MongoDBLoader   = new DataLoadNightScout();
+		//		m_MongoDBLoader   = new DataLoadNightScoutTreatments();
 
 		super.setTitle(title);
-		setBounds(100, 100, 750, 550);
+		setBounds(100, 100, 770, 550);
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] {300, 0};
 		gridBagLayout.rowHeights = new int[] {300, 25};
@@ -176,15 +191,16 @@ public class WinAnalyzer extends JDialog {
 		getContentPane().setLayout(gridBagLayout);
 
 		JPanel panel_1 = new JPanel();
+		panel_1.setBorder(new BevelBorder(BevelBorder.RAISED, null, null, null, null));
 		GridBagConstraints gbc_panel_1 = new GridBagConstraints();
-		gbc_panel_1.insets = new Insets(0, 0, 5, 0);
+		gbc_panel_1.insets = new Insets(0, 0, 5, 5);
 		gbc_panel_1.gridx = 0;
 		gbc_panel_1.gridy = 0;
 		getContentPane().add(panel_1, gbc_panel_1);
 		GridBagLayout gbl_panel_1 = new GridBagLayout();
 		gbl_panel_1.columnWidths = new int[] {50, 147, 0, 70, 0, 0, 0, 0, 0, 0};
 		gbl_panel_1.rowHeights = new int[] {30, 0, 0, 0, 0, 0, 0, 0, 30, 30, 0, 30, 0, 0, 0, 0, 0};
-		gbl_panel_1.columnWeights = new double[]{0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0};
+		gbl_panel_1.columnWeights = new double[]{0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0};
 		gbl_panel_1.rowWeights = new double[]{1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 		panel_1.setLayout(gbl_panel_1);
 
@@ -197,7 +213,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblExcelFile, gbc_lblExcelFile);
 
 		tf_ExcelFile = new JTextField(PrefsNightScoutLoader.getInstance().getM_AnalysisFilePath());
-		tf_ExcelFile.setToolTipText("Analysis results are stored in Excel file for convenience and archiving.  Select the file to use for this analysis here.");
+		tf_ExcelFile.setToolTipText("<html>Analysis results are stored in Excel file for convenience and archiving.  <br>Select the file to use for this analysis here.</html>");
 		GridBagConstraints gbc_tf_ExcelFile = new GridBagConstraints();
 		gbc_tf_ExcelFile.fill = GridBagConstraints.HORIZONTAL;
 		gbc_tf_ExcelFile.anchor = GridBagConstraints.NORTHWEST;
@@ -208,6 +224,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(tf_ExcelFile, gbc_tf_ExcelFile);
 
 		JButton btnSelect = new JButton("Select");
+		btnSelect.setToolTipText("<html>Provides a means of selecting the Excel file for analysis output.</html>");
 		btnSelect.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				JFileChooser chooser = new JFileChooser();
@@ -240,7 +257,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblDaysBack, gbc_lblDaysBack);
 
 		sp_DaysBack = new JSpinner();
-		sp_DaysBack.setToolTipText("This is a convenience parameter to help set the start date for analysis.  It counts back from the most recent result this many days.");
+		sp_DaysBack.setToolTipText("<html>This is a convenience parameter to help set the start date for analysis.  <br>It counts back from the most recent result this many days.</html>");
 		sp_DaysBack.setModel(new SpinnerNumberModel(14, 1, 1000, 1));
 		sp_DaysBack.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerDaysBack());
 		sp_DaysBack.addChangeListener(new ChangeListener() {
@@ -248,7 +265,7 @@ public class WinAnalyzer extends JDialog {
 				setDatesFromDaysBack();
 			}
 		});
-		
+
 		GridBagConstraints gbc_sp_DaysBack = new GridBagConstraints();
 		gbc_sp_DaysBack.anchor = GridBagConstraints.WEST;
 		gbc_sp_DaysBack.insets = new Insets(0, 0, 5, 5);
@@ -257,9 +274,36 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(sp_DaysBack, gbc_sp_DaysBack);
 
 		sp_breakfastStart = new JSpinner();
-		sp_breakfastStart.setToolTipText("Start time for breakfast period.  Used for meal or correction trends that start in one period and could end in another.  (Overnight trends use different periods.)");
+		sp_breakfastStart.setToolTipText("<html>Start time for breakfast period.  <br>Used for meal or correction trends that start in one period and could end in another.  <br>(Overnight trends use different periods.)</html>");
 		sp_breakfastStart.setModel(getTimeListModel());
 		sp_breakfastStart.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerBreakfastTimeStart());
+
+		cb_ExcelOutputLevel = new JComboBox<String>();
+		cb_ExcelOutputLevel.setToolTipText("<html>Determines how much detail is included in Excel report.<br>Full Detail includes extra tabs that show the progression of underlying<br>raw data into intermeidate forms that are then aggregated for trend reports" +
+		"<br><br>It is easy to get lost in a sea of too much data here, <br>so keep at minimal level unless an advanced user with need to access the detail.</html>");
+
+		cb_ExcelOutputLevel.setModel(new DefaultComboBoxModel<String>(new String[] 
+				{"Minimal Detail Excel Summary",  "Moderate Detail Excel Summary", "Full Detail Excel Summary",}));
+		GridBagConstraints gbc_comboBox = new GridBagConstraints();
+		gbc_comboBox.insets = new Insets(0, 0, 5, 5);
+		gbc_comboBox.fill = GridBagConstraints.HORIZONTAL;
+		gbc_comboBox.gridx = 5;
+		gbc_comboBox.gridy = 1;
+		panel_1.add(cb_ExcelOutputLevel, gbc_comboBox);
+
+		tf_BGUnits = new JTextField();
+		tf_BGUnits.setFont(new Font("Tahoma", Font.BOLD | Font.ITALIC, 11));
+		tf_BGUnits.setBackground(Color.YELLOW);
+		tf_BGUnits.setToolTipText("Go to Settings panel to change between mmol/L and mg/dL");
+		tf_BGUnits.setHorizontalAlignment(SwingConstants.CENTER);
+		tf_BGUnits.setEditable(false);
+		GridBagConstraints gbc_tf_BGUnits = new GridBagConstraints();
+		gbc_tf_BGUnits.insets = new Insets(0, 0, 5, 5);
+		gbc_tf_BGUnits.fill = GridBagConstraints.HORIZONTAL;
+		gbc_tf_BGUnits.gridx = 9;
+		gbc_tf_BGUnits.gridy = 1;
+		panel_1.add(tf_BGUnits, gbc_tf_BGUnits);
+		tf_BGUnits.setColumns(10);
 
 		lblStartDate = new JLabel("Start Date");
 		GridBagConstraints gbc_lblStartDate = new GridBagConstraints();
@@ -270,7 +314,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblStartDate, gbc_lblStartDate);
 
 		sp_StartDate = new JSpinner();
-		sp_StartDate.setToolTipText("Start date for analysis.  Results on this date and after and before the End Date are considered in the analysis.");
+		sp_StartDate.setToolTipText("<html>Start date for analysis.  <br>Results on this date and after and before the End Date are considered in the analysis.</html>");
 		sp_StartDate.setModel(new SpinnerDateModel(new Date(1465513200000L), null, null, Calendar.HOUR));
 		sp_StartDate.getModel().setValue(new Date(PrefsNightScoutLoader.getInstance().getM_AnalyzerStartDateLong()));
 
@@ -279,12 +323,13 @@ public class WinAnalyzer extends JDialog {
 				setDaysBackFromDates();
 			}
 		});
-		
+
 		jp_StartDate = new JDatePickerImpl(new JDatePanelImpl(new UtilDateModel()), new DateLabelFormatter());
-		jp_StartDate.setToolTipText("Start date for analysis.  Results on this date and after and before the End Date are considered in the analysis.");
+		jp_StartDate.setToolTipText("<html>Start date for analysis.  <br>Results on this date and after and before the End Date are considered in the analysis.</html>");
 
 		jp_EndDate = new JDatePickerImpl(new JDatePanelImpl(new UtilDateModel()), new DateLabelFormatter());
-		
+		jp_EndDate.setToolTipText("<html>End date for analysis.  <br>Results on the Start date and after and before this Date are considered in the analysis.</html>");
+
 		jp_StartDate.setMinimumSize(new Dimension(115,30));
 		jp_EndDate.setMinimumSize(new Dimension(115,30));
 
@@ -292,10 +337,14 @@ public class WinAnalyzer extends JDialog {
 		// End date will be changed to the most recent date in result set once known.
 		((UtilDateModel)jp_StartDate.getModel()).setValue(new Date(PrefsNightScoutLoader.getInstance().getM_AnalyzerStartDateLong()));
 		((UtilDateModel)jp_EndDate.getModel()).setValue(new Date(PrefsNightScoutLoader.getInstance().getM_AnalyzerEndDateLong()));
-		
+
 		// Put an action handler on end date to catch when values go later than most recent result
 		jp_EndDate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+
+				checkAndSetDates(jp_EndDate);
+
+				/*
 //				Date startDate = (Date)jp_StartDate.getModel().getValue();
 				Date endDate   = (Date)jp_EndDate.getModel().getValue();
 				if (endDate.after(m_MostRecentResultDate))
@@ -316,12 +365,17 @@ public class WinAnalyzer extends JDialog {
 					"Analysis can only therefore run on results between (" + m_OldestResultDateStr + ") and (" + m_MostRecentResultDateStr + ")");
 				}
 				setDaysBackFromDates();
+				 */
 			}
 		});
 
 		// Put an action handler on start date to catch when values go earlier than oldest result
 		jp_StartDate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+
+				checkAndSetDates(jp_StartDate);
+
+				/*
 //				Date startDate = (Date)jp_StartDate.getModel().getValue();
 				Date endDate   = (Date)jp_EndDate.getModel().getValue();
 				if (endDate.before(m_OldestResultDate))
@@ -342,18 +396,20 @@ public class WinAnalyzer extends JDialog {
 					"Analysis can only therefore run on results between (" + m_OldestResultDateStr + ") and (" + m_MostRecentResultDateStr + ")");
 				}
 				setDaysBackFromDates();
+				 */
 			}
 		});
 
-		
+
 		GridBagConstraints gbc_sp_StartDate = new GridBagConstraints();
 		gbc_sp_StartDate.anchor = GridBagConstraints.WEST;
 		gbc_sp_StartDate.insets = new Insets(0, 0, 5, 5);
 		gbc_sp_StartDate.gridx = 3;
 		gbc_sp_StartDate.gridy = 2;
-//		panel_1.add(sp_StartDate, gbc_sp_StartDate);
+		//		panel_1.add(sp_StartDate, gbc_sp_StartDate);
 		panel_1.add(jp_StartDate, gbc_sp_StartDate);
 
+		m_WinCGMRanges = new WinCGMRanges(this, "Nightscout Loader " + Version.getInstance().getM_Version() + " - Analyzer - CGM Dates");
 
 		lblEndDate = new JLabel("End Date");
 		GridBagConstraints gbc_lblEndDate = new GridBagConstraints();
@@ -364,7 +420,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblEndDate, gbc_lblEndDate);
 
 		sp_EndDate = new JSpinner();
-		sp_EndDate.setToolTipText("End date for analysis.  Results on this date and before and on or after the Start Date are considered in the analysis.");
+		sp_EndDate.setToolTipText("<html>End date for analysis.  <br>Results on this date and before and on or after the Start Date are considered in the analysis.</html>");
 		sp_EndDate.setModel(new SpinnerDateModel(new Date(1465513200000L), null, null, Calendar.DAY_OF_YEAR));
 		sp_EndDate.getModel().setValue(new Date(PrefsNightScoutLoader.getInstance().getM_AnalyzerEndDateLong()));
 		GridBagConstraints gbc_spinner = new GridBagConstraints();
@@ -372,7 +428,7 @@ public class WinAnalyzer extends JDialog {
 		gbc_spinner.insets = new Insets(0, 0, 5, 5);
 		gbc_spinner.gridx = 9;
 		gbc_spinner.gridy = 2;
-//		panel_1.add(sp_EndDate, gbc_spinner);
+		//		panel_1.add(sp_EndDate, gbc_spinner);
 		panel_1.add(jp_EndDate, gbc_spinner);
 
 		JLabel lblBreakfastStart = new JLabel("Breakfast Start Time");
@@ -390,7 +446,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(sp_breakfastStart, gbc_sp_breakfastStart);
 
 		sp_dinnerStart = new JSpinner();
-		sp_dinnerStart.setToolTipText("Start time for dinner period.  Used for meal or correction trends that start in one period and could end in another.  (Overnight trends use different periods.)");
+		sp_dinnerStart.setToolTipText("<html>Start time for dinner period.  <br>Used for meal or correction trends that start in one period and could end in another.  <br>(Overnight trends use different periods.)</html>");
 		sp_dinnerStart.setModel(getTimeListModel());
 		sp_dinnerStart.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerDinnerTimeStart());
 
@@ -403,7 +459,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblLunchStart, gbc_lblLunchStart);
 
 		sp_lunchStart = new JSpinner();
-		sp_lunchStart.setToolTipText("Start time for lunch period.  Used for meal or correction trends that start in one period and could end in another.  (Overnight trends use different periods.)");
+		sp_lunchStart.setToolTipText("<html>Start time for lunch period.  <br>Used for meal or correction trends that start in one period and could end in another.  <br>(Overnight trends use different periods.)</html>");
 		sp_lunchStart.setModel(getTimeListModel());
 		sp_lunchStart.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerLunchTimeStart());
 		GridBagConstraints gbc_sp_lunchStart = new GridBagConstraints();
@@ -439,7 +495,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblBedStart, gbc_lblBedStart);
 
 		sp_bedStart = new JSpinner();
-		sp_bedStart.setToolTipText("Start time for bed period.  Used for meal or correction trends that start in one period and could end in another.  (Overnight trends use different periods.)");
+		sp_bedStart.setToolTipText("<html>Start time for bed period.  <br>Used for meal or correction trends that start in one period and could end in another.  <br>(Overnight trends use different periods.)</html>");
 		sp_bedStart.setModel(getTimeListModel());
 		sp_bedStart.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTimeStart());
 		GridBagConstraints gbc_sp_bedStart = new GridBagConstraints();
@@ -458,7 +514,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblHighThreshold, gbc_lblHighThreshold);
 
 		tf_HighThreshold = new JTextField(String.format("%g", PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThreshold()));
-		tf_HighThreshold.setToolTipText("Hyper threshold.  BG Values above this are considered HYPER");
+		tf_HighThreshold.setToolTipText("<html>Hyper threshold.  <br>BG Values above this are considered HYPER.</html>");
 		tf_HighThreshold.setHorizontalAlignment(SwingConstants.LEFT);
 		tf_HighThreshold.setColumns(5);
 		GridBagConstraints gbc_tf_HighThreshold = new GridBagConstraints();
@@ -478,7 +534,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblHighThresholdRelevance, gbc_lblHighThresholdRelevance);
 
 		tf_HighThresholdRelevanceFactor = new JTextField(String.format("%g", PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThresholdRelevanceFactor()));
-		tf_HighThresholdRelevanceFactor.setToolTipText("BG values at this value and above are considered high and scored from 1 to 10 for severity purposes.  1 would be this lower level, and increase as the BG levels go higher.");
+		tf_HighThresholdRelevanceFactor.setToolTipText("<html>BG values at this value and above are considered high and scored from 1 to 10 for severity purposes.  <br>1 would be this lower level, and increase as the BG levels go higher.</html>");
 		tf_HighThresholdRelevanceFactor.setHorizontalAlignment(SwingConstants.LEFT);
 		tf_HighThresholdRelevanceFactor.setColumns(5);
 		GridBagConstraints gbc_tfHighThresholdRelevanceFactor = new GridBagConstraints();
@@ -498,7 +554,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblLowThreshold, gbc_lblLowThreshold);
 
 		tf_LowThreshold = new JTextField(String.format("%g", PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThreshold()));
-		tf_LowThreshold.setToolTipText("Hyper threshold.  BG Values below this are considered HYPO");
+		tf_LowThreshold.setToolTipText("<html>Hyper threshold.  <br>BG Values below this are considered HYPO.</html>");
 		GridBagConstraints gbc_tf_LowThreshold = new GridBagConstraints();
 		gbc_tf_LowThreshold.fill = GridBagConstraints.HORIZONTAL;
 		gbc_tf_LowThreshold.anchor = GridBagConstraints.NORTHWEST;
@@ -517,7 +573,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblLowThresholdRelevanceFactor, gbc_lblLowThresholdRelevanceFactor);
 
 		tf_LowThresholdRelevanceFactor = new JTextField(String.format("%g", PrefsNightScoutLoader.getInstance().getM_AnalyzerLowThresholdRelevanceFactor()));
-		tf_LowThresholdRelevanceFactor.setToolTipText("BG values at this value and below are considered low and scored from 1 to 10 for severity purposes.  1 would be this higherrlevel, and increase as the BG levels go lower.");
+		tf_LowThresholdRelevanceFactor.setToolTipText("<html>BG values at this value and below are considered low and scored from 1 to 10 for severity purposes.  <br>1 would be this higherrlevel, and increase as the BG levels go lower.</html>");
 		tf_LowThresholdRelevanceFactor.setHorizontalAlignment(SwingConstants.LEFT);
 		tf_LowThresholdRelevanceFactor.setColumns(5);
 		GridBagConstraints gbc_tfLowThresholdRelevanceFactor = new GridBagConstraints();
@@ -536,7 +592,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblOvernightTrendRatio, gbc_lblOvernightTrendRatio);
 
 		tf_OvernightTrendRatio = new JTextField(String.format("%g", PrefsNightScoutLoader.getInstance().getM_AnalyzerOvernightChangeTrendRatio()));
-		tf_OvernightTrendRatio.setToolTipText("The severity of a trend is calculated by dividing the difference by the start BG.  If the fraction is this ratio or higher, then it's considered severity 10.  The analyzer calculates severity proportonally right down to 1.  The ratio can be set by meal time.");
+		tf_OvernightTrendRatio.setToolTipText("<html>The severity of a trend is calculated by dividing the difference by the start BG.  <br>If the fraction is this ratio or higher, then it's considered severity 10.  <br>The analyzer calculates severity proportonally right down to 1.  <br>The ratio can be set by meal time.</html>");
 		tf_OvernightTrendRatio.setColumns(10);
 		GridBagConstraints gbc_tf_OvernightTrendRatio = new GridBagConstraints();
 		gbc_tf_OvernightTrendRatio.gridwidth = 2;
@@ -555,7 +611,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblBreakfastTrendRatio, gbc_lblBreakfastTrendRatio);
 
 		tf_BreakfastTrendRatio = new JTextField(String.format("%g", PrefsNightScoutLoader.getInstance().getM_AnalyzerBreakfastChangeTrendRatio()));
-		tf_BreakfastTrendRatio.setToolTipText("The severity of a trend is calculated by dividing the difference by the start BG.  If the fraction is this ratio or higher, then it's considered severity 10.  The analyzer calculates severity proportonally right down to 1.  The ratio can be set by meal time.");
+		tf_BreakfastTrendRatio.setToolTipText("<html>The severity of a trend is calculated by dividing the difference by the start BG.  <br>If the fraction is this ratio or higher, then it's considered severity 10.  <br>The analyzer calculates severity proportonally right down to 1.  <br>The ratio can be set by meal time.</html>");
 		tf_BreakfastTrendRatio.setColumns(10);
 		GridBagConstraints gbc_tf_BreakfastTrendRatio = new GridBagConstraints();
 		gbc_tf_BreakfastTrendRatio.insets = new Insets(0, 0, 5, 5);
@@ -574,7 +630,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblMinMinsForTrend, gbc_lblMinMinsForTrend);
 
 		tf_MinMinsForTrend = new JTextField(String.format("%d", PrefsNightScoutLoader.getInstance().getM_AnalyzerMinMinsForTrendResults()));
-		tf_MinMinsForTrend.setToolTipText("A trend BG requires two results at least this many minutes apart.");
+		tf_MinMinsForTrend.setToolTipText("<html>A trend BG requires two results at least this many minutes apart.</html>");
 		GridBagConstraints gbc_tf_MinMinsForTrend = new GridBagConstraints();
 		gbc_tf_MinMinsForTrend.fill = GridBagConstraints.HORIZONTAL;
 		gbc_tf_MinMinsForTrend.anchor = GridBagConstraints.EAST;
@@ -596,7 +652,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblLunchTrendRatio, gbc_lblLunchTrendRatio);
 
 		tf_LunchTrendRatio = new JTextField(String.format("%g", PrefsNightScoutLoader.getInstance().getM_AnalyzerLunchChangeTrendRatio()));
-		tf_LunchTrendRatio.setToolTipText("The severity of a trend is calculated by dividing the difference by the start BG.  If the fraction is this ratio or higher, then it's considered severity 10.  The analyzer calculates severity proportonally right down to 1.  The ratio can be set by meal time.");
+		tf_LunchTrendRatio.setToolTipText("<html>The severity of a trend is calculated by dividing the difference by the start BG.  <br>If the fraction is this ratio or higher, then it's considered severity 10.  <br>The analyzer calculates severity proportonally right down to 1.  <br>The ratio can be set by meal time.</html>");
 		GridBagConstraints gbc_tf_LunchTrendRatio = new GridBagConstraints();
 		gbc_tf_LunchTrendRatio.fill = GridBagConstraints.HORIZONTAL;
 		gbc_tf_LunchTrendRatio.anchor = GridBagConstraints.NORTHWEST;
@@ -616,7 +672,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblDinnerTrendRatio, gbc_lblDinnerTrendRatio);
 
 		tf_DinnerTrendRatio = new JTextField(String.format("%g", PrefsNightScoutLoader.getInstance().getM_AnalyzerDinnerChangeTrendRatio()));
-		tf_DinnerTrendRatio.setToolTipText("The severity of a trend is calculated by dividing the difference by the start BG.  If the fraction is this ratio or higher, then it's considered severity 10.  The analyzer calculates severity proportonally right down to 1.  The ratio can be set by meal time.");
+		tf_DinnerTrendRatio.setToolTipText("<html>The severity of a trend is calculated by dividing the difference by the start BG.  <br>If the fraction is this ratio or higher, then it's considered severity 10.  <br>The analyzer calculates severity proportonally right down to 1.  <br>The ratio can be set by meal time.</html>");
 		tf_DinnerTrendRatio.setColumns(10);
 		GridBagConstraints gbc_tf_DinnerTrendRatio = new GridBagConstraints();
 		gbc_tf_DinnerTrendRatio.insets = new Insets(0, 0, 5, 5);
@@ -624,6 +680,66 @@ public class WinAnalyzer extends JDialog {
 		gbc_tf_DinnerTrendRatio.gridx = 9;
 		gbc_tf_DinnerTrendRatio.gridy = 9;
 		panel_1.add(tf_DinnerTrendRatio, gbc_tf_DinnerTrendRatio);
+
+		rdbtnIncludeBreakfast = new JRadioButton("Include Breakfast");
+		rdbtnIncludeBreakfast.setToolTipText("<html>Control that determines whether Breakfast meals are considered for Trend Analysis</html>");
+		rdbtnIncludeBreakfast.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				checkIncludeOptions(rdbtnIncludeBreakfast);
+			}
+		});
+		rdbtnIncludeBreakfast.setSelected(PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeBreakfast());
+		GridBagConstraints gbc_rdbtnIncludeBreakfast = new GridBagConstraints();
+		gbc_rdbtnIncludeBreakfast.insets = new Insets(0, 0, 5, 5);
+		gbc_rdbtnIncludeBreakfast.gridx = 1;
+		gbc_rdbtnIncludeBreakfast.gridy = 10;
+		panel_1.add(rdbtnIncludeBreakfast, gbc_rdbtnIncludeBreakfast);
+
+		rdbtnIncludeLunch = new JRadioButton("Include Lunch");
+		rdbtnIncludeLunch.setToolTipText("<html>Control that determines whether Lunch meals are considered for Trend Analysis</html>");
+		rdbtnIncludeLunch.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				checkIncludeOptions(rdbtnIncludeLunch);
+			}
+		});
+		rdbtnIncludeLunch.setSelected(PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeLunch());
+		GridBagConstraints gbc_rdbtnIncludeLunch = new GridBagConstraints();
+		gbc_rdbtnIncludeLunch.insets = new Insets(0, 0, 5, 5);
+		gbc_rdbtnIncludeLunch.gridx = 3;
+		gbc_rdbtnIncludeLunch.gridy = 10;
+		panel_1.add(rdbtnIncludeLunch, gbc_rdbtnIncludeLunch);
+
+		rdbtnIncludeDinner = new JRadioButton("Include Dinner");
+		rdbtnIncludeDinner.setToolTipText("<html>Control that determines whether Dinner meals are considered for Trend Analysis</html>");
+		rdbtnIncludeDinner.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				checkIncludeOptions(rdbtnIncludeDinner);
+			}
+		});
+		rdbtnIncludeDinner.setSelected(PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeDinner());
+		GridBagConstraints gbc_rdbtnIncludeDinner = new GridBagConstraints();
+		gbc_rdbtnIncludeDinner.insets = new Insets(0, 0, 5, 5);
+		gbc_rdbtnIncludeDinner.gridx = 5;
+		gbc_rdbtnIncludeDinner.gridy = 10;
+		panel_1.add(rdbtnIncludeDinner, gbc_rdbtnIncludeDinner);
+
+		rdbtnIncludeOvernight = new JRadioButton("Include Overnight");
+		rdbtnIncludeOvernight.setToolTipText("<html>Control that determines whether Overnight events are considered for Trend Analysis</html>");
+		rdbtnIncludeOvernight.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				checkIncludeOptions(rdbtnIncludeOvernight);
+			}
+		});
+		rdbtnIncludeOvernight.setSelected(PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeOvernight());
+		GridBagConstraints gbc_rdbtnIncludeOvernight = new GridBagConstraints();
+		gbc_rdbtnIncludeOvernight.insets = new Insets(0, 0, 5, 5);
+		gbc_rdbtnIncludeOvernight.gridx = 9;
+		gbc_rdbtnIncludeOvernight.gridy = 10;
+		panel_1.add(rdbtnIncludeOvernight, gbc_rdbtnIncludeOvernight);
 
 		lblBedTrendStartStartTime = new JLabel("Bedtime Trend Start Start Time");
 		GridBagConstraints gbc_lblBedTrendStartStartTime = new GridBagConstraints();
@@ -634,7 +750,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblBedTrendStartStartTime, gbc_lblBedTrendStartStartTime);
 
 		sp_bedTrendStartStart = new JSpinner();
-		sp_bedTrendStartStart.setToolTipText("The anlayzer looks for overnight trends that start with in a start/end start time and end within a start/end end time.  This paramter sets the start of the start time range.");
+		sp_bedTrendStartStart.setToolTipText("<html>The anlayzer looks for overnight trends that start with in a start/end start time and end within a start/end end time.  <br>This paramter sets the start of the start time range.</html>");
 		sp_bedTrendStartStart.setModel(getTimeListModel());
 		sp_bedTrendStartStart.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartStartTime());
 		GridBagConstraints gbc_sp_bedTrendStartStart = new GridBagConstraints();
@@ -652,7 +768,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblBedTrendEndStartTime, gbc_lblBedTrendEndStartTime);
 
 		sp_bedTrendEndStart = new JSpinner();
-		sp_bedTrendEndStart.setToolTipText("The anlayzer looks for overnight trends that start with in a start/end start time and end within a start/end end time.  This paramter sets the start of the end time range.");
+		sp_bedTrendEndStart.setToolTipText("<html>The anlayzer looks for overnight trends that start with in a start/end start time and end within a start/end end time.  <br>This paramter sets the start of the end time range.</html>");
 		sp_bedTrendEndStart.setModel(getTimeListModel());
 		sp_bedTrendEndStart.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendEndStartTime());
 		GridBagConstraints gbc_sp_bedTrendEndStart = new GridBagConstraints();
@@ -670,7 +786,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblBedTrendStartEndTime, gbc_lblBedTrendStartEndTime);
 
 		sp_bedTrendStartEnd = new JSpinner();
-		sp_bedTrendStartEnd.setToolTipText("The anlayzer looks for overnight trends that start with in a start/end start time and end within a start/end end time.  This paramter sets the end of the start time range.");
+		sp_bedTrendStartEnd.setToolTipText("<html>The anlayzer looks for overnight trends that start with in a start/end start time and end within a start/end end time.  <br>This paramter sets the end of the start time range.</html>");
 		sp_bedTrendStartEnd.setModel(getTimeListModel());
 		sp_bedTrendStartEnd.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendStartEndTime());
 		GridBagConstraints gbc_sp_bedTrendStartEnd = new GridBagConstraints();
@@ -688,7 +804,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblBedTrendEndEndTime, gbc_lblBedTrendEndEndTime);
 
 		sp_bedTrendEndEnd = new JSpinner();
-		sp_bedTrendEndEnd.setToolTipText("The anlayzer looks for overnight trends that start with in a start/end start time and end within a start/end end time.  This paramter sets the end of the end time range.");
+		sp_bedTrendEndEnd.setToolTipText("<html>The anlayzer looks for overnight trends that start with in a start/end start time and end within a start/end end time.  <br>This paramter sets the end of the end time range.</html>");
 		sp_bedTrendEndEnd.setModel(getTimeListModel());
 		sp_bedTrendEndEnd.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendEndEndTime());
 		GridBagConstraints gbc_sp_bedTrendEndEnd = new GridBagConstraints();
@@ -710,7 +826,7 @@ public class WinAnalyzer extends JDialog {
 
 		tf_HighPriorityRecurrRatio = new JSpinner();
 		tf_HighPriorityRecurrRatio.setModel(new SpinnerNumberModel(10.0, 1.0, 100.0, 1.0));
-		tf_HighPriorityRecurrRatio.setToolTipText("Recurring trends happening more often than this ratio of times during analytical period are flagged as red since the trend is very strong and needs most attention.");
+		tf_HighPriorityRecurrRatio.setToolTipText("<html>Recurring trends happening more often than this ratio of times during analytical period are flagged as red <br>since the trend is very strong and needs most attention.</html>");
 		GridBagConstraints gbc_tf_HighPriorityRecurrRatio = new GridBagConstraints();
 		gbc_tf_HighPriorityRecurrRatio.anchor = GridBagConstraints.WEST;
 		gbc_tf_HighPriorityRecurrRatio.insets = new Insets(0, 0, 5, 5);
@@ -730,7 +846,7 @@ public class WinAnalyzer extends JDialog {
 
 		tf_MediumPriorityRecurrRatio = new JSpinner();
 		tf_MediumPriorityRecurrRatio.setModel(new SpinnerNumberModel(5.0, 1.0, 100.0, 1.0));
-		tf_MediumPriorityRecurrRatio.setToolTipText("Recurring trends happening more often than this ratio of times (and less often than high priority ratio) during analytical period are flagged as amber since the trend is strong and needs attention.");
+		tf_MediumPriorityRecurrRatio.setToolTipText("<html>Recurring trends happening more often than this ratio of times <br>(and less often than high priority ratio) <br>during analytical period are flagged as amber since the trend is strong and needs attention.</html>");
 		GridBagConstraints gbc_tf_MeterMongoServer = new GridBagConstraints();
 		gbc_tf_MeterMongoServer.anchor = GridBagConstraints.WEST;
 		gbc_tf_MeterMongoServer.insets = new Insets(0, 0, 5, 0);
@@ -792,7 +908,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblBadNightStartTime, gbc_lblBadNightStartTime);
 
 		sp_BadnightStart = new JSpinner();
-		sp_BadnightStart.setToolTipText("The analyzer locates events (either BG, Insulin or Carbs) at bad times of night.  This parameter determines the start time of a 'bad night'");
+		sp_BadnightStart.setToolTipText("<html>The analyzer locates events (either BG, Insulin or Carbs) at bad times of night.  <br>This parameter determines the start time of a 'bad night'</html>");
 		sp_BadnightStart.setModel(getTimeListModel());
 		sp_BadnightStart.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerBadNightStartTime());
 		GridBagConstraints gbc_sp_BadnightStart = new GridBagConstraints();
@@ -811,7 +927,7 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(lblBadNightEndTime, gbc_lblBadNightEndTime);
 
 		sp_BadnightEnd = new JSpinner();
-		sp_BadnightEnd.setToolTipText("The analyzer locates events (either BG, Insulin or Carbs) at bad times of night.  This parameter determines the end time of a 'bad night'");
+		sp_BadnightEnd.setToolTipText("<html>The analyzer locates events (either BG, Insulin or Carbs) at bad times of night.  <br>This parameter determines the end time of a 'bad night'</html>");
 		sp_BadnightEnd.setModel(getTimeListModel());
 		sp_BadnightEnd.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerBadNightEndTime());
 		GridBagConstraints gbc_sp_BadnightEnd = new GridBagConstraints();
@@ -820,40 +936,52 @@ public class WinAnalyzer extends JDialog {
 		gbc_sp_BadnightEnd.gridx = 9;
 		gbc_sp_BadnightEnd.gridy = 15;
 		panel_1.add(sp_BadnightEnd, gbc_sp_BadnightEnd);
+		
+		lblCgmTrendHour = new JLabel("CGM Trend Hour Intervals");
+		lblCgmTrendHour.setFont(new Font("Tahoma", Font.BOLD, 11));
+		GridBagConstraints gbc_lblCgmTrendHour = new GridBagConstraints();
+		gbc_lblCgmTrendHour.anchor = GridBagConstraints.EAST;
+		gbc_lblCgmTrendHour.insets = new Insets(0, 0, 0, 5);
+		gbc_lblCgmTrendHour.gridx = 1;
+		gbc_lblCgmTrendHour.gridy = 16;
+		panel_1.add(lblCgmTrendHour, gbc_lblCgmTrendHour);
 
+		
+		
+		sp_CGMTrendIntervalDuration = new JSpinner();
+		sp_CGMTrendIntervalDuration.setFont(new Font("Tahoma", Font.BOLD, 11));
+		sp_CGMTrendIntervalDuration.setToolTipText("<html>This parameter sets the number of hours to group CGM entries in for trend analysis.  <br>Groupings can either be 1 hour, 2 hours or 3 hours </hmtl>");
+		sp_CGMTrendIntervalDuration.setModel(new SpinnerNumberModel(1, 1, 3, 1));
+		sp_CGMTrendIntervalDuration.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_EntryAnalyzerIntervalHours());
+
+		GridBagConstraints gbc_spCGMTrendIntervalDuration = new GridBagConstraints();
+		gbc_spCGMTrendIntervalDuration.anchor = GridBagConstraints.WEST;
+		gbc_spCGMTrendIntervalDuration.insets = new Insets(0, 0, 0, 5);
+		gbc_spCGMTrendIntervalDuration.gridx = 3;
+		gbc_spCGMTrendIntervalDuration.gridy = 16;
+		panel_1.add(sp_CGMTrendIntervalDuration, gbc_spCGMTrendIntervalDuration);
+
+
+		
 		rdbtnCompressMealTrends = new JRadioButton("Compress Meal Trends");
-		rdbtnCompressMealTrends.setToolTipText("The analyzer can separate out rises from in range to out of range as well as rises from out of range to further out of range.  Compressing the meal trends will just consider all rises to out of range together (and the opposite for falls too).");
+		rdbtnCompressMealTrends.setToolTipText("<html>The analyzer can separate out rises from in range to out of range as well as rises from out of range to further out of range.  <br>Compressing the meal trends will just consider all rises to out of range together (and the opposite for falls too).</html>");
 		GridBagConstraints gbc_rdbtnCompressMealTrends = new GridBagConstraints();
 		gbc_rdbtnCompressMealTrends.anchor = GridBagConstraints.WEST;
 		gbc_rdbtnCompressMealTrends.insets = new Insets(0, 0, 0, 5);
-		gbc_rdbtnCompressMealTrends.gridx = 3;
+		gbc_rdbtnCompressMealTrends.gridx = 5;
 		gbc_rdbtnCompressMealTrends.gridy = 16;
 		panel_1.add(rdbtnCompressMealTrends, gbc_rdbtnCompressMealTrends);
 
 		rdbtnCompressMealTrends.setSelected(PrefsNightScoutLoader.getInstance().isM_AnalyzerCompressMealTrends());
 
 		rdbtnTotalRecurringTrendsOnly = new JRadioButton("Total Recurring Trends Only");
-		rdbtnTotalRecurringTrendsOnly.setToolTipText("When determining the %ge for recurring results, the analyzer can consider 100% to be either recurring trend results only or ALL trend results");
+		rdbtnTotalRecurringTrendsOnly.setToolTipText("<html>When determining the %ge for recurring results, the analyzer can consider 100% to be either recurring trend results only or ALL trend results</html>");
 		GridBagConstraints gbc_rdbtnTotalRecurringTrendsOnly = new GridBagConstraints();
 		gbc_rdbtnTotalRecurringTrendsOnly.anchor = GridBagConstraints.WEST;
 		gbc_rdbtnTotalRecurringTrendsOnly.insets = new Insets(0, 0, 0, 5);
-		gbc_rdbtnTotalRecurringTrendsOnly.gridx = 3;
-		gbc_rdbtnTotalRecurringTrendsOnly.gridy = 17;
+		gbc_rdbtnTotalRecurringTrendsOnly.gridx = 9;
+		gbc_rdbtnTotalRecurringTrendsOnly.gridy = 16;
 		panel_1.add(rdbtnTotalRecurringTrendsOnly, gbc_rdbtnTotalRecurringTrendsOnly);
-
-		tf_BGUnits = new JTextField();
-		tf_BGUnits.setFont(new Font("Tahoma", Font.BOLD | Font.ITALIC, 11));
-		tf_BGUnits.setBackground(Color.YELLOW);
-		tf_BGUnits.setToolTipText("Go to Options panel to change between mmol/L and mg/dL");
-		tf_BGUnits.setHorizontalAlignment(SwingConstants.CENTER);
-		tf_BGUnits.setEditable(false);
-		GridBagConstraints gbc_tf_BGUnits = new GridBagConstraints();
-		gbc_tf_BGUnits.insets = new Insets(0, 0, 5, 5);
-		gbc_tf_BGUnits.fill = GridBagConstraints.HORIZONTAL;
-		gbc_tf_BGUnits.gridx = 5;
-		gbc_tf_BGUnits.gridy = 1;
-		panel_1.add(tf_BGUnits, gbc_tf_BGUnits);
-		tf_BGUnits.setColumns(10);
 		setBGUnitsText();
 
 
@@ -870,6 +998,7 @@ public class WinAnalyzer extends JDialog {
 		getContentPane().add(panel, gbc_panel);
 
 		m_AnaylzeButton = new JButton("Analyze!");
+		m_AnaylzeButton.setToolTipText("<html><b>Starts the Analysis<br>Once complete, Excel will launch with results.</b></html>");
 		m_AnaylzeButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				//analyze();
@@ -879,35 +1008,134 @@ public class WinAnalyzer extends JDialog {
 		});
 		panel.add(m_AnaylzeButton);
 
-		JButton button_1 = new JButton("Cancel");
-		button_1.addActionListener(new ActionListener() {
+		JButton btnCancel = new JButton("Cancel");
+		btnCancel.setToolTipText("<html><b>Cancels the Analysis and closes this window</b></html>");
+		btnCancel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				dispose();
 			}
 		});
-		panel.add(button_1);
+		panel.add(btnCancel);
 
-		button_2 = new JButton("Reset to Defaults");
-		button_2.addActionListener(new ActionListener() {
+		btnResetToDefaults = new JButton("Reset to Defaults");
+		btnResetToDefaults.setToolTipText("<html><b>Resets the Analysis settings to Factory Defaults</b></html>");
+		btnResetToDefaults.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) 
 			{
 				resetDefaults();
 			}
 		});
-		panel.add(button_2);
 
-		toggleAdvancedOptions(PrefsNightScoutLoader.getInstance().isM_AdvancedOptions());
+		btnCGMDates = new JButton("CGM Dates");
+		btnCGMDates.setToolTipText("<html>Click here to see a range of dates that have CGM results.  <br>This offers a convenient way of selecting Start and End dates to analyze a period of CGM results.  <br>Look at the dates in the popup and double click a row to make the selection.</html>");
+		panel.add(btnCGMDates);
+		btnCGMDates.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				// Display a popup window that displays the CGM date ranges
+				// and allows one to be selected to set start and end dates 
+
+				if (CoreNightScoutLoader.getInstance().getM_NightScoutArrayListDBResultEntries().size() == 0)
+				{
+					JOptionPane.showMessageDialog(null, 
+							"No CGM Date Ranges found.  Is CGM loading enabled?");
+				}
+				else
+				{
+					m_WinCGMRanges.intializeCGMRanges();
+					m_WinCGMRanges.setVisible(true);
+				}
+			}
+		});
+		panel.add(btnResetToDefaults);
+
+		toggleAdvancedOptions(PrefsNightScoutLoader.getInstance().isM_AdvancedSettings());
 
 		// Set values based on the restore method
 		loadOptions();
 	}
-	
+
 	void 	warningMessage(String message)
 	{
 		JOptionPane.showMessageDialog(this, message); 
 	}
 
-	
+	void checkAndSetDates(JDatePickerImpl jdpJustSet)
+	{
+		Date jdpJustSetDate = (Date)jdpJustSet.getModel().getValue();
+		Date startDate      = (Date)jp_StartDate.getModel().getValue();
+		Date endDate        = (Date)jp_EndDate.getModel().getValue();
+
+		// Check if end is before start
+		if (endDate.before(startDate))
+		{
+			String jdpJustSetDateStr = new String("");
+			try {
+				jdpJustSetDateStr = CommonUtils.convertDateString(jdpJustSetDate, "dd-MMM-yyyy");
+			} catch (ParseException e) {
+				m_Logger.log( Level.SEVERE, "Unexpected error converting dates to check end date");
+			}
+
+			// Add a warning
+			warningMessage("Please note the following:\n\n" + "The selected date (" + 
+					jdpJustSetDateStr + ") means the end date is before the start date.\n\nPlease change.");
+		}
+
+		else if (jdpJustSetDate.after(m_MostRecentResultDate))
+		{
+			String jdpJustSetDateStr = new String("");
+			try {
+				jdpJustSetDateStr = CommonUtils.convertDateString(jdpJustSetDate, "dd-MMM-yyyy");
+			} catch (ParseException e) {
+				m_Logger.log( Level.SEVERE, "Unexpected error converting dates to check end date");
+			}
+
+			// Add a warning
+			warningMessage("Please note the following:\n\n" + "The selected date (" + 
+					jdpJustSetDateStr + ") is later than the date of last result loaded (" 
+					+ m_MostRecentResultDateStr + ")\n\n" +
+					"Analysis can only therefore run on results between (" + m_OldestResultDateStr + ") and (" + m_MostRecentResultDateStr + ")");
+		}
+		else if (jdpJustSetDate.before(m_OldestResultDate))
+		{
+			String jdpJustSetDateStr = new String("");
+			try {
+				jdpJustSetDateStr = CommonUtils.convertDateString(jdpJustSetDate, "dd-MMM-yyyy");
+			} catch (ParseException e) {
+				m_Logger.log( Level.SEVERE, "Unexpected error converting dates to check end date");
+			}
+
+			// Add a warning
+			warningMessage("Please note the following:\n\n" + "The selected date (" + 
+					jdpJustSetDateStr + ") is earlier than the date of earliest result loaded (" 
+					+ m_OldestResultDateStr + ")\n\n" +
+					"Analysis can only therefore run on results between (" + m_OldestResultDateStr + ") and (" + m_MostRecentResultDateStr + ")");
+		}
+
+		setDaysBackFromDates();
+	}
+
+	void checkIncludeOptions(JRadioButton rbJustSet)
+	{
+		// Check whether all RBs are disabled.
+		// If so and this is the last one, then reset to enabled.
+
+		boolean atLeastOneEnabled = 
+				rdbtnIncludeBreakfast.isSelected() || rdbtnIncludeLunch.isSelected() || 
+				rdbtnIncludeDinner.isSelected(   ) || rdbtnIncludeOvernight.isSelected();
+
+		if (atLeastOneEnabled == false)
+		{
+			rbJustSet.setSelected(true);
+
+			// Add a warning
+			warningMessage("Analyzer has nothing to do if no meals are included!\n\n" +
+					"Therefore the option to '" + rbJustSet.getText() + "' cannot be disabled\n"+
+					"unless the option to include one of the other meals is enabled.");
+		}
+	}
+
+
 	public void resetDefaults()
 	{
 		PrefsNightScoutLoader.getInstance().loadAnalyzerDefaultPreferences();
@@ -925,13 +1153,13 @@ public class WinAnalyzer extends JDialog {
 	{
 		// Check units used...
 		setBGUnitsText();
-		
+
 		// Set maximum dates based on last result
 		setMaximumDates();
 
 		// Days back drives it initially.
-//		setDatesFromDaysBack();
-		
+		//		setDatesFromDaysBack();
+
 		// Set date based on latest value
 		// Use date diff to work backwards
 
@@ -939,29 +1167,29 @@ public class WinAnalyzer extends JDialog {
 		super.setVisible(visible);
 
 	}
-	
+
 	private void setMaximumDates()
 	{
 		// Setting min max dates seems to break the spinners.
 		// Not essential, so comment all out
-		
-//		ArrayList<DBResult> resultList = CoreNightScoutLoader.getInstance().getM_ResultsMongoDB();
-//		if (resultList.size() > 0)
-//		{
-//			Date endDate   = Analyzer.getLastDateFromDBResults(resultList);
-//			Date firstDate = Analyzer.getFirstDateFromDBResults(resultList);
-//			SpinnerDateModel startDateModel = (SpinnerDateModel)sp_StartDate.getModel();
-//			SpinnerDateModel endDateModel   = (SpinnerDateModel)sp_EndDate.getModel();
-//			startDateModel.setEnd(endDate.getTime());
-//			startDateModel.setStart(firstDate.getTime());
-//			endDateModel.setEnd(endDate.getTime());
-//			endDateModel.setStart(firstDate.getTime());
-//		}
-		
+
+		//		ArrayList<DBResult> resultList = CoreNightScoutLoader.getInstance().getM_ResultsMongoDB();
+		//		if (resultList.size() > 0)
+		//		{
+		//			Date endDate   = Analyzer.getLastDateFromDBResults(resultList);
+		//			Date firstDate = Analyzer.getFirstDateFromDBResults(resultList);
+		//			SpinnerDateModel startDateModel = (SpinnerDateModel)sp_StartDate.getModel();
+		//			SpinnerDateModel endDateModel   = (SpinnerDateModel)sp_EndDate.getModel();
+		//			startDateModel.setEnd(endDate.getTime());
+		//			startDateModel.setStart(firstDate.getTime());
+		//			endDateModel.setEnd(endDate.getTime());
+		//			endDateModel.setStart(firstDate.getTime());
+		//		}
+
 		ArrayList<DBResult> resultList = CoreNightScoutLoader.getInstance().getM_ResultsMongoDB();
 		m_MostRecentResultDate = Analyzer.getLastDateFromDBResults(resultList);
 		m_OldestResultDate     = Analyzer.getFirstDateFromDBResults(resultList);
-		
+
 		try {
 			m_MostRecentResultDateStr = CommonUtils.convertDateString(m_MostRecentResultDate, "dd-MMM-yyyy");
 			m_OldestResultDateStr     = CommonUtils.convertDateString(m_OldestResultDate, "dd-MMM-yyyy");
@@ -969,9 +1197,10 @@ public class WinAnalyzer extends JDialog {
 			m_Logger.log( Level.SEVERE, "Unexpected error converting most recent result date to string");
 		}
 
-		
+
 		// Set end date as the last result in the system
 		((UtilDateModel)jp_EndDate.getModel()).setValue(m_MostRecentResultDate);
+		setDaysBackFromDates();
 	}
 
 	private void setDatesFromDaysBack()
@@ -984,10 +1213,10 @@ public class WinAnalyzer extends JDialog {
 			Date endDate   = Analyzer.getLastDateFromDBResults(resultList);
 			Date startDate = Analyzer.getDateOffsetBy(endDate, daysBack);
 
-//			sp_StartDate.getModel().setValue(startDate);
-//			sp_EndDate.getModel().setValue(endDate);
+			//			sp_StartDate.getModel().setValue(startDate);
+			//			sp_EndDate.getModel().setValue(endDate);
 			m_SettingDatesOrDays = false;
-			
+
 			final DateFormat format = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
 
 			((UtilDateModel)jp_StartDate.getModel()).setValue(startDate);
@@ -998,8 +1227,24 @@ public class WinAnalyzer extends JDialog {
 
 			jp_StartDate.getJFormattedTextField().setText(startDateTxt);
 			jp_EndDate.getJFormattedTextField().setText(endDateTxt);
-			
+
 		}
+	}
+
+	public void setDates(Date startDate, Date endDate)
+	{
+		final DateFormat format = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
+
+		((UtilDateModel)jp_StartDate.getModel()).setValue(startDate);
+		((UtilDateModel)jp_EndDate.getModel()).setValue(endDate);
+
+		String startDateTxt = new String(format.format(startDate.getTime()));
+		String endDateTxt   = new String(format.format(endDate.getTime()));
+
+		jp_StartDate.getJFormattedTextField().setText(startDateTxt);
+		jp_EndDate.getJFormattedTextField().setText(endDateTxt);
+		
+		setDaysBackFromDates();
 	}
 
 	private void setDaysBackFromDates()
@@ -1007,12 +1252,12 @@ public class WinAnalyzer extends JDialog {
 		if (m_SettingDatesOrDays == false)
 		{
 			m_SettingDatesOrDays = true;
-			
+
 			Date startDate = (Date)jp_StartDate.getModel().getValue();
 			Date endDate = (Date)jp_EndDate.getModel().getValue();
-//			Date startDate = (Date)sp_StartDate.getModel().getValue();
-//			Date endDate = (Date)sp_EndDate.getModel().getValue();
-			
+			//			Date startDate = (Date)sp_StartDate.getModel().getValue();
+			//			Date endDate = (Date)sp_EndDate.getModel().getValue();
+
 			long diff = endDate.getTime() - startDate.getTime();
 
 			long daysBack =  TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
@@ -1046,17 +1291,16 @@ public class WinAnalyzer extends JDialog {
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerBadNightStartTime((String)sp_BadnightStart.getModel().getValue());
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerBadNightEndTime((String)sp_BadnightEnd.getModel().getValue());
 
-
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerCompressMealTrends(rdbtnCompressMealTrends.isSelected());
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerTotalRecurringTrendsOnly(rdbtnTotalRecurringTrendsOnly.isSelected());
 
 		PrefsNightScoutLoader.getInstance().setPreferences();
 
-		
-		
-		
-		
-		
+		//		PrefsNightScoutLoader.getInstance().setM_AnalyzerIncludeBreakfast(rdbtnIncludeBreakfast.isSelected());
+		//		PrefsNightScoutLoader.getInstance().setM_AnalyzerIncludeLunch(rdbtnIncludeLunch.isSelected());
+		//		PrefsNightScoutLoader.getInstance().setM_AnalyzerIncludeDinner(rdbtnIncludeDinner.isSelected());
+		//		PrefsNightScoutLoader.getInstance().setM_AnalyzerIncludeOvernight(rdbtnIncludeOvernight.isSelected());
+
 		tf_ExcelFile.setText(PrefsNightScoutLoader.getInstance().getM_AnalysisFilePath());
 
 		sp_breakfastStart.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerBreakfastTimeStart());
@@ -1083,10 +1327,19 @@ public class WinAnalyzer extends JDialog {
 		sp_bedTrendEndEnd.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerBedTrendEndEndTime());
 		sp_BadnightStart.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerBadNightStartTime());
 		sp_BadnightEnd.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerBadNightEndTime());
-				
+
+		sp_CGMTrendIntervalDuration.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_EntryAnalyzerIntervalHours());
+		
 		rdbtnCompressMealTrends.setSelected(PrefsNightScoutLoader.getInstance().isM_AnalyzerCompressMealTrends());		
 		rdbtnTotalRecurringTrendsOnly.setSelected(PrefsNightScoutLoader.getInstance().isM_AnalyzerTotalRecurringTrendsOnly());	
-		
+
+		rdbtnIncludeBreakfast.setSelected(PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeBreakfast());		
+		rdbtnIncludeLunch.setSelected(PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeLunch());		
+		rdbtnIncludeDinner.setSelected(PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeDinner());		
+		rdbtnIncludeOvernight.setSelected(PrefsNightScoutLoader.getInstance().isM_AnalyzerIncludeOvernight());	
+
+		cb_ExcelOutputLevel.setSelectedIndex(PrefsNightScoutLoader.getInstance().getM_AnalyzerExcelOutputLevel());
+
 		setBGUnitsText();
 	}
 
@@ -1102,17 +1355,17 @@ public class WinAnalyzer extends JDialog {
 		//		tf_ExcelFile.setText(excelFile);
 
 		// Save options first since analyzer retrieves them from Prefs
-//		Date startDate = (Date)sp_StartDate.getModel().getValue();
-//		Date endDate   = (Date)sp_EndDate.getModel().getValue();
+		//		Date startDate = (Date)sp_StartDate.getModel().getValue();
+		//		Date endDate   = (Date)sp_EndDate.getModel().getValue();
 
 		Date startDate = (Date)jp_StartDate.getModel().getValue();
 		Date endDate   = (Date)jp_EndDate.getModel().getValue();
 
-		
+
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerDaysBack((int)sp_DaysBack.getModel().getValue());
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerStartDateLong(startDate.getTime());
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerEndDateLong(endDate.getTime());
-		
+
 		PrefsNightScoutLoader.getInstance().setM_AnalysisFilePath(tf_ExcelFile.getText());
 
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerBreakfastTimeStart((String)sp_breakfastStart.getModel().getValue());
@@ -1147,13 +1400,24 @@ public class WinAnalyzer extends JDialog {
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerBadNightStartTime((String)sp_BadnightStart.getModel().getValue());
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerBadNightEndTime((String)sp_BadnightEnd.getModel().getValue());
 
-
+		PrefsNightScoutLoader.getInstance().setM_EntryAnalyzerIntervalHours((int)sp_CGMTrendIntervalDuration.getModel().getValue());
+		
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerCompressMealTrends(rdbtnCompressMealTrends.isSelected());
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerTotalRecurringTrendsOnly(rdbtnTotalRecurringTrendsOnly.isSelected());
+
+		PrefsNightScoutLoader.getInstance().setM_AnalyzerIncludeBreakfast(rdbtnIncludeBreakfast.isSelected());
+		PrefsNightScoutLoader.getInstance().setM_AnalyzerIncludeLunch(rdbtnIncludeLunch.isSelected());
+		PrefsNightScoutLoader.getInstance().setM_AnalyzerIncludeDinner(rdbtnIncludeDinner.isSelected());
+		PrefsNightScoutLoader.getInstance().setM_AnalyzerIncludeOvernight(rdbtnIncludeOvernight.isSelected());
+		PrefsNightScoutLoader.getInstance().setM_AnalyzerExcelOutputLevel(cb_ExcelOutputLevel.getSelectedIndex());
 
 		PrefsNightScoutLoader.getInstance().setPreferences();
 	}
 
+	private void setExcelOutputLevel()
+	{
+		AnalyzerTabs.getInstance().setupListOfTabs();
+	}
 
 	public void setSelectedExcelFile(String file)
 	{
@@ -1176,6 +1440,9 @@ public class WinAnalyzer extends JDialog {
 	{
 		// Now insist that a filename is selected at top panel		
 		savePreferences();
+
+		// Now set Excel level based on selection
+		setExcelOutputLevel();
 
 		// Do the analysis
 		boolean analysisRan = this.m_MainWin.threadDeeperAnalyseResults(
@@ -1210,13 +1477,16 @@ public class WinAnalyzer extends JDialog {
 								// Re-enable the analyze button in GUI thread
 								m_AnaylzeButton.setEnabled(true);
 								m_MainWin.openExcelFile(tf_ExcelFile.getText());
+
+								// Experimental - display a chart
+								//								m_MainWin.displayCGMChart();
 							}
 						});
 
 					}
 				}
 				);
-		
+
 		// Disable the Analyze! button from allowing analyze to run again - if analysis actually ran
 		m_AnaylzeButton.setEnabled(analysisRan ? false : true);
 	}

@@ -32,7 +32,7 @@ public class AuditHistory
 
 	private ArrayList<AuditLog> m_AuditHistoryList;
 	
-	private DataLoadNightScout  m_NightScoutServerTest = new DataLoadNightScout();
+	private DataLoadNightScoutTreatments  m_NightScoutServerTest = new DataLoadNightScoutTreatments();
 
 	private String              m_UploadIDPrefix  = "Nightscout Loader";
 	private String              m_NextUploadID    = new String();
@@ -51,10 +51,12 @@ public class AuditHistory
 
 	public void storeAuditHistory(String uploadStatus, Date uploadDate, 
 			String uploadDevice, String fileName, String dateRange, int entriesAdded, 
-			int treatmentsAtStart, int treatmentsByNSLAtStart, int proximityEntries) throws UnknownHostException
+			int treatmentsAtStart, int treatmentsByNSLAtStart, int proximityEntries,
+			int proximityNSEntries) throws UnknownHostException
 	{
 		AuditLog newLog = new AuditLog("", getM_NextUploadID(), uploadStatus, uploadDate, uploadDevice, 
-				fileName, dateRange, entriesAdded,	treatmentsAtStart, treatmentsByNSLAtStart, proximityEntries);
+				fileName, dateRange, entriesAdded,	treatmentsAtStart, treatmentsByNSLAtStart, proximityEntries,
+				proximityNSEntries);
 
 		storeAuditHistory(newLog);
 	}
@@ -270,7 +272,7 @@ public class AuditHistory
 		dbObject.put("_id", new ObjectId(entry.getM_ID()));
 
 		BasicDBObject newObject = entry.createNightScoutObject();
-		newObject.put("proximityEntries", entry.getM_ProximityEntries() - 1);
+		newObject.put("meterProximityEntries", entry.getM_ProximityMeterEntries() - 1);
 		
 		coll.findAndModify(dbObject, newObject);
 		m_Logger.log(Level.FINE, "Audit Log update completed.");
@@ -473,7 +475,7 @@ public class AuditHistory
 		{
 			// Use the DataNightScout load to check server state
 			m_NightScoutServerTest.testMongo();
-			if (m_NightScoutServerTest.getM_ServerState() == DataLoadNightScout.MongoDBServerStateEnum.accessible)
+			if (m_NightScoutServerTest.getM_ServerState() == DataLoadNightScoutTreatments.MongoDBServerStateEnum.accessible)
 			{
 				loadAuditHistory();
 			}

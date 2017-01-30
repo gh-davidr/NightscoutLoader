@@ -10,10 +10,11 @@ public class ThreadAnalyzer implements Runnable
 	private static final Logger m_Logger = Logger.getLogger( MyLogger.class.getName() );
 
 	// Separate thread for Analyzer to run
-	private Thread                   m_AnalyzerThread;
+	private Thread                    m_AnalyzerThread;
 
-	private String                   m_ExcelFilename = new String("");
-	private ArrayList <DBResult>     m_DBResultList  = null;
+	private String                    m_ExcelFilename = new String("");
+	private ArrayList <DBResult>      m_DBResultList  = null;
+	private ArrayList <DBResultEntry> m_DBResultEntryList  = null;
 
 	// Analyzer used by thread
 	private Analyzer                 m_Analyzer;
@@ -80,22 +81,22 @@ public class ThreadAnalyzer implements Runnable
 		m_Lock            = new Object();
 	}
 
-	public ThreadAnalyzer(ArrayList <DBResult> results)
+	public ThreadAnalyzer(ArrayList <DBResult> results, ArrayList <DBResultEntry> resultEntries)
 	{
 		m_AnalyzerRunning = true;  // Initialise the thread in running state
 		m_AnalyzerThread  = new Thread(this);
-		m_Analyzer        = new Analyzer(results);
+		m_Analyzer        = new Analyzer(results, resultEntries);
 		m_CompleteHandler = null;
 
 		// Thread synchronization
 		m_Lock            = new Object();
 	}
 	
-	public ThreadAnalyzer(ArrayList <DBResult> results, boolean summaryOnly)
+	public ThreadAnalyzer(ArrayList <DBResult> results, ArrayList <DBResultEntry> resultEntries, boolean summaryOnly)
 	{
 		m_AnalyzerRunning = true;  // Initialise the thread in running state
 		m_AnalyzerThread  = new Thread(this);
-		m_Analyzer        = new Analyzer(results, summaryOnly);
+		m_Analyzer        = new Analyzer(results, resultEntries, summaryOnly);
 		m_CompleteHandler = null;
 
 		// Thread synchronization
@@ -103,11 +104,11 @@ public class ThreadAnalyzer implements Runnable
 		m_SummaryOnly     = summaryOnly;
 	}
 
-	public ThreadAnalyzer(ArrayList <DBResult> results, Analyzer.AnalyzerMode mode)
+	public ThreadAnalyzer(ArrayList <DBResult> results, ArrayList <DBResultEntry> resultEntries, Analyzer.AnalyzerMode mode)
 	{
 		m_AnalyzerRunning = true;  // Initialise the thread in running state
 		m_AnalyzerThread  = new Thread(this);
-		m_Analyzer        = new Analyzer(results, mode);
+		m_Analyzer        = new Analyzer(results, resultEntries, mode);
 		m_CompleteHandler = null;
 
 		// Thread synchronization

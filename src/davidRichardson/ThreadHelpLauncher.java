@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JOptionPane;
+
 
 public class ThreadHelpLauncher implements Runnable 
 {
@@ -114,6 +116,12 @@ public class ThreadHelpLauncher implements Runnable
 
 			m_Logger.log(Level.INFO, "Help file opened");
 		}
+		
+		else
+		{
+			m_Logger.log(Level.WARNING, "<"+this.getClass().getName()+">" + " Desktop Not Supported ");
+		}
+
 	}
 
 }

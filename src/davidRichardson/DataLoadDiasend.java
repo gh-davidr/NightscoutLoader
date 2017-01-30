@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -111,6 +112,7 @@ public class DataLoadDiasend extends DataLoadBase
 		}
 
 		locateTempBasals();
+
 
 		// For debug, drop a list of all results so far
 		m_Logger.log(Level.FINE, "<"+this.getClass().getName()+">" + "Summary of Diasend Results AFTER Locating Temp Basals");
@@ -331,13 +333,16 @@ public class DataLoadDiasend extends DataLoadBase
 			m_BasalSettings6 = loadBasalRate(6, sheet);
 			m_BasalSettings7 = loadBasalRate(7, sheet);
 
-			m_BasalSettings = (m_ActiveBasal.equals("Program: 1")) ? m_BasalSettings1 : m_BasalSettings;
-			m_BasalSettings = (m_ActiveBasal.equals("Program: 2")) ? m_BasalSettings2 : m_BasalSettings;
-			m_BasalSettings = (m_ActiveBasal.equals("Program: 3")) ? m_BasalSettings3 : m_BasalSettings;
-			m_BasalSettings = (m_ActiveBasal.equals("Program: 4")) ? m_BasalSettings4 : m_BasalSettings;
-			m_BasalSettings = (m_ActiveBasal.equals("Program: 5")) ? m_BasalSettings5 : m_BasalSettings;
-			m_BasalSettings = (m_ActiveBasal.equals("Program: 6")) ? m_BasalSettings6 : m_BasalSettings;
-			m_BasalSettings = (m_ActiveBasal.equals("Program: 7")) ? m_BasalSettings7 : m_BasalSettings;
+			if (m_ActiveBasal != null)
+			{
+				m_BasalSettings = (m_ActiveBasal.equals("Program: 1")) ? m_BasalSettings1 : m_BasalSettings;
+				m_BasalSettings = (m_ActiveBasal.equals("Program: 2")) ? m_BasalSettings2 : m_BasalSettings;
+				m_BasalSettings = (m_ActiveBasal.equals("Program: 3")) ? m_BasalSettings3 : m_BasalSettings;
+				m_BasalSettings = (m_ActiveBasal.equals("Program: 4")) ? m_BasalSettings4 : m_BasalSettings;
+				m_BasalSettings = (m_ActiveBasal.equals("Program: 5")) ? m_BasalSettings5 : m_BasalSettings;
+				m_BasalSettings = (m_ActiveBasal.equals("Program: 6")) ? m_BasalSettings6 : m_BasalSettings;
+				m_BasalSettings = (m_ActiveBasal.equals("Program: 7")) ? m_BasalSettings7 : m_BasalSettings;
+			}
 		}
 	}
 
@@ -461,22 +466,26 @@ public class DataLoadDiasend extends DataLoadBase
 	{
 		DBResultDiasendBasalSetting result = null;
 		DBResultDiasendBasalSetting prev   = null;
-		for (DBResultDiasendBasalSetting c : m_BasalSettings)
+		if (m_BasalSettings != null)
 		{
-			try {
-				if (result == null && CommonUtils.isTimeAfter(c.getM_Time(), basalResult.getM_Time()))
-				{
-					result = prev;
-				}
-				else
-				{
-					prev = c;
-				}
-			} 
-			catch (ParseException e) 
+			for (DBResultDiasendBasalSetting c : m_BasalSettings)
 			{
-				m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + 
-						"getPrevalentBasalRate - Unexpected error identifying basal rate: " + basalResult.toString());
+				try {
+					if (result == null && CommonUtils.isTimeAfter(c.getM_Time(), basalResult.getM_Time()))
+					{
+						result = prev;
+						break;
+					}
+					else
+					{
+						prev = c;
+					}
+				} 
+				catch (ParseException e) 
+				{
+					m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + 
+							"getPrevalentBasalRate - Unexpected error identifying basal rate: " + basalResult.toString());
+				}
 			}
 		}
 
@@ -487,63 +496,74 @@ public class DataLoadDiasend extends DataLoadBase
 	{
 		// Iterate over the raw results looking for basal rates that have changed.
 		// Assume the list is ordered in time.
-//		boolean  tempStarted   = false;
-		DBResult tempBasalRate = null;
-		for (DBResult res : rawResultsFromDB)
+		//		boolean  tempStarted   = false;
+		if (PrefsNightScoutLoader.getInstance().isM_InferDiasendTempBasals())
 		{
-			// Only do this for Basal Rates
-			String resType = res.getM_ResultType();
-
-			if (resType == "Basal")
+			DBResult tempBasalStart = null;
+			DBResult lastHourChange = null;
+			Double lastHourChangeRate = null;
+			
+			for (DBResult res : rawResultsFromDB)
 			{
-				DBResultDiasendBasalSetting basalRate = getPrevalentBasalRate(res);
+				// Only do this for Basal Rates
+				String resType = res.getM_ResultType();
 
-				// Have we started a new temporary Basal Rate
-				if (tempBasalRate == null && !basalRate.getM_BasalValue().toString().equals(res.getM_Result()))
+				if (resType == "Basal")
 				{
-					tempBasalRate = new DBResult(res, getDevice());
-
-					Double resRate = Double.parseDouble(res.getM_Result());
-					Double basRate = basalRate.getM_BasalValue();
-					Double percent = Math.round((resRate / basRate) * 100.0) * 1.0;
-					tempBasalRate.setM_CP_Percent(percent);
-					// Work out the percentage too ...
-				}
-
-				else if (tempBasalRate != null && basalRate.getM_BasalValue().toString().equals(res.getM_Result()))
-				{
-					// Merge the basal rate change
-					tempBasalRate.merge(res);
-					resultTreatments.add(tempBasalRate);
-
-					tempBasalRate = null;
-				}
-
-				// Special case...
-				// Look for a rate that's at a different percentage to before.
-				// That means we've closed out the previous temp basal and opened another
-				else if (tempBasalRate != null)
-				{
-					Double resRate = Double.parseDouble(res.getM_Result());
-					Double basRate = basalRate.getM_BasalValue();
-					Double percent = Math.round((resRate / basRate) * 100.0) * 1.0;
-
-					if (!percent.equals(tempBasalRate.getM_CP_Percent()))
+					// Different approach.
+					// If the basal rate change was on the hour, then assume that it's a basal rate
+					// If the basal rate change was off the hour, then assume it's a temp basal.
+					Date basalTime = new Date(res.getM_EpochMillies());
+					int minutes = CommonUtils.getMinutesFromDate(basalTime);
+					
+					if (minutes == 0)
 					{
-						// Merge the basal rate change to close out current
-						tempBasalRate.merge(res);
-						resultTreatments.add(tempBasalRate);
-
-						// Open another
-						tempBasalRate = new DBResult(res, getDevice());
-						tempBasalRate.setM_CP_Percent(percent);
-
+						lastHourChange = res;
+						lastHourChangeRate = Double.parseDouble(lastHourChange.getM_Result());
 					}
-				}
-			}
+					else
+					{
+						// If there's a last hour change and we're not in the middle of a temp basal,
+						// and the last hour change basal rate was not 0, and the rate is not 100% then start one
+						if (lastHourChange != null && tempBasalStart == null && 
+								lastHourChangeRate != null && lastHourChangeRate != 0.0)
+						{
+							m_Logger.log(Level.INFO, 
+									"Creating Temp Basal from : " + res.rawToString());
 
+							Double resRate = Double.parseDouble(res.getM_Result());
+							Double basRate = lastHourChangeRate;
+							Double percent = Math.round((resRate / basRate) * 100.0) * 1.0;
+							
+							if (java.lang.Math.abs(percent - 100.0) > 0.1)
+							{
+								tempBasalStart = new DBResult(res, getDevice());
+								tempBasalStart.setM_CP_Percent(percent);
+							}
+						}
+
+						// If there's a last hour change and we're  in the middle of a temp basal,
+						// Then end one
+						else if (lastHourChange != null && tempBasalStart != null)
+						{
+							// Merge the basal rate change
+//							tempBasalStart.merge(res);
+							
+							Date tempBasalEndTime = new Date(tempBasalStart.getM_EpochMillies());			
+							Double mins = (double)CommonUtils.timeDiffInMinutes(basalTime, tempBasalEndTime);
+							tempBasalStart.setM_CP_Duration(mins);
+
+							resultTreatments.add(tempBasalStart);
+
+							tempBasalStart = null;
+						}
+					}
+					
+				}
+
+			}
 		}
-		
+
 		// Now remove all the basal entries from rawResultsFromDB
 		Iterator<DBResult> it = rawResultsFromDB.iterator();
 		while (it.hasNext()) 
@@ -551,12 +571,12 @@ public class DataLoadDiasend extends DataLoadBase
 			String resType = it.next().getM_ResultType();
 			if (resType == "Basal")
 			{
-		        it.remove();
-		        // If you know it's unique, you could `break;` here
-		    }
+				it.remove();
+				// If you know it's unique, you could `break;` here
+			}
 		}
 	}
-
+	
 	public static boolean isDiasend(String fileName)
 	{
 		boolean result = false;
