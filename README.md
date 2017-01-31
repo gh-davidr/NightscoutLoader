@@ -4,11 +4,16 @@
 
 A desktop application with the following purposes in mind:
 
+* Synchronize data from meter/pump as treatments in Nightscout Care Portal.
+* Quick way of locating and allowing edits to the Notes field in treatment data.
+* Analysis of BG Trends
+* Analysis of CGM Data
+
 ### Synchronize data from meter/pump as treatments in Nightscout Care Portal.
 
 ![picture](resources/images/MainPage.jpg)
 
-Meter & Pump Data can be loaded regularly from a range of systems:
+Meter & Pump Data can be regularly loaded from a range of systems:
   * Roche (SQL Server Database load as well as CSV export)
   * Medtronic
   * Diasend
