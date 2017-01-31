@@ -4,7 +4,7 @@
 
 A desktop application with the following purposes in mind:
 
-* Synchronize data from meter/pump as treatments in Nightscout Care Portal.
+### Synchronize data from meter/pump as treatments in Nightscout Care Portal.
 
 ![picture](resources/images/MainPage.jpg)
 
@@ -13,18 +13,18 @@ Meter & Pump Data can be loaded regularly from a range of systems:
   * Medtronic
   * Diasend
 
-* Quick way of locating and allowing edits to the Notes field in treatment data.
+### Quick way of locating and allowing edits to the Notes field in treatment data.
 
 ![picture](resources/images/FindModify.jpg)
 
-* Analysis of BG Trends
+### Analysis of BG Trends
 
 ![picture](resources/images/TreatmentTrendAnalysis.jpg)
 
 Analysis can be run over selected date ranges and outputs to Excel for convenient archiving of analytical snapshots.
 Analysis also runs in background on start up and provides a condensed summary of top 3 trends
 
-* Analysis of CGM Data
+### Analysis of CGM Data
 
 ![picture](resources/images/CGMTrendAnalysis.jpg)
 
