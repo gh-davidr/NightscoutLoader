@@ -17,7 +17,8 @@ Meter & Pump Data can be regularly loaded from a range of systems:
   * Roche (SQL Server Database load as well as CSV export)
   * Medtronic
   * Diasend
-
+A serial stream of BG, Carb and Insulin is intelligently grouped together into a Treatment.  The tool will ignore previously loaded data.  It will also identify contention between manually entered Care Portal entries and data from meter/pump.
+  
 ### Quick way of locating and allowing edits to the Notes field in treatment data.
 
 ![picture](resources/images/FindModify.jpg)
