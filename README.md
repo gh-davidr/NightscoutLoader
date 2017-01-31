@@ -25,6 +25,8 @@ A serial stream of BG, Carb and Insulin is intelligently grouped together into a
 
 ![picture](resources/images/FindModify.jpg)
 
+Searches can be performed over combinations of different fields, date ranges, treatment types and also if the loaded entry is a duplicate with a manually entered Care Portal entry.
+
 ### Analysis of BG Trends
 
 ![picture](resources/images/TreatmentTrendAnalysis.jpg)
