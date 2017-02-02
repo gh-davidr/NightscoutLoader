@@ -72,14 +72,14 @@ It loads the Nightscout Treatment and CGM into memory for comparison with new da
 4. Click Tools => Settings to launch the Settings panel
 5. Complete the Sections in Yellow
 6. For example
-  1.  if your user is my_mongo_user
-  2.  password is my_mongo_pass
+  1.  if your user is "my_mongo_user"
+  2.  password is "my_mongo_pass"
   3.  port is 123
-  4.  database is my_mongodb 
-  5.  then:
-  6.  Nightscout Server would "mongodb://my_mongo_user:my_mongo_pass@ds123.mongolab.com:123"
-  7.  Nightscout DB would be my_mongodb
-  8.  Nightscout Collection is always “treatments”
+  4.  database is "my_mongodb"
+  5.  then, please see how the Nightscout Server, Nightscout DB and Nightscout Collection fields are set:
+    6.  Nightscout Server would "mongodb://my_mongo_user:my_mongo_pass@ds123.mongolab.com:123"
+    7.  Nightscout DB would be "my_mongodb"
+    8.  Nightscout Collection is always “treatments”
 
 ### Installation Guide for non-Nightscout use
 
