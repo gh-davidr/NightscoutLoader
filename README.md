@@ -56,8 +56,13 @@ If any of the above are true, then it could help you.
 
 ## Installation Guide
 
+### System Requirements
+
+The application is built for desktop or laptop computers with Java.  It requires at least Java version 7 and the installation guide includes a link to check and install if necessary.
+
 ### Installation Guide for Nightscout use
 
+1. Check your version of Java at this [link] (https://java.com/en/download/help/version_manual.xml)
 1. Download the application from Google Drive.  Latest version is [V2.5] (https://drive.google.com/open?id=0BxlKJmCnE32_ek5kRERBeWxaNE0)
 2. Copy the NightScoutLoader.jar file to your desktop
 3. Launch the application
@@ -75,10 +80,13 @@ If any of the above are true, then it could help you.
 
 ### Installation Guide for non-Nightscout use
 
+1. Check your version of Java at this [link] (https://java.com/en/download/help/version_manual.xml)
 1. Download the application from Google Drive.  Latest version is [V2.5] (https://drive.google.com/open?id=0BxlKJmCnE32_ek5kRERBeWxaNE0)
 2. Copy the NightScoutLoader.jar file to your desktop
 3. Launch the application
 
-That's it.  To convert a previous installation for Nightscout to one for non-Nightscout use, simply clear the Nightscout Server field in the Settings window.
+That's all there is to it!
+
+To convert a previous installation for Nightscout to one for non-Nightscout use, simply clear the Nightscout Server field in the Settings window.
 
 
