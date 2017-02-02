@@ -46,3 +46,39 @@ Any CGM data available within selected analysis date range is also analyzed.  A 
 
 Nightscout Loader helps get real **Insights** from reams of *Data*.
 
+## Is it for me?
+
+- [x] Do you use Nightscout and want to upload Treatment data to Nightscout from a supported Meter and or Pump?
+- [x] Do you want an extra tool to help analyze BGs, Carbs & Insulin?  (Nightscout use is optional)
+- [x] Do you use Nightscout and want an extra tool to visualize repeated patterns of CGM data?
+
+If any of the above are true, then it could help you.
+
+## Installation Guide
+
+### Installation Guide for Nightscout use
+
+1. Download the application from Google Drive.  Latest version is [V2.5] (https://drive.google.com/open?id=0BxlKJmCnE32_ek5kRERBeWxaNE0)
+2. Copy the NightScoutLoader.jar file to your desktop
+3. Launch the application
+4. Click Tools => Settings to launch the Settings panel
+5. Complete the Sections in Yellow
+6. For example
+  1.  if your user is my_mongo_user
+  2.  password is my_mongo_pass
+  3.  port is 123
+  4.  database is my_mongodb 
+  5.  then:
+  6.  Nightscout Server would "mongodb://my_mongo_user:my_mongo_pass@ds123.mongolab.com:123"
+  7.  Nightscout DB would be my_mongodb
+  8.  Nightscout Collection is always “treatments”
+
+### Installation Guide for non-Nightscout use
+
+1. Download the application from Google Drive.  Latest version is [V2.5] (https://drive.google.com/open?id=0BxlKJmCnE32_ek5kRERBeWxaNE0)
+2. Copy the NightScoutLoader.jar file to your desktop
+3. Launch the application
+
+That's it.  To convert a previous installation for Nightscout to one for non-Nightscout use, simply clear the Nightscout Server field in the Settings window.
+
+
