@@ -60,6 +60,9 @@ If any of the above are true, then it could help you.
 
 The application is built for desktop or laptop computers with Java.  It requires at least Java version 7 and the installation guide includes a link to check and install if necessary.
 
+
+It loads the Nightscout Treatment and CGM into memory for comparison with new data being uploaded or for analysis.  The amount of memory your system needs will depend on how much data you pull in.  As a guide, 8 years' worth of treatment data and 20,000 CGM entries takes up 300Mb of RAM.
+
 ### Installation Guide for Nightscout use
 
 1. Check your version of Java at this [link] (https://java.com/en/download/help/version_manual.xml)
