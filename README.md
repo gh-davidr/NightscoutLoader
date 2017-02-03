@@ -95,4 +95,5 @@ That's all there is to it!
 
 To convert a previous installation for Nightscout to one for non-Nightscout use, simply clear the Nightscout Server field in the Settings window, save the settings and re-launch the application.
 
+:couple: [Nightscout Loader Facebook Page] (https://www.facebook.com/NightscoutLoader)
 
