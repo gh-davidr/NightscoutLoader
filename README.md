@@ -68,7 +68,7 @@ It loads the Nightscout Treatment and CGM into memory for comparison with new da
 1. Check your version of Java at this [link] (https://java.com/en/download/help/version_manual.xml)
 1. Download the application from Google Drive.  Latest version is [V2.5] (https://drive.google.com/open?id=0BxlKJmCnE32_ek5kRERBeWxaNE0)
 2. Copy the NightScoutLoader.jar file to your desktop
-3. Launch the application
+3. Launch the application by double-clicking the icon on your desktop.
 4. Click Tools => Settings to launch the Settings panel
 5. Complete the Sections in Yellow
 6. For example
@@ -81,15 +81,18 @@ It loads the Nightscout Treatment and CGM into memory for comparison with new da
     7.  Nightscout DB would be "my_mongodb"
     8.  Nightscout Collection is always “treatments”
 
+
+To convert a previous installation for non-Nightscout to one for Nightscout use, simply complete steps 5 and onwards above, save the settings and re-launch the application.
+
 ### Installation Guide for non-Nightscout use
 
 1. Check your version of Java at this [link] (https://java.com/en/download/help/version_manual.xml)
 1. Download the application from Google Drive.  Latest version is [V2.5] (https://drive.google.com/open?id=0BxlKJmCnE32_ek5kRERBeWxaNE0)
 2. Copy the NightScoutLoader.jar file to your desktop
-3. Launch the application
+3. Launch the application by double-clicking the icon on your desktop
 
 That's all there is to it!
 
-To convert a previous installation for Nightscout to one for non-Nightscout use, simply clear the Nightscout Server field in the Settings window.
+To convert a previous installation for Nightscout to one for non-Nightscout use, simply clear the Nightscout Server field in the Settings window, save the settings and re-launch the application.
 
 
