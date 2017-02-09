@@ -76,6 +76,7 @@ public class PrefsNightScoutLoader
 	final private String def_M_DiasendMeterPumpResultFilePath    = "";
 	final private String def_M_OmniPodMeterPumpResultFilePath    = "";
 	final private String def_M_RocheExtractMeterPumpResultFilePath    = "";
+	final private String def_M_TandemMeterPumpResultFilePath     = "";
 	final private String def_M_ExportFilePath                    = "";
 	final private String def_M_DownloadTreatmentFilePath         = "";
 	final private String def_M_DownloadSensorFilePath            = "";
@@ -180,6 +181,7 @@ public class PrefsNightScoutLoader
 	private String  m_DiasendMeterPumpResultFilePath;
 	private String  m_OmniPodMeterPumpResultFilePath;
 	private String  m_RocheExtractMeterPumpResultFilePath;
+	private String  m_TandemMeterPumpResultFilePath;
 	private String  m_ExportFilePath;
 	private String  m_DownloadTreatmentFilePath;
 	private String  m_DownloadSensorFilePath;
@@ -286,6 +288,7 @@ public class PrefsNightScoutLoader
 	final private String pref_DiasendMeterPumpResultFilePath    = "NSL_DiasendMeterPumpResultFilePath";
 	final private String pref_OmniPodMeterPumpResultFilePath    = "NSL_OmniPodMeterPumpResultFilePath";
 	final private String pref_RocheExtractMeterPumpResultFilePath    = "NSL_RocheExtractMeterPumpResultFilePath";
+	final private String pref_TandemMeterPumpResultFilePath     = "NSL_TandemMeterPumpResultFilePath";
 	final private String pref_ExportFilePath                    = "NSL_ExportFilePath";
 	final private String pref_DownloadTreatmentFilePath         = "NSL_DownloadTreatmentFilePath";
 	final private String pref_DownloadSensorFilePath            = "NSL_DownloadSensorFilePath";
@@ -395,6 +398,7 @@ public class PrefsNightScoutLoader
 		m_DiasendMeterPumpResultFilePath    = def_M_DiasendMeterPumpResultFilePath;
 		m_OmniPodMeterPumpResultFilePath    = def_M_OmniPodMeterPumpResultFilePath;
 		m_RocheExtractMeterPumpResultFilePath    = def_M_RocheExtractMeterPumpResultFilePath;
+		m_TandemMeterPumpResultFilePath     = def_M_TandemMeterPumpResultFilePath;
 		
 		m_ExportFilePath                    = def_M_ExportFilePath;
 		m_DownloadTreatmentFilePath         = def_M_DownloadTreatmentFilePath;
@@ -547,6 +551,7 @@ public class PrefsNightScoutLoader
 	    prefs.put(pref_DiasendMeterPumpResultFilePath, m_DiasendMeterPumpResultFilePath);
 	    prefs.put(pref_OmniPodMeterPumpResultFilePath, m_OmniPodMeterPumpResultFilePath);
 	    prefs.put(pref_RocheExtractMeterPumpResultFilePath, m_RocheExtractMeterPumpResultFilePath);
+	    prefs.put(pref_TandemMeterPumpResultFilePath, m_TandemMeterPumpResultFilePath);
 	    prefs.put(pref_ExportFilePath,          m_ExportFilePath);
 	    prefs.put(pref_DownloadTreatmentFilePath, m_DownloadTreatmentFilePath);
 	    prefs.put(pref_DownloadSensorFilePath, m_DownloadSensorFilePath);
@@ -653,6 +658,7 @@ public class PrefsNightScoutLoader
 		m_DiasendMeterPumpResultFilePath    = prefs.get(pref_DiasendMeterPumpResultFilePath, def_M_DiasendMeterPumpResultFilePath);
 		m_OmniPodMeterPumpResultFilePath    = prefs.get(pref_OmniPodMeterPumpResultFilePath, def_M_OmniPodMeterPumpResultFilePath);
 		m_RocheExtractMeterPumpResultFilePath    = prefs.get(pref_RocheExtractMeterPumpResultFilePath, def_M_RocheExtractMeterPumpResultFilePath);
+		m_TandemMeterPumpResultFilePath     = prefs.get(pref_TandemMeterPumpResultFilePath, def_M_TandemMeterPumpResultFilePath);
 		m_ExportFilePath                    = prefs.get(pref_ExportFilePath, def_M_ExportFilePath);
 		m_DownloadTreatmentFilePath         = prefs.get(pref_DownloadTreatmentFilePath, def_M_DownloadTreatmentFilePath);
 		m_DownloadSensorFilePath            = prefs.get(pref_DownloadSensorFilePath, def_M_DownloadSensorFilePath);
@@ -924,6 +930,21 @@ public class PrefsNightScoutLoader
 		this.m_RocheExtractMeterPumpResultFilePath = m_RocheExtractMeterPumpResultFilePath;
 	}
 
+	/**
+	 * @return the m_TandemMeterPumpResultFilePath
+	 */
+	public synchronized String getM_TandemMeterPumpResultFilePath() {
+		return m_TandemMeterPumpResultFilePath;
+	}
+
+	/**
+	 * @param m_TandemMeterPumpResultFilePath the m_TandemMeterPumpResultFilePath to set
+	 */
+	public synchronized void setM_TandemMeterPumpResultFilePath(String m_TandemMeterPumpResultFilePath) {
+		this.m_TandemMeterPumpResultFilePath = m_TandemMeterPumpResultFilePath;
+	}
+
+	
 	/**
 	 * @return the m_ExportFilePath
 	 */

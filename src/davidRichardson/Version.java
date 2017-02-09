@@ -30,7 +30,7 @@ public class Version
 		m_GoogleDriveHelpURI = new String();
 
 		//	m_Version    = "V2.5 beta 2";
-		m_Version    = "V2.5";
+		m_Version    = "V2.6.b";
 		m_Author     = "David Richardson";
 		m_ContactUs  = "NightscoutLoader@gmail.com";
 		//		m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_cEZMbmk4TTlZRUk";
@@ -94,9 +94,11 @@ public class Version
 		m_AboutText += "           Having added a feature to disable Diasend temp basals, introduced a much better algorithm to infer them more accurately\r\n";
 		m_AboutText += "           Fix to issue where last value read from file is duplicated\r\n";
 		m_AboutText += "           Reference to Online help – link to PDF on Google Drive\r\n";
-
+		m_AboutText += " 2.6.b   - Beta release introducing the following\r\n";
+		m_AboutText += "           Support for T:Slim exports\r\n";
+		m_AboutText += "           Fixes to MongoDB Reads as reported by Mátyási Péter\r\n";
 		m_AboutText += "\r\n\r\n";
-		m_AboutText += "Written by " + m_Author + " - January 2016 through January 2017\r\n";
+		m_AboutText += "Written by " + m_Author + " - January 2016 through February 2017\r\n";
 	}
 
 	/**

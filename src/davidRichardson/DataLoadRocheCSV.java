@@ -20,6 +20,13 @@ public class DataLoadRocheCSV extends DataLoadCSVFile
 	}
 
 	@Override
+	protected DBResult makeDBResult(String[] res, DBResult.ResultType resType) 
+	{
+		DBResult result = null;
+		return result;
+	}
+	
+	@Override
 	protected String loadStringName() 
 	{
 		return "Roche";

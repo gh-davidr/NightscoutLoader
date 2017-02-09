@@ -24,6 +24,10 @@ public abstract class DataLoadCSVFile extends DataLoadBase
 	// with String array
 	protected abstract DBResult makeDBResult(String[] res);    
 	
+	// Base class that must know how to create a DBResult derived instance
+	// with String array
+	protected abstract DBResult makeDBResult(String[] res, DBResult.ResultType resType); 
+	
 	// Similarly, base class must know what types it creates for logging
 	protected abstract String loadStringName();
 	
@@ -118,4 +122,51 @@ public abstract class DataLoadCSVFile extends DataLoadBase
 		}
 
 	}
+	
+	public void loadDBRawResultsFrom(String fileName) throws  IOException
+	{
+		BufferedReader br = null;
+		String line = "";
+		//String cvsSplitBy = ",";
+		String cvsSplitBy = getSplitBy();
+
+		try 
+		{			
+			rawResultsFromDB.clear();
+			br = new BufferedReader(new FileReader(fileName));
+			while ((line = br.readLine()) != null) 
+			{
+				// use comma as separator
+				String[] rs = line.split(cvsSplitBy);
+
+				// DBResultMedtronic res = new DBResultMedtronic(rs);
+				DBResult res = makeDBResult(rs);
+				if (res.isValid())
+				{
+					rawResultsFromDB.add(res);
+	       	    	m_Logger.log(Level.FINEST, "Result added for " + loadStringName() + " " + res.toString());
+				}
+				else if (res.isReportRange())
+				{
+					m_ReportDateRange = res;
+				}
+			}
+
+		} catch (FileNotFoundException e) {
+			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "DataLoadCSVFile: FileNotFoundException trying to open file " + e.getLocalizedMessage());
+		} catch (IOException e) {
+			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "DataLoadCSVFile: IOException trying to open file " + e.getLocalizedMessage());
+		} finally {
+			if (br != null) {
+				try {
+					br.close();
+				} catch (IOException e) {
+					m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "DataLoadCSVFile: IOException trying to close file " + e.getLocalizedMessage());
+				}
+			}
+		}
+
+	}
+
+	
 }

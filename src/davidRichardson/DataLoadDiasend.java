@@ -528,7 +528,7 @@ public class DataLoadDiasend extends DataLoadBase
 						if (lastHourChange != null && tempBasalStart == null && 
 								lastHourChangeRate != null && lastHourChangeRate != 0.0)
 						{
-							m_Logger.log(Level.INFO, 
+							m_Logger.log(Level.FINE, 
 									"Creating Temp Basal from : " + res.rawToString());
 
 							Double resRate = Double.parseDouble(res.getM_Result());

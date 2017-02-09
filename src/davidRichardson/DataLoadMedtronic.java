@@ -18,6 +18,13 @@ public class DataLoadMedtronic extends DataLoadCSVFile
 		DBResultMedtronic result = new DBResultMedtronic(res);
 		return result;
 	}
+	
+	@Override
+	protected DBResult makeDBResult(String[] res, DBResult.ResultType resType) 
+	{
+		DBResult result = null;
+		return result;
+	}
 
 	@Override
 	protected String loadStringName() 

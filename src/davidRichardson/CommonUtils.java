@@ -464,7 +464,7 @@ public class CommonUtils
 	public static Double getFieldDouble(DBObject rs, String fieldName)
 	{
 		Double result = null;
-		if (rs.containsField(fieldName))
+		if (rs.containsField(fieldName) && rs.get(fieldName).toString().length() > 0)
 		{
 			try
 			{
@@ -481,7 +481,7 @@ public class CommonUtils
 	public static int getFieldInt(DBObject rs, String fieldName)
 	{
 		int result = 0;
-		if (rs.containsField(fieldName))
+		if (rs.containsField(fieldName) && rs.get(fieldName).toString().length() > 0)
 		{
 			result = (int)rs.get(fieldName);
 		}
@@ -491,7 +491,7 @@ public class CommonUtils
 	public static long getFieldLong(DBObject rs, String fieldName)
 	{
 		long result = 0;
-		if (rs.containsField(fieldName))
+		if (rs.containsField(fieldName) && rs.get(fieldName).toString().length() > 0)
 		{
 			result = (long)rs.get(fieldName);
 		}
@@ -501,6 +501,7 @@ public class CommonUtils
 	public static Date convertNSZDateString(String dateStr) throws ParseException
 	{ 
 		final String z     = new String("Z");
+		final String t     = new String("T");
 		final String pls   = new String("+");
 		final String am    = new String("am");
 		final String pm    = new String("pm");
@@ -509,9 +510,15 @@ public class CommonUtils
 		
 		final String happ  = new String("0000");
 		
-		if (dateStr.contains(z))
+		if (dateStr.contains(z) && dateStr.contains(t) && dateStr.contains(dot))
 		{
 			Date result = convertDateString(dateStr, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+			return result;
+		}
+		// Some Nightscout dates are missing the milliseconds
+		else if (dateStr.contains(z) && dateStr.contains(t))
+		{
+			Date result = convertDateString(dateStr, "yyyy-MM-dd'T'HH:mm:ss'Z'");
 			return result;
 		}
 		else if (dateStr.contains(pls))

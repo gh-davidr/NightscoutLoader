@@ -135,7 +135,8 @@ public class WinNightScoutLoader extends JFrame {
     set2.removeAll(set1);
 	 */	
 
-	private String[] m_SupportedMeters = {"Roche Combo", "Medtronic", "Diasend", "OmniPod", "Roche SQL Extract"};
+	// private String[] m_SupportedMeters = {"Roche Combo", "Medtronic", "Diasend", "OmniPod", "Roche SQL Extract", "Tandem"};
+	private String[] m_SupportedMeters = {"Roche Combo", "Medtronic", "Diasend", "OmniPod", "Roche SQL Extract", };
 	//	private String[] m_SupportedMeters = {"Roche Combo", "Medtronic"};
 	private JComboBox<String> m_ComboBox;
 
@@ -353,27 +354,43 @@ public class WinNightScoutLoader extends JFrame {
         		m_FileNameTxtFld.setText(m_MeterFileChooser.getSelectedFile());
 				 */ 
 
+				String meter = new String((String)m_ComboBox.getSelectedItem());
 				JFileChooser chooser = new JFileChooser();
+				chooser.setDialogTitle("Select " + meter + " file.  Action ==> Synchronize will then load");
 
 				FileNameExtensionFilter filter = null;
-				if (m_ComboBox.getSelectedIndex() == 1)
+				
+				if (meter.equals("Diasend"))
 				{
-					// CSV for Medtronic and XLS for Diasend
-					filter = new FileNameExtensionFilter(
-							"CSV Files", "csv");
+					filter = new FileNameExtensionFilter("XLS Files", "xls");
 				}
-				else if (m_ComboBox.getSelectedIndex() == 2)
+				else if (meter.equals("Medtronic") || meter.equals("Tandem") || meter.equals("Roche SQL Extract"))
 				{
-					// CSV for Medtronic and XLS for Diasend
-					filter = new FileNameExtensionFilter(
-							"XLS Files", "xls");
+					filter = new FileNameExtensionFilter("CSV Files", "csv");
 				}
-				else if (m_ComboBox.getSelectedIndex() == 3)
+				else if (meter.equals("OmniPod"))
 				{
-					// IBF file format for OmniPod binary file
-					filter = new FileNameExtensionFilter(
-							"OmniPod Files", "ibf");
+					filter = new FileNameExtensionFilter("OmniPod Files", "ibf");
 				}
+				
+//				if (m_ComboBox.getSelectedIndex() == 1)
+//				{
+//					// CSV for Medtronic and XLS for Diasend
+//					filter = new FileNameExtensionFilter(
+//							"CSV Files", "csv");
+//				}
+//				else if (m_ComboBox.getSelectedIndex() == 2)
+//				{
+//					// CSV for Medtronic and XLS for Diasend
+//					filter = new FileNameExtensionFilter(
+//							"XLS Files", "xls");
+//				}
+//				else if (m_ComboBox.getSelectedIndex() == 3)
+//				{
+//					// IBF file format for OmniPod binary file
+//					filter = new FileNameExtensionFilter(
+//							"OmniPod Files", "ibf");
+//				}
 
 
 				chooser.setFileFilter(filter);
@@ -385,22 +402,44 @@ public class WinNightScoutLoader extends JFrame {
 					m_FileNameTxtFld.setText(chooser.getSelectedFile().getAbsolutePath());
 
 					// Also set it in preferences too
-					if (m_ComboBox.getSelectedIndex() == 1)
+					if (meter.equals("Medtronic"))
 					{
 						PrefsNightScoutLoader.getInstance().setM_MedtronicMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
 					}
-					else if (m_ComboBox.getSelectedIndex() == 2)
+					else if (meter.equals("Diasend"))
 					{
 						PrefsNightScoutLoader.getInstance().setM_DiasendMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
 					}
-					else if (m_ComboBox.getSelectedIndex() == 3)
+					else if (meter.equals("OmniPod"))
 					{
 						PrefsNightScoutLoader.getInstance().setM_OmniPodMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
 					}
-					else if (m_ComboBox.getSelectedIndex() == 4)
+					else if (meter.equals("Roche SQL Extract"))
 					{
 						PrefsNightScoutLoader.getInstance().setM_RocheExtractMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
 					}
+					else if (meter.equals("Tandem"))
+					{
+						PrefsNightScoutLoader.getInstance().setM_TandemMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
+					}
+					
+//					// Also set it in preferences too
+//					if (m_ComboBox.getSelectedIndex() == 1)
+//					{
+//						PrefsNightScoutLoader.getInstance().setM_MedtronicMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
+//					}
+//					else if (m_ComboBox.getSelectedIndex() == 2)
+//					{
+//						PrefsNightScoutLoader.getInstance().setM_DiasendMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
+//					}
+//					else if (m_ComboBox.getSelectedIndex() == 3)
+//					{
+//						PrefsNightScoutLoader.getInstance().setM_OmniPodMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
+//					}
+//					else if (m_ComboBox.getSelectedIndex() == 4)
+//					{
+//						PrefsNightScoutLoader.getInstance().setM_RocheExtractMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
+//					}
 
 					m_Logger.log(Level.INFO, "You chose to open this file: " +
 							chooser.getSelectedFile().getAbsolutePath());

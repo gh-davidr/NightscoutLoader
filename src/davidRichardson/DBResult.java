@@ -18,15 +18,15 @@ public class DBResult implements DBResultInterface
 {
 
 	protected static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());
-	
+
 	// Sep 2016
 	// Proximity checks are for where we have a new Meter/Pump entry coming into an
 	// existing NightScout Care Portal data set, and there's a possible duplicate
 	// among them.
 	private static boolean m_ProximityCheck           = false;
 	private static boolean m_ProximityCheckSecondPass = false;
-	
-	
+
+
 	// Enumerator for Analysis
 	enum TimeSlot
 	{
@@ -36,7 +36,7 @@ public class DBResult implements DBResultInterface
 		DinnerTime,
 		BedTime
 	};
-	
+
 	// Need to return more that true/false back from merge
 	enum MergeResult
 	{
@@ -44,6 +44,17 @@ public class DBResult implements DBResultInterface
 		TooDistant, // Raw result is part of another result
 		Duplicate,
 		CantMerge   // Raw result is completely different
+	};
+	
+	// Since the file already groups this together, we need to read each section separately
+	// to utilize the grouping logic already established for other data sources.
+	// So when reading the pump values, tell the constructor what to look out for.
+	public enum ResultType
+	{
+		Unknown,
+		BG,
+		Insulin,
+		Carbs,
 	};
 
 	// Work out which time the result falls into
@@ -239,7 +250,7 @@ public class DBResult implements DBResultInterface
 	private boolean m_Ins = false;
 	private boolean m_Corr = false; // A correction will be a BG then Ins in that order :-)
 	private boolean m_TmpBasal = false;
-	
+
 	// Proximity match with an existing record
 	private boolean m_ProximityPossibleDuplicate = false;
 
@@ -512,9 +523,9 @@ public class DBResult implements DBResultInterface
 
 		m_DataSource    = new String();
 	}
-	
-	
-	
+
+
+
 
 
 	public String getId() 
@@ -530,42 +541,42 @@ public class DBResult implements DBResultInterface
 	public String getIdentity()
 	{
 		String result = null;
-				
+
 		//		String result = new String(getM_CP_EventType() + this.getM_CP_EventTime());
 		long   time = this.getM_EpochMillies();
 		String details = new String("");
-				
+
 		if (m_ProximityCheck == true)
 		{
 			// How many minutes apart two entries can be before being considered proximity/duplicate
 			int     proximityMinutes    = PrefsNightScoutLoader.getInstance().getM_ProximityMinutes();
 			int     checkType           = PrefsNightScoutLoader.getInstance().getM_ProximityCheckType();
 
-//			boolean typeCheck           = PrefsNightScoutLoader.getInstance().isM_ProximityTypeCheck();
+			//			boolean typeCheck           = PrefsNightScoutLoader.getInstance().isM_ProximityTypeCheck();
 			boolean typeCheck           = checkType == 0 ? false : true;
 			boolean checkBGValue        = PrefsNightScoutLoader.getInstance().isM_CompareBGInProximityCheck();
 			boolean checkCarbValue      = PrefsNightScoutLoader.getInstance().isM_CompareCarbInProximityCheck();
 			boolean checkInsulinValue   = PrefsNightScoutLoader.getInstance().isM_CompareInsulinInProximityCheck();
-			
+
 			int     checkBGValueDP      = PrefsNightScoutLoader.getInstance().getM_BGDecPlacesProximityCheck();
 			int     checkCarbValueDP    = PrefsNightScoutLoader.getInstance().getM_CarbDecPlacesProximityCheck();
 			int     checkInsulinValueDP = PrefsNightScoutLoader.getInstance().getM_InsulinDecPlacesProximityCheck();
-			
+
 			// Since we may have 2 adjacent readings either side of the mid point of proximityMinutes, we do a second
 			// pass looking for proximity matches but this time slide the time forward by half the proximityMinutes
 			if (m_ProximityCheckSecondPass == true)
 			{
 				long halfProximityMinutesMillis = proximityMinutes * 60 * 1000 / 2;
-				
+
 				time += halfProximityMinutesMillis;
 			}
-			
+
 			long roundPeriodMins = proximityMinutes * 60 * 1000;
 			// Adjust time by rounding up or down to nearest proximity minutes approximately.
-			
+
 			long timeUp   = time - (time % roundPeriodMins) + roundPeriodMins;
 			long timeDown = time - (time % roundPeriodMins);
-			
+
 			// Are we closer to Up time or Down
 			if ( (timeUp - time) > (time - timeDown) )
 			{
@@ -575,29 +586,29 @@ public class DBResult implements DBResultInterface
 			{
 				time = timeUp;
 			}
-			
+
 			// Based on preferences, include the BG, Carb and Insulin formatted
 			// again to preference decimal places for each parameter
 			if (checkBGValue == true && this.getM_CP_Glucose() != null)
 			{
 				details += " :BG: " + String.format("%." + checkBGValueDP + "f", getM_CP_Glucose());
 			}
-		    if (checkCarbValue == true && this.getM_CP_Carbs() != null)
+			if (checkCarbValue == true && this.getM_CP_Carbs() != null)
 			{
 				details += " :CARBS: " + String.format("%." + checkCarbValueDP + "f", getM_CP_Carbs());
 			}
-		    if (checkInsulinValue == true && this.getM_CP_Insulin() != null)
+			if (checkInsulinValue == true && this.getM_CP_Insulin() != null)
 			{
-		    	details += " :INSULIN: " + String.format("%." + checkInsulinValueDP + "f", getM_CP_Insulin());
+				details += " :INSULIN: " + String.format("%." + checkInsulinValueDP + "f", getM_CP_Insulin());
 			}
-			
-		    result = new String((typeCheck == true ? getM_CP_EventType() : "" ) + String.format("%d", time) + details);
+
+			result = new String((typeCheck == true ? getM_CP_EventType() : "" ) + String.format("%d", time) + details);
 		}
 		else
 		{
-		   result = new String(getM_CP_EventType() + String.format("%d", time));
+			result = new String(getM_CP_EventType() + String.format("%d", time));
 		}
-		
+
 		return result;
 	}
 
@@ -653,28 +664,34 @@ public class DBResult implements DBResultInterface
 		result = id.hashCode();
 		return result; 
 	}
-	
+
 	protected Date parseFileDate(String date)
 	{
 		Date result = new Date(0);
 		// One of a couple of formats
-		
+
 		// 15 Jun 2016
 		// Bug found by Melanie Cragg in Australia 14 Jun 2016
 		// Medtronic dates were all being stored as January
 		// Andy's original file masked this issue as his data was all January!!!
-//		DateFormat dashformat  = new SimpleDateFormat("dd-mm-yyyy", Locale.ENGLISH);
-//		DateFormat slashformat = new SimpleDateFormat("dd/mm/yyyy", Locale.ENGLISH);
-		
-		final String defDashFormat  = new String("dd-MM-yy");
-		final String defSlashFormat = new String("dd/MM/yy");
+		//		DateFormat dashformat  = new SimpleDateFormat("dd-mm-yyyy", Locale.ENGLISH);
+		//		DateFormat slashformat = new SimpleDateFormat("dd/mm/yyyy", Locale.ENGLISH);
+
+		final String defDashFormat    = new String("dd-MM-yy");
+		final String defSlashFormat   = new String("dd/MM/yy");
+		final String defISODashFormat = new String("yyyy-MM-ddTHH:mm:ss");
 		String prefDateFormat       = PrefsNightScoutLoader.getInstance().getM_InputDateFormat();
 		DateFormat dashformat       = new SimpleDateFormat((prefDateFormat.contains("-")  ?  prefDateFormat : defDashFormat), Locale.ENGLISH);
 		DateFormat slashformat      = new SimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat), Locale.ENGLISH);
-		
+		DateFormat defISODashformat = new SimpleDateFormat(defISODashFormat);
+
 		try
 		{
-			if (date.contains("/"))
+			if (date.contains("T"))
+			{
+				result = defISODashformat.parse(date);
+			}
+			else if (date.contains("/"))
 			{
 				result = slashformat.parse(date);
 			}
@@ -685,7 +702,7 @@ public class DBResult implements DBResultInterface
 		}
 		catch (ParseException e) 
 		{
-   	    	m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "parseFileDate - Unexpected error parsing date: " + date);
+			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "parseFileDate - Unexpected error parsing date: " + date);
 		}
 
 		return result;
@@ -819,13 +836,13 @@ public class DBResult implements DBResultInterface
 			m_CP_EnteredBy = AuditHistory.getInstance().getM_NextUploadID();
 
 			// Doing this check here is way too early!
-			
-//			// If this result has proximity flag then something already stored was found in NS
-//			if (isM_ProximityMatch() == true)
-//			{
-//				m_CP_EnteredBy += "-PROXIMITY";
-//			}
-			
+
+			//			// If this result has proximity flag then something already stored was found in NS
+			//			if (isM_ProximityMatch() == true)
+			//			{
+			//				m_CP_EnteredBy += "-PROXIMITY";
+			//			}
+
 			// Too noisy on the reports to include details in notes
 
 			if (resType.equals("BG"))
@@ -963,7 +980,7 @@ public class DBResult implements DBResultInterface
 		return result;
 	}
 
-	
+
 	public MergeResult merge(DBResult res)
 	{
 		MergeResult result = MergeResult.Merged;  // Assume that the result cannot be merged
@@ -1133,165 +1150,165 @@ public class DBResult implements DBResultInterface
 		return result;
 	}
 
-	
-//	public boolean merge(DBResult res)
-//	{
-//		boolean result = true;  // Assume that the result is in close proximity
-//
-//		// 17 Apr 016
-//		// Try a big try
-//		try
-//		{
-//
-//			// Compare time of current object with the merge.
-//			// If less than a minute then it could be a merge
-//			Date thisTime = this.getM_Time();
-//			Date resTime  = res.getM_Time();
-//
-//			/*		long maxDiffBetweenSameMealEvent  = 1000 * 60 * 30; // Allow up to half an hour between BG, Carbs & Ins
-//		long maxDiffBetweenSameCorrection = 1000 * 60 * 5;  // Allow up to 5 mins between BG & Ins
-//			 */
-//			long maxDiffBetweenSameMealEvent  = 1000 * 60 * 
-//					// Get Preference Value now
-//					PrefsNightScoutLoader.getInstance().getM_MaxMinsBetweenSameMealEvent();
-//			long maxDiffBetweenSameCorrection = 1000 * 60 * 
-//					// Get Preference Value now
-//					PrefsNightScoutLoader.getInstance().getM_MaxMinsBetweenSameCorrectionEvent();
-//
-//			long diffMillies = resTime.getTime() - thisTime.getTime();
-//
-//			if ((diffMillies <= maxDiffBetweenSameCorrection) || (diffMillies <= maxDiffBetweenSameMealEvent && m_Carb))
-//			{
-//				// Add the notes from the other item with optional separator
-//				m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + res.getM_Notes();
-//
-//				// First, assume it's a Carb Correction as we are merging two results.
-//				String resType = res.getM_ResultType();
-//
-//				if (resType.equals("BG") && !m_BG) // Last check in case results out of sequence
-//				{
-//					m_BG = true;
-//					m_CP_Glucose = new Double(Double.parseDouble(res.m_Result));
-//				}
-//				else if (resType.equals("Carbs") && !m_Carb)
-//				{
-//					m_Carb = true;
-//					m_CP_Carbs = new Double(Double.parseDouble(res.m_Result));
-//					// However, if we see a Carb then it must be a Meal Bolus instead
-//					m_CP_EventType = "Meal Bolus";
-//
-//					// We can work out the Carbs time in Mins by assuming meal began at the time of first event
-//					m_CP_CarbsTime = (double)(diffMillies / (1000 * 60));
-//				}
-//				else if (resType.equals("Standard Bolus") && !m_Ins)
-//				{
-//					m_Ins = true;
-//					m_CP_Insulin = Double.parseDouble(res.m_Result);
-//				}
-//				else if (resType.equals("Pen Units")  && !m_Ins)
-//				{
-//					m_Ins = true;
-//					if (!m_Carb && m_BG)
-//					{
-//						m_Corr = true; // Allow a BG first then Ins
-//					}
-//					m_CP_EventType = "Correction Bolus";
-//					m_CP_Insulin = Double.parseDouble(res.getM_Result());
-//					m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + "PenBolus";
-//				}
-//
-//				else if (resType.equals("MultiWave") && !m_Ins)
-//				{
-//					m_Ins = true;
-//					if (!m_Carb && m_BG)
-//					{
-//						m_Corr = true; // Allow a BG first then Ins
-//					}
-//					m_CP_Insulin = Double.parseDouble(res.m_Result);
-//					m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + "PumpMultiWave";
-//				}
-//				/*
-//				 * Looks like extended is not supported
-//				 */
-//				/* But let's store it as a NOTE for now
-//				 */
-//				else if (resType.equals("Extended Bolus Start"))
-//				{
-//					m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + "Extended Bolus " + res.getM_Duration() + " Mins";
-//					m_CP_Duration = Double.parseDouble(res.getM_Duration());
-//
-//					// If we already have insulin amount, then add the amounts together.
-//					if (m_Ins)
-//					{
-//						Double totIns = this.getM_CP_Insulin() + Double.parseDouble(res.getM_Result());
-//
-//						m_CP_Insulin = totIns;
-//
-//						m_CP_Notes += "(Insulin Combined. " + res.getM_Result() + "u Extended)";
-//					}
-//					else
-//					{
-//						m_CP_Insulin = Double.parseDouble(res.m_Result);
-//					}
-//
-//					m_Ins = true;
-//
-//				}
-//				
-//				// David 14 Oct 2016
-//				// So the results are in close proximity, but we've not really merged anything
-//				else
-//				{
-//					// Return false so the current mergee gets converted to a candidate
-//					result = false;					
-//				}
-//				// David 14 Oct 2016
-//			}
-//
-//			// Could be either side of a long running temp basal
-//			else if (m_TmpBasal == true && res.getM_ResultType().equals("Basal"))
-//			{
-//				// Get duration from time differences
-//				Double diffMilliesDbl = new Double(diffMillies);
-//
-//				// Round to nearest whole number
-//				m_CP_Duration = Math.round(diffMilliesDbl / ( 60000.0 )) * 1.0; // Convert duration to minutes.
-//
-//				m_TmpBasal = false;
-//			}
-//
-//			else
-//			{
-//				// Check if we need to change the type first ...
-//
-//				// BG & Insulin is a correction!
-//				if (m_BG && m_Ins && !m_Carb)
-//				{
-//					m_CP_EventType = "Correction Bolus";
-//				}
-//				// Result is outside what we expect, so reset previous pending flags
-//				// so this gets stored.
-//				m_BG = false;
-//				m_Carb = false;
-//				m_Ins = false;
-//
-//				// Return false so the current mergee gets converted to a candidate
-//				result = false;
-//			}
-//
-//		}
-//		catch (Exception e) 
-//		{
-//			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+"> DBResult " +
-//					" Exception caught merging DBResult for Care Portal from Raw data: " + res.toString()
-//					+ res.rawToString() + " DURATION is " + res.getM_Duration());
-//		}
-//		finally
-//		{
-//		}
-//
-//		return result;
-//	}
+
+	//	public boolean merge(DBResult res)
+	//	{
+	//		boolean result = true;  // Assume that the result is in close proximity
+	//
+	//		// 17 Apr 016
+	//		// Try a big try
+	//		try
+	//		{
+	//
+	//			// Compare time of current object with the merge.
+	//			// If less than a minute then it could be a merge
+	//			Date thisTime = this.getM_Time();
+	//			Date resTime  = res.getM_Time();
+	//
+	//			/*		long maxDiffBetweenSameMealEvent  = 1000 * 60 * 30; // Allow up to half an hour between BG, Carbs & Ins
+	//		long maxDiffBetweenSameCorrection = 1000 * 60 * 5;  // Allow up to 5 mins between BG & Ins
+	//			 */
+	//			long maxDiffBetweenSameMealEvent  = 1000 * 60 * 
+	//					// Get Preference Value now
+	//					PrefsNightScoutLoader.getInstance().getM_MaxMinsBetweenSameMealEvent();
+	//			long maxDiffBetweenSameCorrection = 1000 * 60 * 
+	//					// Get Preference Value now
+	//					PrefsNightScoutLoader.getInstance().getM_MaxMinsBetweenSameCorrectionEvent();
+	//
+	//			long diffMillies = resTime.getTime() - thisTime.getTime();
+	//
+	//			if ((diffMillies <= maxDiffBetweenSameCorrection) || (diffMillies <= maxDiffBetweenSameMealEvent && m_Carb))
+	//			{
+	//				// Add the notes from the other item with optional separator
+	//				m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + res.getM_Notes();
+	//
+	//				// First, assume it's a Carb Correction as we are merging two results.
+	//				String resType = res.getM_ResultType();
+	//
+	//				if (resType.equals("BG") && !m_BG) // Last check in case results out of sequence
+	//				{
+	//					m_BG = true;
+	//					m_CP_Glucose = new Double(Double.parseDouble(res.m_Result));
+	//				}
+	//				else if (resType.equals("Carbs") && !m_Carb)
+	//				{
+	//					m_Carb = true;
+	//					m_CP_Carbs = new Double(Double.parseDouble(res.m_Result));
+	//					// However, if we see a Carb then it must be a Meal Bolus instead
+	//					m_CP_EventType = "Meal Bolus";
+	//
+	//					// We can work out the Carbs time in Mins by assuming meal began at the time of first event
+	//					m_CP_CarbsTime = (double)(diffMillies / (1000 * 60));
+	//				}
+	//				else if (resType.equals("Standard Bolus") && !m_Ins)
+	//				{
+	//					m_Ins = true;
+	//					m_CP_Insulin = Double.parseDouble(res.m_Result);
+	//				}
+	//				else if (resType.equals("Pen Units")  && !m_Ins)
+	//				{
+	//					m_Ins = true;
+	//					if (!m_Carb && m_BG)
+	//					{
+	//						m_Corr = true; // Allow a BG first then Ins
+	//					}
+	//					m_CP_EventType = "Correction Bolus";
+	//					m_CP_Insulin = Double.parseDouble(res.getM_Result());
+	//					m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + "PenBolus";
+	//				}
+	//
+	//				else if (resType.equals("MultiWave") && !m_Ins)
+	//				{
+	//					m_Ins = true;
+	//					if (!m_Carb && m_BG)
+	//					{
+	//						m_Corr = true; // Allow a BG first then Ins
+	//					}
+	//					m_CP_Insulin = Double.parseDouble(res.m_Result);
+	//					m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + "PumpMultiWave";
+	//				}
+	//				/*
+	//				 * Looks like extended is not supported
+	//				 */
+	//				/* But let's store it as a NOTE for now
+	//				 */
+	//				else if (resType.equals("Extended Bolus Start"))
+	//				{
+	//					m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + "Extended Bolus " + res.getM_Duration() + " Mins";
+	//					m_CP_Duration = Double.parseDouble(res.getM_Duration());
+	//
+	//					// If we already have insulin amount, then add the amounts together.
+	//					if (m_Ins)
+	//					{
+	//						Double totIns = this.getM_CP_Insulin() + Double.parseDouble(res.getM_Result());
+	//
+	//						m_CP_Insulin = totIns;
+	//
+	//						m_CP_Notes += "(Insulin Combined. " + res.getM_Result() + "u Extended)";
+	//					}
+	//					else
+	//					{
+	//						m_CP_Insulin = Double.parseDouble(res.m_Result);
+	//					}
+	//
+	//					m_Ins = true;
+	//
+	//				}
+	//				
+	//				// David 14 Oct 2016
+	//				// So the results are in close proximity, but we've not really merged anything
+	//				else
+	//				{
+	//					// Return false so the current mergee gets converted to a candidate
+	//					result = false;					
+	//				}
+	//				// David 14 Oct 2016
+	//			}
+	//
+	//			// Could be either side of a long running temp basal
+	//			else if (m_TmpBasal == true && res.getM_ResultType().equals("Basal"))
+	//			{
+	//				// Get duration from time differences
+	//				Double diffMilliesDbl = new Double(diffMillies);
+	//
+	//				// Round to nearest whole number
+	//				m_CP_Duration = Math.round(diffMilliesDbl / ( 60000.0 )) * 1.0; // Convert duration to minutes.
+	//
+	//				m_TmpBasal = false;
+	//			}
+	//
+	//			else
+	//			{
+	//				// Check if we need to change the type first ...
+	//
+	//				// BG & Insulin is a correction!
+	//				if (m_BG && m_Ins && !m_Carb)
+	//				{
+	//					m_CP_EventType = "Correction Bolus";
+	//				}
+	//				// Result is outside what we expect, so reset previous pending flags
+	//				// so this gets stored.
+	//				m_BG = false;
+	//				m_Carb = false;
+	//				m_Ins = false;
+	//
+	//				// Return false so the current mergee gets converted to a candidate
+	//				result = false;
+	//			}
+	//
+	//		}
+	//		catch (Exception e) 
+	//		{
+	//			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+"> DBResult " +
+	//					" Exception caught merging DBResult for Care Portal from Raw data: " + res.toString()
+	//					+ res.rawToString() + " DURATION is " + res.getM_Duration());
+	//		}
+	//		finally
+	//		{
+	//		}
+	//
+	//		return result;
+	//	}
 
 
 	public BasicDBObject createNightScoutObject()
@@ -1315,9 +1332,9 @@ public class DBResult implements DBResultInterface
 
 		appendToDoc(result, m_determinantField, m_CP_EnteredBy);
 		//		appendToDoc(result, "enteredBy", m_CP_EnteredBy);
-		
+
 		Date utcTime = new Date(CommonUtils.toUTC(m_Time.getTime(), CommonUtils.locTZ));
-//		appendToDoc(result, "created_at", m_CP_EventTime);
+		//		appendToDoc(result, "created_at", m_CP_EventTime);
 		appendToDoc(result, "created_at", utcTime);  // Use the UTC time instead
 
 		return result;
@@ -1355,9 +1372,9 @@ public class DBResult implements DBResultInterface
 			//			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH); // Try something different
 
 			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-//			Date utcValue = new Date(CommonUtils.toUTC(value.getTime(), CommonUtils.locTZ)); 
-//			String dVal = format.format(utcValue);
-			
+			//			Date utcValue = new Date(CommonUtils.toUTC(value.getTime(), CommonUtils.locTZ)); 
+			//			String dVal = format.format(utcValue);
+
 			String dVal = format.format(value);
 
 			doc.append(label, dVal);
@@ -1856,7 +1873,7 @@ public class DBResult implements DBResultInterface
 	 */
 	public synchronized void setM_ProximityPossibleDuplicate(boolean m_ProximityMatch) {
 		this.m_ProximityPossibleDuplicate = m_ProximityMatch;
-		
+
 		if (m_CP_EnteredBy.length() > 0 &&
 				!m_CP_EnteredBy.contains("-PROXIMITY"))
 		{
