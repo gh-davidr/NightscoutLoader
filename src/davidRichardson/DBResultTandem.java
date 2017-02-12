@@ -19,10 +19,11 @@ public class DBResultTandem extends DBResult
 	private boolean  m_Valid;
 	private boolean  m_ReportDateRange;
 
-	private enum WhichSectionOfFile
+	public enum WhichSectionOfFile
 	{
 		Unknown,
 		Meter_Vals,
+		Basal_Vals,
 		Pump_Vals,
 	};
 
@@ -37,6 +38,14 @@ public class DBResultTandem extends DBResult
 				"Note",
 		};
 
+	static private String[] m_BasalFieldNames =
+		{
+				"Type",
+				"EventDateTime",
+				"BasalRate",
+		};
+
+	
 	static private String[] m_PumpFieldNames =
 		{
 				"Type",
@@ -89,6 +98,11 @@ public class DBResultTandem extends DBResult
 	static private int m_MeterDateTimeIndex = 0;
 	static private int m_MeterBGIndex = 0;
 
+	static private boolean m_BasalIndexesInitialized = false; 
+	static private int m_BasalDateTimeIndex = 0;
+	static private int m_BasalBasalRateIndex = 0;
+
+	
 	static private boolean m_PumpIndexesInitialized = false; 
 	static private int m_PumpDateTimeIndex = 0;
 	static private int m_PumpBGIndex = 0;		
@@ -111,6 +125,12 @@ public class DBResultTandem extends DBResult
 		return m_ReportDateRange;
 	}
 
+	@Override
+	public long getM_EpochMillies() 
+	{
+		return m_Time.getTime();
+	}
+	
 	public DBResultTandem(String[] recordSet, ResultType resType) 
 	{
 		super();
@@ -118,6 +138,10 @@ public class DBResultTandem extends DBResult
 		if (m_WhichSectionOfFile == WhichSectionOfFile.Meter_Vals)
 		{
 			constructMeterValues(recordSet);
+		}
+		else if (m_WhichSectionOfFile == WhichSectionOfFile.Basal_Vals)
+		{
+			constructBasalValues(recordSet);
 		}
 
 		else if (m_WhichSectionOfFile == WhichSectionOfFile.Pump_Vals)
@@ -155,6 +179,8 @@ public class DBResultTandem extends DBResult
 
 			if (m_Valid == true)
 			{
+				m_Time = d;
+				
 				Calendar cal = Calendar.getInstance();
 				cal.setTime(d);
 				m_Year = cal.get(Calendar.YEAR);
@@ -169,26 +195,6 @@ public class DBResultTandem extends DBResult
 				catch(Exception e) 
 				{
 					m_DayName = "";
-				}
-
-				DateFormat df = new SimpleDateFormat("dd/MM/yy");
-				String ds;
-				ds = df.format(d);
-
-				// David 15-Jun-2016
-				// BUg from Australia!
-				//			    DateFormat tf = new SimpleDateFormat("dd/mm/yy H:m:s");
-				DateFormat tf = new SimpleDateFormat("dd/MM/yy H:m:s");
-				Date l_time = new Date(0);
-
-				try
-				{
-					l_time = tf.parse(ds + " " + m_RecordSet[m_MeterDateTimeIndex]);
-					this.m_Time = l_time;
-				}
-				catch(Exception e) 
-				{
-					this.m_Time = new Date(0);
 				}
 
 				// DAVID - 17 APr
@@ -216,6 +222,76 @@ public class DBResultTandem extends DBResult
 		}
 	}
 
+	private void constructBasalValues(String[] recordSet) 
+	{
+		m_Valid = true;
+		m_ReportDateRange = false;
+		initialize();
+
+		if (recordSet.length < m_RecordSet.length)
+		{
+			m_Valid = false;
+		}
+
+		if (m_Valid == true)
+		{
+			// Deep copy
+			for (int i = 0; i<m_RecordSet.length; i++)
+			{
+				m_RecordSet[i] = new String(recordSet[i]);
+			}
+
+			Date d = new Date(0);
+			d = parseFileDate(m_RecordSet[m_BasalDateTimeIndex]);
+			if (d.getTime() == 0)
+			{
+				m_Valid=false;
+			}
+
+			if (m_Valid == true)
+			{
+				m_Time = d;
+				
+				Calendar cal = Calendar.getInstance();
+				cal.setTime(d);
+				m_Year = cal.get(Calendar.YEAR);
+				m_Month = cal.get(Calendar.MONTH);
+				m_Day = cal.get(Calendar.DAY_OF_MONTH);
+
+				DateFormat f = new SimpleDateFormat("EEEE");
+				try 
+				{
+					m_DayName = f.format(d);
+				}
+				catch(Exception e) 
+				{
+					m_DayName = "";
+				}
+
+				try
+				{
+					// BASAL
+					if (m_RecordSet[m_BasalBasalRateIndex].length() > 0)
+					{
+						this.m_Result = m_RecordSet[m_BasalBasalRateIndex];
+						this.m_ResultType = "Basal";
+					}
+
+					// Not interested, so make invalid and it's discarded
+					else
+					{
+						m_Valid = false;
+					}
+				}
+				catch(Exception e) 
+				{
+					m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "DBResultTandem - Exception caught" + e.getMessage());
+				}
+			}
+		}
+	}
+
+	
 	private void constructPumpValues(String[] recordSet, ResultType resType) 
 	{
 		m_Valid = true;
@@ -244,6 +320,8 @@ public class DBResultTandem extends DBResult
 
 			if (m_Valid == true)
 			{
+				m_Time = d;
+				
 				Calendar cal = Calendar.getInstance();
 				cal.setTime(d);
 				m_Year = cal.get(Calendar.YEAR);
@@ -258,26 +336,6 @@ public class DBResultTandem extends DBResult
 				catch(Exception e) 
 				{
 					m_DayName = "";
-				}
-
-				DateFormat df = new SimpleDateFormat("dd/MM/yy");
-				String ds;
-				ds = df.format(d);
-
-				// David 15-Jun-2016
-				// BUg from Australia!
-				//			    DateFormat tf = new SimpleDateFormat("dd/mm/yy H:m:s");
-				DateFormat tf = new SimpleDateFormat("dd/MM/yy H:m:s");
-				Date l_time = new Date(0);
-
-				try
-				{
-					l_time = tf.parse(ds + " " + m_RecordSet[m_PumpDateTimeIndex]);
-					this.m_Time = l_time;
-				}
-				catch(Exception e) 
-				{
-					this.m_Time = new Date(0);
 				}
 
 				// DAVID - 17 APr
@@ -348,6 +406,13 @@ public class DBResultTandem extends DBResult
 						{
 							this.m_Result = m_RecordSet[m_PumpCarbAmountIndex];
 							this.m_ResultType = "Carbs";
+							
+							// If the carb value is 0, then this means there weren't really any carbs at all
+							// and more than likely it's just a correction.  So we invalidate the entry
+							if (this.m_Result.equals("0"))
+							{
+								m_Valid = false;
+							}
 						}
 					}
 
@@ -375,12 +440,25 @@ public class DBResultTandem extends DBResult
 			// Set values in underlying ResultFromDB from record set
 			if (m_MeterIndexesInitialized == false)
 			{	
-				m_MeterDateTimeIndex = fieldLocation("EventDateTime");
-				m_MeterBGIndex = fieldLocation("BG");
+				m_MeterDateTimeIndex = fieldLocation("EventDateTime", m_MeterFieldNames);
+				m_MeterBGIndex       = fieldLocation("BG", m_MeterFieldNames);
 
 				m_MeterIndexesInitialized = true;
 			}
+		}
+		
+		else if (m_WhichSectionOfFile == WhichSectionOfFile.Basal_Vals)
+		{
+			m_RecordSet = new String[m_BasalFieldNames.length];
+			
+			// Set values in underlying ResultFromDB from record set
+			if (m_BasalIndexesInitialized == false)
+			{	
+				m_BasalDateTimeIndex  = fieldLocation("EventDateTime", m_BasalFieldNames);
+				m_BasalBasalRateIndex = fieldLocation("BasalRate", m_BasalFieldNames);
 
+				m_BasalIndexesInitialized = true;
+			}
 		}
 
 		else if (m_WhichSectionOfFile == WhichSectionOfFile.Pump_Vals)
@@ -390,15 +468,15 @@ public class DBResultTandem extends DBResult
 			// Set values in underdlying ResultFromDB from record set
 			if (m_PumpIndexesInitialized == false)
 			{	
-				m_PumpDateTimeIndex = fieldLocation("EventDateTime");
-				m_PumpBolusTypeIndex = fieldLocation("Description");
-				m_PumpBGIndex = fieldLocation("BG");
+				m_PumpDateTimeIndex  = fieldLocation("EventDateTime", m_PumpFieldNames);
+				m_PumpBolusTypeIndex = fieldLocation("Description", m_PumpFieldNames);
+				m_PumpBGIndex = fieldLocation("BG", m_PumpFieldNames);
 
 				//				m_TempBasalAmountIndex = fieldLocation("Temp Basal Amount (U/h)");
 				//				m_TempBasalDurationIndex = fieldLocation("Temp Basal Duration (hh:mm:ss)");
-				m_PumpCarbAmountIndex = fieldLocation("CarbSize");
-				m_PumpStandardBolusIndex = fieldLocation("ActualTotalBolusRequested");
-				m_PumpBolusDurationIndex = fieldLocation("Duration");
+				m_PumpCarbAmountIndex    = fieldLocation("CarbSize", m_PumpFieldNames);
+				m_PumpStandardBolusIndex = fieldLocation("ActualTotalBolusRequested", m_PumpFieldNames);
+				m_PumpBolusDurationIndex = fieldLocation("Duration", m_PumpFieldNames);
 				//			m_Time = fieldLocation("Timestamp");
 
 				m_PumpIndexesInitialized = true;
@@ -408,12 +486,12 @@ public class DBResultTandem extends DBResult
 
 	}
 
-	private int fieldLocation(String f)
+	private int fieldLocation(String f, String[] fieldNames)
 	{
 		int result=-1;
-		for (int i=0; result < 0 && i < m_MeterFieldNames.length; i++)
+		for (int i=0; result < 0 && i < fieldNames.length; i++)
 		{
-			if (m_MeterFieldNames[i] == f)
+			if (fieldNames[i] == f)
 			{
 				result=i;
 			}
@@ -431,5 +509,19 @@ public class DBResultTandem extends DBResult
 			result=false;
 		}
 		return result;
+	}
+
+	/**
+	 * @return the m_WhichSectionOfFile
+	 */
+	public static synchronized WhichSectionOfFile getM_WhichSectionOfFile() {
+		return m_WhichSectionOfFile;
+	}
+
+	/**
+	 * @param m_WhichSectionOfFile the m_WhichSectionOfFile to set
+	 */
+	public static synchronized void setM_WhichSectionOfFile(WhichSectionOfFile m_WhichSectionOfFile) {
+		DBResultTandem.m_WhichSectionOfFile = m_WhichSectionOfFile;
 	}
 }

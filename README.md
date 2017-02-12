@@ -15,8 +15,9 @@ A desktop application with the following purposes in mind:
 
 Meter & Pump Data can be regularly loaded from a range of systems:
   * Roche (SQL Server Database load as well as CSV export)
-  * Medtronic
-  * Diasend
+  * Medtronic (csv)
+  * Diasend (xls)
+  * Tandem t:slim (csv)
 
   
 A serial stream of BG, Carb and Insulin is intelligently grouped together into a Treatment.  The tool will ignore previously loaded data.  It will also identify contention between manually entered Care Portal entries and data from meter/pump.
@@ -39,6 +40,12 @@ Analysis also runs in background on start up and provides a condensed summary of
 ![picture](resources/images/CGMTrendAnalysis.jpg)
 
 Any CGM data available within selected analysis date range is also analyzed.  A heat map shows areas of high frequency profiles.
+
+### Inference of CGM Date Ranges
+
+![picture](resources/images/AnalysisCGMDates.jpg)
+
+For those without continual sensor use, identifies date ranges when sensor was worn - useful for reviewing past events & data.
 
 ## Analytic approach used by NightscoutLoader
 
@@ -63,11 +70,14 @@ The application is built for desktop or laptop computers with Java.  It requires
 
 It loads the Nightscout Treatment and CGM into memory for comparison with new data being uploaded or for analysis.  The amount of memory your system needs will depend on how much data you pull in.  As a guide, 8 years' worth of treatment data and 20,000 CGM entries takes up 300Mb of RAM.
 
+
 ### Installation Guide for Nightscout use
 
 1. Check your version of Java at this [link] (https://java.com/en/download/help/version_manual.xml)
-1. Download the application from Google Drive.  Latest version is [V2.5] (https://drive.google.com/open?id=0BxlKJmCnE32_ek5kRERBeWxaNE0)
-  1. Occassionally, an early beta version is made available with fixes on the stable version or access to upcoming features.  The [Latest Beta] (https://drive.google.com/open?id=0BxlKJmCnE32_MmxTdXZGaUEyYVE) folder will have the latest beta if one is available.
+1. Download the application from Google Drive.  
+  1. Latest stable version always available [here] (https://drive.google.com/open?id=0BxlKJmCnE32_bVlpd3pHVjJnTzQ). 
+  1. Occassionally, an early beta version is made available with fixes on the stable version or access to upcoming 
+features.  The [Latest Beta] (https://drive.google.com/open?id=0BxlKJmCnE32_MmxTdXZGaUEyYVE) folder will have the latest beta if one is available.
 2. Copy the NightScoutLoader.jar file to your desktop
 3. Launch the application by double-clicking the icon on your desktop.
 4. Click Tools => Settings to launch the Settings panel
@@ -88,7 +98,10 @@ To convert a previous installation for non-Nightscout to one for Nightscout use,
 ### Installation Guide for non-Nightscout use
 
 1. Check your version of Java at this [link] (https://java.com/en/download/help/version_manual.xml)
-1. Download the application from Google Drive.  Latest version is [V2.5] (https://drive.google.com/open?id=0BxlKJmCnE32_ek5kRERBeWxaNE0)
+1. Download the application from Google Drive.  
+  1. Latest stable version always available [here] (https://drive.google.com/open?id=0BxlKJmCnE32_bVlpd3pHVjJnTzQ). 
+  1. Occassionally, an early beta version is made available with fixes on the stable version or access to upcoming 
+features.  The [Latest Beta] (https://drive.google.com/open?id=0BxlKJmCnE32_MmxTdXZGaUEyYVE) folder will have the latest beta if one is available.
 2. Copy the NightScoutLoader.jar file to your desktop
 3. Launch the application by double-clicking the icon on your desktop
 

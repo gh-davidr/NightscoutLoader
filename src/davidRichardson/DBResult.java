@@ -55,6 +55,7 @@ public class DBResult implements DBResultInterface
 		BG,
 		Insulin,
 		Carbs,
+		Basal,
 	};
 
 	// Work out which time the result falls into
@@ -679,7 +680,7 @@ public class DBResult implements DBResultInterface
 
 		final String defDashFormat    = new String("dd-MM-yy");
 		final String defSlashFormat   = new String("dd/MM/yy");
-		final String defISODashFormat = new String("yyyy-MM-ddTHH:mm:ss");
+		final String defISODashFormat = new String("yyyy-MM-dd'T'HH:mm:ss");
 		String prefDateFormat       = PrefsNightScoutLoader.getInstance().getM_InputDateFormat();
 		DateFormat dashformat       = new SimpleDateFormat((prefDateFormat.contains("-")  ?  prefDateFormat : defDashFormat), Locale.ENGLISH);
 		DateFormat slashformat      = new SimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat), Locale.ENGLISH);
@@ -917,7 +918,7 @@ public class DBResult implements DBResultInterface
 			// The merge will set the duration and percent is supplied externally.
 			else if (resType.equals("Basal") && 
 					// Only if we are inferring temp basals
-					PrefsNightScoutLoader.getInstance().isM_InferDiasendTempBasals())
+					PrefsNightScoutLoader.getInstance().isM_InferTempBasals())
 			{
 				m_CP_EventType = "Temp Basal";
 				m_CP_Duration = new Double(0);

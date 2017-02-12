@@ -12,6 +12,7 @@ public class FileChecker
 		Diasend,
 		OmniPod,
 		RocheSQLExtract,
+		Tandem,
 	}
 
 	public static String getFileTypeStr(FileCheckType fct)
@@ -25,6 +26,7 @@ public class FileChecker
 		case Diasend : result = "Diasend"; break;
 		case OmniPod : result = "OmniPod"; break;
 		case RocheSQLExtract : result = "Roche SQL Extract"; break;
+		case Tandem : result = "Tandem"; break;
 
 		default : result = "UNKNOWN"; break;
 		}
@@ -54,6 +56,10 @@ public class FileChecker
 			{
 				result = FileChecker.FileCheckType.RocheSQLExtract;
 			}
+			else if (isTandem(filename))
+			{
+				result = FileChecker.FileCheckType.Tandem;
+			}
 		}
 		else if (filename.contains(".ibf") && isOmniPod(filename))
 		{
@@ -75,9 +81,13 @@ public class FileChecker
 		{
 			result = FileChecker.FileCheckType.Diasend;
 		}
-		else if (isDiasend(filename))
+		else if (isRocheCSV(filename))
 		{
-			result = FileChecker.FileCheckType.Diasend;
+			result = FileChecker.FileCheckType.RocheSQLExtract;
+		}
+		else if (isTandem(filename))
+		{
+			result = FileChecker.FileCheckType.Tandem;
 		}
 
 		return result;
@@ -107,5 +117,10 @@ public class FileChecker
 		return result;
 	}
 
+	private static boolean isTandem(String fileName)
+	{
+		boolean result = DataLoadTandem.isTandem(fileName);
+		return result;
+	}
 	
 }

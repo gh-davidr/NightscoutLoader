@@ -18,13 +18,6 @@ public class DataLoadRocheCSV extends DataLoadCSVFile
 		DBResultRoche result = new DBResultRoche(res);
 		return result;
 	}
-
-	@Override
-	protected DBResult makeDBResult(String[] res, DBResult.ResultType resType) 
-	{
-		DBResult result = null;
-		return result;
-	}
 	
 	@Override
 	protected String loadStringName() 
@@ -71,16 +64,17 @@ public class DataLoadRocheCSV extends DataLoadCSVFile
 
 				if (ln == 1)
 				{
-					ln1Year       = (rs.length > 0 && rs[0].equals("Year")) ? true : false;
-					ln1Month      = (rs.length > 0 && rs[1].equals("Month")) ? true : false;
-					ln1Day        = (rs.length > 0 && rs[2].equals("Day")) ? true : false;
-					ln1DayName    = (rs.length > 0 && rs[3].equals("DayName")) ? true : false;
-					ln1Time       = (rs.length > 0 && rs[4].equals("Time")) ? true : false;
-					ln1TimeSlot   = (rs.length > 0 && rs[5].equals("TimeSlot")) ? true : false;
-					ln1Result     = (rs.length > 0 && rs[6].equals("Result")) ? true : false;
-					ln1ResultType = (rs.length > 0 && rs[7].equals("ResultType")) ? true : false;
-					ln1MealType   = (rs.length > 0 && rs[8].equals("MealType")) ? true : false;
-					ln1Duration   = (rs.length > 0 && rs[9].equals("Duration")) ? true : false;
+					int i = 0;
+					ln1Year       = (rs.length > i && rs[i++].equals("Year")) ? true : false;
+					ln1Month      = (rs.length > i && rs[i++].equals("Month")) ? true : false;
+					ln1Day        = (rs.length > i && rs[i++].equals("Day")) ? true : false;
+					ln1DayName    = (rs.length > i && rs[i++].equals("DayName")) ? true : false;
+					ln1Time       = (rs.length > i && rs[i++].equals("Time")) ? true : false;
+					ln1TimeSlot   = (rs.length > i && rs[i++].equals("TimeSlot")) ? true : false;
+					ln1Result     = (rs.length > i && rs[i++].equals("Result")) ? true : false;
+					ln1ResultType = (rs.length > i && rs[i++].equals("ResultType")) ? true : false;
+					ln1MealType   = (rs.length > i && rs[i++].equals("MealType")) ? true : false;
+					ln1Duration   = (rs.length > i && rs[i++].equals("Duration")) ? true : false;
 
 				}
 

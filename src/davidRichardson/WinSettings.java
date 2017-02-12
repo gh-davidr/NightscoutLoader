@@ -100,7 +100,7 @@ public class WinSettings extends JDialog {
 	private JTextField tf_MeterMongoDB;
 	private JTextField tf_MeterMongoCollection;
 	private JRadioButton rb_UseMongoForRoche;
-	private JRadioButton rb_InferDiasendTempBasals;
+	private JRadioButton rb_DiasendTempBasals;
 	private JLabel lbl_MeterMongoServer;
 	private JLabel lbl_MeterMongoDB;
 	private JLabel lbl_MeterMongoCollection;
@@ -1142,32 +1142,32 @@ public class WinSettings extends JDialog {
 		//		rochePanel.add(sp_RocheDaysToLoad, gbc_rochePanelComponents);
 
 		
-		rb_InferDiasendTempBasals = new JRadioButton("DIASEND : Infer Temp Basals");
-		rb_InferDiasendTempBasals.setToolTipText("<html>Diasend doesn't provide temp basals <br><b>Instead, they can be inferred by comparing basal rate changes against the profile</b> <br>Disable this in real use if temp basals appear wrong.</html>");
-		rb_InferDiasendTempBasals.addActionListener(new ActionListener() {
+		rb_DiasendTempBasals = new JRadioButton("Infer Temp Basals (Dias/Tand)");
+		rb_DiasendTempBasals.setToolTipText("<html>Diasend & Tandem exports don't provide temp basals <br><b>Instead, they can be inferred by comparing basal rate change times.<br>A Basal rate change on the hour is assumed a usual change.  Any other time is assumed to be a temp basal.<br>Disable this in real use if temp basals appear wrong.</html>");
+		rb_DiasendTempBasals.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent actionEvent) {
 				AbstractButton aButton = (AbstractButton) actionEvent.getSource();
-				PrefsNightScoutLoader.getInstance().setM_InferDiasendTempBasals(aButton.isSelected());
+				PrefsNightScoutLoader.getInstance().setM_InferTempBasals(aButton.isSelected());
 			}
 		});
-		GridBagConstraints gbc_rdbtnInferDiasendTempBasals = new GridBagConstraints();
-		gbc_rdbtnInferDiasendTempBasals.anchor = GridBagConstraints.WEST;
-		gbc_rdbtnInferDiasendTempBasals.insets = new Insets(0, 0, 5, 5);
-		//	gbc_rdbtnInferDiasendTempBasals.gridwidth = 6;
-		//		gbc_rdbtnInferDiasendTempBasals.gridx = 1;
-		gbc_rdbtnInferDiasendTempBasals.gridx = 4;
-		//		gbc_rdbtnInferDiasendTempBasals.gridy = 10;
-		gbc_rdbtnInferDiasendTempBasals.gridy = 4;
-		//		panel_1.add(rb_InferDiasendTempBasals, gbc_rdbtnInferDiasendTempBasals);
-		//		advancedPanel.add(rb_InferDiasendTempBasals, gbc_rdbtnInferDiasendTempBasals);
-		rochePanel.add(rb_InferDiasendTempBasals, gbc_rdbtnInferDiasendTempBasals);
+		GridBagConstraints gbc_rdbtnInferTempBasals = new GridBagConstraints();
+		gbc_rdbtnInferTempBasals.anchor = GridBagConstraints.WEST;
+		gbc_rdbtnInferTempBasals.insets = new Insets(0, 0, 5, 5);
+		//	gbc_rdbtnInferTempBasals.gridwidth = 6;
+		//		gbc_rdbtnInferTempBasals.gridx = 1;
+		gbc_rdbtnInferTempBasals.gridx = 4;
+		//		gbc_rdbtnInferTempBasals.gridy = 10;
+		gbc_rdbtnInferTempBasals.gridy = 4;
+		//		panel_1.add(rb_DiasendTempBasals, gbc_rdbtnInferTempBasals);
+		//		advancedPanel.add(rb_DiasendTempBasals, gbc_rdbtnInferTempBasals);
+		rochePanel.add(rb_DiasendTempBasals, gbc_rdbtnInferTempBasals);
 		//		gbc_rochePanelComponents.anchor = GridBagConstraints.WEST;
 		//		gbc_rochePanelComponents.insets = new Insets(0, 0, 5, 5);
 		//		gbc_rochePanelComponents.gridx = 2;
 		//		gbc_rochePanelComponents.gridy = 4;
-		//		rochePanel.add(rb_InferDiasendTempBasals, gbc_rochePanelComponents);
+		//		rochePanel.add(rb_DiasendTempBasals, gbc_rochePanelComponents);
 
-		rb_InferDiasendTempBasals.setSelected(PrefsNightScoutLoader.getInstance().isM_InferDiasendTempBasals());
+		rb_DiasendTempBasals.setSelected(PrefsNightScoutLoader.getInstance().isM_InferTempBasals());
 
 		
 

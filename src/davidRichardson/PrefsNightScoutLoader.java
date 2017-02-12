@@ -103,7 +103,7 @@ public class PrefsNightScoutLoader
 	
 	final private int     def_M_LogLevel                         = 0; // CHanged now.  It's an index onto 3 values
 	final private String  def_M_LogFile                          = "C:\\temp\\NightscoutLoader_Log.txt";
-	final private Boolean def_M_InferDiasendTempBasals         = false;
+	final private Boolean def_M_InferTempBasals         = false;
 	final private Boolean def_M_AuditLogAllShown                 = true;
 	
 	/*Not Final!*/      
@@ -207,7 +207,7 @@ public class PrefsNightScoutLoader
 	private boolean m_UseMongoForRocheResults;
 	private int     m_LogLevel;
 	private String  m_LogFile;
-	private boolean m_InferDiasendTempBasals;
+	private boolean m_InferTempBasals;
 	private boolean m_AuditLogAllShown;
 	private String  m_InputDateFormat;
 	private String  m_Timezone;
@@ -313,7 +313,7 @@ public class PrefsNightScoutLoader
 	final private String pref_UseMongoForRocheResults           = "NSL_UseMongoForRocheResults";
 	final private String pref_LogLevel                          = "NSL_LogLevel";
 	final private String pref_LogFile                           = "NSL_LogFile";
-	final private String pref_InferDiasendTempBasals          = "NSL_InferDiasendTempBasals";
+	final private String pref_InferTempBasals          = "NSL_InferTempBasals";
 	final private String pref_AuditLogAllShown                  = "NSL_AuditLogAllShown";   
 	final private String pref_InputDateFormat                   = "NSL_InputDateFormat";
 	final private String pref_Timezone                          = "NSL_Timezone";
@@ -422,7 +422,7 @@ public class PrefsNightScoutLoader
 		
 		m_LogLevel                          = def_M_LogLevel;
 		m_LogFile                           = def_M_LogFile;
-		m_InferDiasendTempBasals          = def_M_InferDiasendTempBasals;
+		m_InferTempBasals          = def_M_InferTempBasals;
 		m_AuditLogAllShown                  = def_M_AuditLogAllShown;
 		m_InputDateFormat                   = def_M_InputDateFormat;
 		m_Timezone                          = def_M_Timezone;
@@ -574,7 +574,7 @@ public class PrefsNightScoutLoader
 	    prefs.putBoolean(pref_UseMongoForRocheResults, m_UseMongoForRocheResults);
 	    prefs.putInt(pref_LogLevel, m_LogLevel);
 	    prefs.put(pref_LogFile, m_LogFile);
-	    prefs.putBoolean(pref_InferDiasendTempBasals, m_InferDiasendTempBasals);
+	    prefs.putBoolean(pref_InferTempBasals, m_InferTempBasals);
 	    prefs.putBoolean(pref_AuditLogAllShown, m_AuditLogAllShown);
 	    prefs.put(pref_InputDateFormat, m_InputDateFormat);
 	    prefs.put(pref_Timezone, m_Timezone);
@@ -686,7 +686,7 @@ public class PrefsNightScoutLoader
 		
 		m_LogLevel                          = prefs.getInt(pref_LogLevel, def_M_LogLevel);
 		m_LogFile                           = prefs.get(pref_LogFile,  def_M_LogFile); // "C:\\temp\\NightscoutLoader.log");
-		m_InferDiasendTempBasals          = prefs.getBoolean(pref_InferDiasendTempBasals, def_M_InferDiasendTempBasals);
+		m_InferTempBasals          = prefs.getBoolean(pref_InferTempBasals, def_M_InferTempBasals);
 		m_AuditLogAllShown                  = prefs.getBoolean(pref_AuditLogAllShown, def_M_AuditLogAllShown);
 		m_InputDateFormat                   = prefs.get(pref_InputDateFormat, def_M_InputDateFormat);     
 		m_Timezone                          = prefs.get(pref_Timezone, def_M_Timezone);
@@ -1254,17 +1254,17 @@ public class PrefsNightScoutLoader
 	}
 
 	/**
-	 * @return the m_InferDiasendTempBasals
+	 * @return the m_InferTempBasals
 	 */
-	public synchronized boolean isM_InferDiasendTempBasals() {
-		return m_InferDiasendTempBasals;
+	public synchronized boolean isM_InferTempBasals() {
+		return m_InferTempBasals;
 	}
 
 	/**
-	 * @param m_InferDiasendTempBasals the m_InferDiasendTempBasals to set
+	 * @param m_InferTempBasals the m_InferTempBasals to set
 	 */
-	public synchronized void setM_InferDiasendTempBasals(boolean m_InferDiasendTempBasals) {
-		this.m_InferDiasendTempBasals = m_InferDiasendTempBasals;
+	public synchronized void setM_InferTempBasals(boolean m_InferTempBasals) {
+		this.m_InferTempBasals = m_InferTempBasals;
 	}
 
 	/**

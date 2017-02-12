@@ -29,12 +29,15 @@ public class Version
 		m_ContactUs  = new String();
 		m_GoogleDriveHelpURI = new String();
 
-		//	m_Version    = "V2.5 beta 2";
-		m_Version    = "V2.6.b";
+		m_Version    = "V2.6";
 		m_Author     = "David Richardson";
 		m_ContactUs  = "NightscoutLoader@gmail.com";
 		//		m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_cEZMbmk4TTlZRUk";
-		m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_MTc4LThSamk2dzA";
+		
+		// This is a static URL.
+		// m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_MTc4LThSamk2dzA";
+		m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_RnZUTmxleFkyWlU";
+		
 		m_AboutText += "Nightscout Loader Version" + m_Version + "\r\n\r\n";
 		m_AboutText += "Nightscout Loader\r\n\r\nThree main functions offered:\r\n\r\n";
 		m_AboutText += "  (1) Load data from meter/pump database and upload into Nightscout for display on viewer\r\n";
@@ -94,7 +97,7 @@ public class Version
 		m_AboutText += "           Having added a feature to disable Diasend temp basals, introduced a much better algorithm to infer them more accurately\r\n";
 		m_AboutText += "           Fix to issue where last value read from file is duplicated\r\n";
 		m_AboutText += "           Reference to Online help – link to PDF on Google Drive\r\n";
-		m_AboutText += " 2.6.b   - Beta release introducing the following\r\n";
+		m_AboutText += " 2.6     - Release introducing the following\r\n";
 		m_AboutText += "           Support for T:Slim exports\r\n";
 		m_AboutText += "           Fixes to MongoDB Reads as reported by Mátyási Péter\r\n";
 		m_AboutText += "\r\n\r\n";

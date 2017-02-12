@@ -46,6 +46,7 @@ public class CoreNightScoutLoader
 	private DataLoadNightScoutEntries   m_DataLoadNightScoutEntries;
 	private DataLoadDiasend             m_DataLoadDiasend;
 	private DataLoadOmniPod             m_DataLoadOmniPod;
+	private DataLoadTandem              m_DataLoadTandem;
 
 	// Hold the list of objects back from SQL Server
 	private ArrayList <DBResult>      m_MeterArrayListDBResults;
@@ -73,6 +74,7 @@ public class CoreNightScoutLoader
 	private ThreadDataLoad       m_ThreadDataLoadMedtronic;
 	private ThreadDataLoad       m_ThreadDataLoadDiasend;
 	private ThreadDataLoad       m_ThreadDataLoadOmniPod;
+	private ThreadDataLoad       m_ThreadDataLoadTandem;
 	private ThreadDataLoad       m_ThreadDataLoadNightScout;
 	private ThreadDataLoad       m_ThreadDataLoadNightScoutEntries;
 	private ThreadDataLoad       m_ThreadDataMeterLoad; // Which thread is actually in use
@@ -96,6 +98,7 @@ public class CoreNightScoutLoader
 	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerMedtronic;
 	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerDiasend;
 	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerOmniPod;
+	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerTandem;
 	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerNightscout;
 	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerNightscoutEntries;
 	private ThreadDetermineSaveDifferences.DataLoadCompleteHander m_ThreadHandlerDetermineSaveDifferences;
@@ -120,6 +123,7 @@ public class CoreNightScoutLoader
 		m_DataLoadNightScoutEntries = new DataLoadNightScoutEntries();
 		m_DataLoadDiasend           = new DataLoadDiasend();   
 		m_DataLoadOmniPod           = new DataLoadOmniPod();
+		m_DataLoadTandem            = new DataLoadTandem();
 
 		m_MeterArrayListDBResults    = m_DataLoadRoche.getResultsTreatments();
 		m_NightScoutArrayListDBResults       = m_DataLoadNightScout.getResultsFromDB();
@@ -152,6 +156,7 @@ public class CoreNightScoutLoader
 		m_ThreadHandlerMedtronic  = null;
 		m_ThreadHandlerDiasend    = null;
 		m_ThreadHandlerOmniPod    = null;
+		m_ThreadHandlerTandem     = null;
 		m_ThreadHandlerNightscout = null;
 		m_ThreadHandlerNightscoutEntries = null;
 		m_ThreadHandlerDetermineSaveDifferences = null;
@@ -723,6 +728,82 @@ public class CoreNightScoutLoader
 	}
 
 
+	// Multi-threaded Tandem Loader
+	public synchronized void threadLoadTandemMeterPump(String filename,
+			ThreadDataLoad.DataLoadCompleteHander handler)
+	{
+		if (this.getM_ThreadDataMeterLoad() != null)
+		{
+			// Need better way than this!
+			addErrorText("threadLoadTandemMeterPump Thread Already Running!!");
+		}
+		else
+		{
+			m_DeviceUsed   = "Tandem Download File";
+			m_FileName     = filename;
+			m_DateRange    = "";
+
+			// Initialize the Tandem loader with supplied dates
+			m_DataLoadTandem.initialize(filename);
+
+			this.setM_ThreadDataLoadTandem(new ThreadDataLoad(m_DataLoadTandem));
+			this.setM_ThreadDataMeterLoad(this.getM_ThreadDataLoadTandem());
+
+			// Store supplied handler
+			m_ThreadHandlerTandem = handler;
+
+			// Install our own
+			// m_ThreadDataLoadNightScout.loadDBResults(handler);
+
+			m_ThreadDataLoadTandem.loadDBResults(
+					new ThreadDataLoad.DataLoadCompleteHander(handler.getM_Object()) 
+					{
+						//		@Override
+						public void exceptionRaised(String message) 
+						{
+							setM_ThreadDataLoadTandem(null);
+							setM_ThreadDataMeterLoad(null);
+						}
+
+						//		@Override
+						public void dataLoadComplete(Object obj, String message) 
+						{
+							m_MeterArrayListDBResults = new ArrayList<DBResult>(m_DataLoadTandem.getResultsTreatments());
+
+							// Sort the Mongo Results
+							Collections.sort(m_MeterArrayListDBResults, new ResultFromDBComparator());
+
+							String statusText = new String("");
+							statusText = String.format("Load %s\n%5d meter/pump entries read. ", 
+									m_DeviceUsed, m_MeterArrayListDBResults.size());
+
+							// We want to do this UI change in the main thread, and not the DB worker thread that's just
+							// notified back
+							EventQueue.invokeLater(new 
+									Runnable()
+							{ 
+								public void run()
+								{ 
+									// Add some commentary to the text pane
+									//									addStatusText("Loaded " + m_MeterArrayListDBResults.size() + " entries from Meter.");
+								}
+							});
+
+							// Check whether this meter/pump load does not include Nightscout load too
+							checkMeterPumpOnlyLoad();
+							
+							// Invoke our stored handler
+							m_ThreadHandlerTandem.dataLoadComplete(obj, statusText);
+
+							// Now clear the thread
+							setM_ThreadDataLoadTandem(null);
+							setM_ThreadDataMeterLoad(null);
+						}
+					});	
+		}
+	}
+
+	
 	public void loadRocheMeterPump(Date startDate, Date endDate)
 	{
 		try
@@ -1778,6 +1859,20 @@ public class CoreNightScoutLoader
 		this.m_ThreadDataLoadOmniPod = m_ThreadDataLoadOmniPod;
 	}
 
+
+	/**
+	 * @return the m_ThreadDataLoadTandem
+	 */
+	public synchronized ThreadDataLoad getM_ThreadDataLoadTandem() {
+		return m_ThreadDataLoadTandem;
+	}
+
+	/**
+	 * @param m_ThreadDataLoadTandem the m_ThreadDataLoadTandem to set
+	 */
+	public synchronized void setM_ThreadDataLoadTandem(ThreadDataLoad m_ThreadDataLoadTandem) {
+		this.m_ThreadDataLoadTandem = m_ThreadDataLoadTandem;
+	}
 
 	/**
 	 * @return the m_ThreadDataLoadNightScout

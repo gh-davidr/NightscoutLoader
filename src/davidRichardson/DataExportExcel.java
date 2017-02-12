@@ -151,6 +151,8 @@ public class DataExportExcel
 		rowNum += addParameterValue("Last Selected Meter", PrefsNightScoutLoader.getInstance().getM_SelectedMeter(), "Last Meter selected for data upload", sheet, rowNum);
 		rowNum += addParameterValue("Last Medtronic File", PrefsNightScoutLoader.getInstance().getM_MedtronicMeterPumpResultFilePath(), "(If used) Path to last file uploaded with Medtronic data", sheet, rowNum);
 		rowNum += addParameterValue("Last Diasend File", PrefsNightScoutLoader.getInstance().getM_DiasendMeterPumpResultFilePath(), "(If used) Path to last file uploaded with Diasend data", sheet, rowNum);
+		rowNum += addParameterValue("Last Roche SQL Export File", PrefsNightScoutLoader.getInstance().getM_RocheExtractMeterPumpResultFilePath(), "(If used) Path to last file uploaded with Roche SQL Extract data", sheet, rowNum);
+		rowNum += addParameterValue("Last Tandem File", PrefsNightScoutLoader.getInstance().getM_TandemMeterPumpResultFilePath(), "(If used) Path to last file uploaded with Tandem data", sheet, rowNum);
 		rowNum += addParameterValue("Last Export File", PrefsNightScoutLoader.getInstance().getM_ExportFilePath(), "(If used) Path to last Export of results", sheet, rowNum);
 		rowNum += addParameterValue("Last Care Portal Download File", PrefsNightScoutLoader.getInstance().getM_DownloadTreatmentFilePath(), "(If used) Path to last JSON download of Care Portal Treatment data", sheet, rowNum);
 		rowNum += addParameterValue("Last CGMS Download File", PrefsNightScoutLoader.getInstance().getM_DownloadSensorFilePath(), "(If used) Path to last JSON download of CGMS Sensor data", sheet, rowNum);
@@ -161,7 +163,7 @@ public class DataExportExcel
 		rowNum += addParameterValue("MongoDB Sensor Collection", PrefsNightScoutLoader.getInstance().getM_NightscoutSensorMongoCollection(), "Not exposed.  Internally used to identify name of collection for sensor heartbeats", sheet, rowNum);
 		rowNum += addParameterValue("MongoDB Database (Development only)", PrefsNightScoutLoader.getInstance().getM_MongoMeterDB(), "Nightscout MongoDB Database Name used to hold SQL Server data during development", sheet, rowNum);
 		rowNum += addParameterValue("MongoDB Audit Collection", PrefsNightScoutLoader.getInstance().getM_NightscoutAuditCollection(), "Not exposed.  Internally used to identify name of new collection for Nightscout Loader historic loads", sheet, rowNum);
-		rowNum += addParameterValue("Attempt Diasend Temp Basals", PrefsNightScoutLoader.getInstance().isM_InferDiasendTempBasals() ? "True" : "False", "Diasend temp basals have to be inferred and the logic is not too accurate.  This disables until I can persuade Diased to improve their exports", sheet, rowNum);
+		rowNum += addParameterValue("Infer Temp Basals", PrefsNightScoutLoader.getInstance().isM_InferTempBasals() ? "True" : "False", "Diasend & now Tandem temp basals have to be inferred so there's a risk they could be wrong..  This disables until I can persuade Diased/Tandem to improve their exports", sheet, rowNum);
 		rowNum += addParameterValue("Show All results in Audit History Window", PrefsNightScoutLoader.getInstance().isM_AuditLogAllShown() ? "True" : "False", "The simple Audit view hides all activity.  This flag controls this", sheet, rowNum);
 
 		autoSizeColumns(sheet, m_Settings_ColNames);

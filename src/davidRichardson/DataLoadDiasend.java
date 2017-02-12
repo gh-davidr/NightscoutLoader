@@ -456,12 +456,12 @@ public class DataLoadDiasend extends DataLoadBase
 		}
 	}
 
-	private void sortDBResults()
+/*	private void sortDBResults()
 	{
 		// Sort the Mongo Results
 		Collections.sort(rawResultsFromDB, new ResultFromDBComparator(false));
 	}
-
+*/
 	private DBResultDiasendBasalSetting getPrevalentBasalRate(DBResult basalResult)
 	{
 		DBResultDiasendBasalSetting result = null;
@@ -492,12 +492,12 @@ public class DataLoadDiasend extends DataLoadBase
 		return result;
 	}
 
-	private void locateTempBasals()
+	private void locateTempBasals_orig()
 	{
 		// Iterate over the raw results looking for basal rates that have changed.
 		// Assume the list is ordered in time.
 		//		boolean  tempStarted   = false;
-		if (PrefsNightScoutLoader.getInstance().isM_InferDiasendTempBasals())
+		if (PrefsNightScoutLoader.getInstance().isM_InferTempBasals())
 		{
 			DBResult tempBasalStart = null;
 			DBResult lastHourChange = null;

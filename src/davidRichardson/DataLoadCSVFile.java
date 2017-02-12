@@ -6,6 +6,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,11 +25,7 @@ public abstract class DataLoadCSVFile extends DataLoadBase
 	// Base class that must know how to create a DBResult derived instance
 	// with String array
 	protected abstract DBResult makeDBResult(String[] res);    
-	
-	// Base class that must know how to create a DBResult derived instance
-	// with String array
-	protected abstract DBResult makeDBResult(String[] res, DBResult.ResultType resType); 
-	
+		
 	// Similarly, base class must know what types it creates for logging
 	protected abstract String loadStringName();
 	
@@ -167,6 +165,5 @@ public abstract class DataLoadCSVFile extends DataLoadBase
 		}
 
 	}
-
 	
 }

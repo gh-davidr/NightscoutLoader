@@ -135,8 +135,20 @@ public class WinNightScoutLoader extends JFrame {
     set2.removeAll(set1);
 	 */	
 
-	// private String[] m_SupportedMeters = {"Roche Combo", "Medtronic", "Diasend", "OmniPod", "Roche SQL Extract", "Tandem"};
-	private String[] m_SupportedMeters = {"Roche Combo", "Medtronic", "Diasend", "OmniPod", "Roche SQL Extract", };
+	enum SupportedMeters
+	{
+		Unknown,
+
+		RocheCombo,
+		Medtronic,
+		Diasend,
+		OmniPod,
+		RocheSQLExtract,
+		Tandem,
+	};
+
+	private String[] m_SupportedMeters = {"Roche Combo", "Medtronic", "Diasend", "OmniPod", "Roche SQL Extract", "Tandem"};
+	//private String[] m_SupportedMeters = {"Roche Combo", "Medtronic", "Diasend", "OmniPod", "Roche SQL Extract", };
 	//	private String[] m_SupportedMeters = {"Roche Combo", "Medtronic"};
 	private JComboBox<String> m_ComboBox;
 
@@ -203,6 +215,38 @@ public class WinNightScoutLoader extends JFrame {
 		// Tested Fri 4 Mar
 		// Not sure this is working correctly.
 		// Grid does not populate
+	}
+
+	private SupportedMeters getSelectedMeter(String meter)
+	{
+		SupportedMeters result = SupportedMeters.Unknown;
+
+		if (meter.equals("Roche Combo"))
+		{
+			result = SupportedMeters.RocheCombo;
+		}
+		else if (meter.equals("Medtronic"))
+		{
+			result = SupportedMeters.Medtronic;
+		}
+		else if (meter.equals("Diasend"))
+		{
+			result = SupportedMeters.Diasend;
+		}
+		else if (meter.equals("OmniPod"))
+		{
+			result = SupportedMeters.OmniPod;
+		}
+		else if (meter.equals("Roche SQL Extract"))
+		{
+			result = SupportedMeters.RocheSQLExtract;
+		}
+		else if (meter.equals("Tandem"))
+		{
+			result = SupportedMeters.Tandem;
+		}
+
+		return result;
 	}
 
 	private void addStatusLine()
@@ -354,43 +398,45 @@ public class WinNightScoutLoader extends JFrame {
         		m_FileNameTxtFld.setText(m_MeterFileChooser.getSelectedFile());
 				 */ 
 
-				String meter = new String((String)m_ComboBox.getSelectedItem());
+				String meterStr = new String((String)m_ComboBox.getSelectedItem());
+				SupportedMeters meter = getSelectedMeter(meterStr);
+				
 				JFileChooser chooser = new JFileChooser();
 				chooser.setDialogTitle("Select " + meter + " file.  Action ==> Synchronize will then load");
 
 				FileNameExtensionFilter filter = null;
-				
-				if (meter.equals("Diasend"))
+
+				if (meter == SupportedMeters.Diasend)
 				{
 					filter = new FileNameExtensionFilter("XLS Files", "xls");
 				}
-				else if (meter.equals("Medtronic") || meter.equals("Tandem") || meter.equals("Roche SQL Extract"))
+				else if (meter == SupportedMeters.Medtronic || meter == SupportedMeters.Tandem || meter == SupportedMeters.RocheSQLExtract)
 				{
 					filter = new FileNameExtensionFilter("CSV Files", "csv");
 				}
-				else if (meter.equals("OmniPod"))
+				else if (meter == SupportedMeters.OmniPod)
 				{
 					filter = new FileNameExtensionFilter("OmniPod Files", "ibf");
 				}
-				
-//				if (m_ComboBox.getSelectedIndex() == 1)
-//				{
-//					// CSV for Medtronic and XLS for Diasend
-//					filter = new FileNameExtensionFilter(
-//							"CSV Files", "csv");
-//				}
-//				else if (m_ComboBox.getSelectedIndex() == 2)
-//				{
-//					// CSV for Medtronic and XLS for Diasend
-//					filter = new FileNameExtensionFilter(
-//							"XLS Files", "xls");
-//				}
-//				else if (m_ComboBox.getSelectedIndex() == 3)
-//				{
-//					// IBF file format for OmniPod binary file
-//					filter = new FileNameExtensionFilter(
-//							"OmniPod Files", "ibf");
-//				}
+
+				//				if (m_ComboBox.getSelectedIndex() == 1)
+				//				{
+				//					// CSV for Medtronic and XLS for Diasend
+				//					filter = new FileNameExtensionFilter(
+				//							"CSV Files", "csv");
+				//				}
+				//				else if (m_ComboBox.getSelectedIndex() == 2)
+				//				{
+				//					// CSV for Medtronic and XLS for Diasend
+				//					filter = new FileNameExtensionFilter(
+				//							"XLS Files", "xls");
+				//				}
+				//				else if (m_ComboBox.getSelectedIndex() == 3)
+				//				{
+				//					// IBF file format for OmniPod binary file
+				//					filter = new FileNameExtensionFilter(
+				//							"OmniPod Files", "ibf");
+				//				}
 
 
 				chooser.setFileFilter(filter);
@@ -402,44 +448,44 @@ public class WinNightScoutLoader extends JFrame {
 					m_FileNameTxtFld.setText(chooser.getSelectedFile().getAbsolutePath());
 
 					// Also set it in preferences too
-					if (meter.equals("Medtronic"))
+					if (meter == SupportedMeters.Medtronic)
 					{
 						PrefsNightScoutLoader.getInstance().setM_MedtronicMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
 					}
-					else if (meter.equals("Diasend"))
+					else if (meter == SupportedMeters.Diasend)
 					{
 						PrefsNightScoutLoader.getInstance().setM_DiasendMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
 					}
-					else if (meter.equals("OmniPod"))
+					else if (meter == SupportedMeters.OmniPod)
 					{
 						PrefsNightScoutLoader.getInstance().setM_OmniPodMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
 					}
-					else if (meter.equals("Roche SQL Extract"))
+					else if (meter == SupportedMeters.RocheSQLExtract)
 					{
 						PrefsNightScoutLoader.getInstance().setM_RocheExtractMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
 					}
-					else if (meter.equals("Tandem"))
+					else if (meter == SupportedMeters.Tandem)
 					{
 						PrefsNightScoutLoader.getInstance().setM_TandemMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
 					}
-					
-//					// Also set it in preferences too
-//					if (m_ComboBox.getSelectedIndex() == 1)
-//					{
-//						PrefsNightScoutLoader.getInstance().setM_MedtronicMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
-//					}
-//					else if (m_ComboBox.getSelectedIndex() == 2)
-//					{
-//						PrefsNightScoutLoader.getInstance().setM_DiasendMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
-//					}
-//					else if (m_ComboBox.getSelectedIndex() == 3)
-//					{
-//						PrefsNightScoutLoader.getInstance().setM_OmniPodMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
-//					}
-//					else if (m_ComboBox.getSelectedIndex() == 4)
-//					{
-//						PrefsNightScoutLoader.getInstance().setM_RocheExtractMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
-//					}
+
+					//					// Also set it in preferences too
+					//					if (m_ComboBox.getSelectedIndex() == 1)
+					//					{
+					//						PrefsNightScoutLoader.getInstance().setM_MedtronicMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
+					//					}
+					//					else if (m_ComboBox.getSelectedIndex() == 2)
+					//					{
+					//						PrefsNightScoutLoader.getInstance().setM_DiasendMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
+					//					}
+					//					else if (m_ComboBox.getSelectedIndex() == 3)
+					//					{
+					//						PrefsNightScoutLoader.getInstance().setM_OmniPodMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
+					//					}
+					//					else if (m_ComboBox.getSelectedIndex() == 4)
+					//					{
+					//						PrefsNightScoutLoader.getInstance().setM_RocheExtractMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
+					//					}
 
 					m_Logger.log(Level.INFO, "You chose to open this file: " +
 							chooser.getSelectedFile().getAbsolutePath());
@@ -857,7 +903,7 @@ public class WinNightScoutLoader extends JFrame {
 		});
 		mnHelp.add(mntmDetailedHelp);
 
-		
+
 		// When fully initialized, come back and set the timezone label
 		EventQueue.invokeLater(new 
 				Runnable()
@@ -1356,6 +1402,40 @@ public class WinNightScoutLoader extends JFrame {
 				});	
 			}
 
+			else if (fileType == FileChecker.FileCheckType.Tandem)
+			{
+				m_NightScoutLoaderCore.threadLoadTandemMeterPump(m_FileNameTxtFld.getText(),
+						new ThreadDataLoad.DataLoadCompleteHander(null) 
+				{
+					public void exceptionRaised(String message) { }
+					public void dataLoadComplete(Object obj, String message) 
+					{
+						// Refresh grid if meter/pump load only
+						if (m_NightScoutLoaderCore.isM_MeterPumpLoadOnly() == true)
+						{
+							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadNightScout().getResultsFromDB();
+							m_SaveDiffMessage = message;
+
+							EventQueue.invokeLater(new 
+									Runnable()
+							{ 
+								public void run()
+								{ 
+									// 1 kick off background analysis check
+									// 2 refresh grid
+									// 3 Generate a message
+									// Do in this order since grid refresh resets the m_MeterPumpLoadOnly flag
+									doBackgroundAnalysis();										
+									updateGrid();
+									JOptionPane.showMessageDialog(null, m_SaveDiffMessage);									
+								}
+							});
+						}
+
+					}
+				});	
+			}
+
 		}
 		catch (Exception e)
 		{
@@ -1422,7 +1502,9 @@ public class WinNightScoutLoader extends JFrame {
 					(fileType == FileChecker.FileCheckType.OmniPod &&
 					desiredFileType == FileChecker.FileCheckType.OmniPod) ||
 					(fileType == FileChecker.FileCheckType.RocheSQLExtract &&
-					desiredFileType == FileChecker.FileCheckType.RocheSQLExtract) )
+					desiredFileType == FileChecker.FileCheckType.RocheSQLExtract) ||
+					(fileType == FileChecker.FileCheckType.Tandem &&
+					desiredFileType == FileChecker.FileCheckType.Tandem) )
 			{
 				doThreadLoadFile(file, fileType);
 			}
@@ -1484,21 +1566,32 @@ public class WinNightScoutLoader extends JFrame {
 		//        JOptionPane.showMessageDialog(null, "Load Meter Pump selected", "InfoBox: " + " Action Selected", JOptionPane.INFORMATION_MESSAGE);
 
 		// If Roche is selected, then enable the date ranges
-		if (m_ComboBox.getSelectedIndex() == 0)
-		{			
+		String meterStr = new String((String)m_ComboBox.getSelectedItem());
+		SupportedMeters meter = getSelectedMeter(meterStr);
+		
+		FileNameExtensionFilter filter = null;
+
+		if (meter == SupportedMeters.RocheCombo)
+		{
 			doThreadLoadRoche();
 		}
-
-		// In all other cases, we load from a file
-		else if (m_ComboBox.getSelectedIndex() == 1)
-		{
-			result = offerToLoadCorrectFileFormat(m_FileNameTxtFld.getText(), FileChecker.FileCheckType.Medtronic);
-		}
-		else if (m_ComboBox.getSelectedIndex() == 2)
+		else if (meter == SupportedMeters.Diasend)
 		{
 			result = offerToLoadCorrectFileFormat(m_FileNameTxtFld.getText(), FileChecker.FileCheckType.Diasend);
 		}
-		else if (m_ComboBox.getSelectedIndex() == 3)
+		else if (meter == SupportedMeters.Medtronic)
+		{
+			result = offerToLoadCorrectFileFormat(m_FileNameTxtFld.getText(), FileChecker.FileCheckType.Medtronic);
+		}
+		else if (meter == SupportedMeters.Tandem)
+		{
+			result = offerToLoadCorrectFileFormat(m_FileNameTxtFld.getText(), FileChecker.FileCheckType.Tandem);
+		}
+		else if (meter == SupportedMeters.RocheSQLExtract)
+		{
+			result = offerToLoadCorrectFileFormat(m_FileNameTxtFld.getText(), FileChecker.FileCheckType.RocheSQLExtract);
+		}
+		else if (meter == SupportedMeters.OmniPod)
 		{
 			// Only enable the parameters that use MongoDB for Roche if it's Davids laptop
 			boolean davidsLaptop = PrefsNightScoutLoader.isItDavidsLaptop();
@@ -1506,7 +1599,7 @@ public class WinNightScoutLoader extends JFrame {
 			// For now, only I can do this on the laptop development machine...
 			if (davidsLaptop)
 			{
-			result = offerToLoadCorrectFileFormat(m_FileNameTxtFld.getText(), FileChecker.FileCheckType.OmniPod);
+				result = offerToLoadCorrectFileFormat(m_FileNameTxtFld.getText(), FileChecker.FileCheckType.OmniPod);
 			}
 			else
 			{
@@ -1515,10 +1608,6 @@ public class WinNightScoutLoader extends JFrame {
 						"Please note that OmniPod loads are not available yet.  This menu is here to allow development to proceed.");
 				result = false;
 			}
-		}
-		else if (m_ComboBox.getSelectedIndex() == 4)
-		{
-			result = offerToLoadCorrectFileFormat(m_FileNameTxtFld.getText(), FileChecker.FileCheckType.RocheSQLExtract);
 		}
 
 		// Update Status on window
@@ -2107,12 +2196,12 @@ public class WinNightScoutLoader extends JFrame {
 			// Load treatments
 			m_NightScoutLoaderCore.loadNightScout();
 			m_MongoResults = m_NightScoutLoaderCore.getM_ResultsMongoDB();
-			
+
 			// Load entries
 			// DAVID 8 Dec 2016
-//			m_NightScoutLoaderCore.loadNightScoutEntries();
-//			m_MongoResultsEntries = m_NightScoutLoaderCore.getM_DataLoadNightScoutEntries();
-			
+			//			m_NightScoutLoaderCore.loadNightScoutEntries();
+			//			m_MongoResultsEntries = m_NightScoutLoaderCore.getM_DataLoadNightScoutEntries();
+
 			doBackgroundAnalysis();
 		}
 
@@ -2279,14 +2368,14 @@ public class WinNightScoutLoader extends JFrame {
 	{
 
 	}
-	
+
 	public void displayCGMChart()
 	{
 		// Experimental - create a chart
 		CGMChart chart = new CGMChart(this.m_NightScoutLoaderCore.getM_NightScoutArrayListDBResultEntries());
 		chart.setVisible(true);
 	}
-	
+
 
 	public boolean threadDeeperAnalyseResults(ThreadAnalyzer.AnalyzerCompleteHander handler)
 	{
@@ -2470,9 +2559,11 @@ public class WinNightScoutLoader extends JFrame {
 
 	public void meterSelected()
 	{
-		// If Roche is selected, then enable the date ranges
-		if (m_ComboBox.getSelectedIndex() == 0)
-		{			
+		String meterStr = new String((String)m_ComboBox.getSelectedItem());
+		SupportedMeters meter = getSelectedMeter(meterStr);
+		
+		if (meter == SupportedMeters.RocheCombo)
+		{
 			m_StartDateLbl.setVisible(true);	
 			startDatePicker.setVisible(true);
 			m_EndDateLbl.setVisible(true);	
@@ -2480,49 +2571,55 @@ public class WinNightScoutLoader extends JFrame {
 
 			m_FileNameTxtFld.setVisible(false);
 			m_FileNameLbl.setVisible(false);
-			m_FileSelectBtn.setVisible(false);
+			m_FileSelectBtn.setVisible(false);		
 		}
 		else
 		{
-			if (m_ComboBox.getSelectedIndex() == 1)
-			{
-				// Set the text filename if Medtronic is used.
-				// Initialise text field from preferences
-				m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_MedtronicMeterPumpResultFilePath());
-			}
-			else if(m_ComboBox.getSelectedIndex() == 2)
-			{
-				// Set the text filename if Medtronic is used.
-				// Initialise text field from preferences
-				m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_DiasendMeterPumpResultFilePath());			
-			}
-			else if(m_ComboBox.getSelectedIndex() == 3)
-			{
-				// Set the text filename if Medtronic is used.
-				// Initialise text field from preferences
-				m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_OmniPodMeterPumpResultFilePath());			
-			}
-			else if(m_ComboBox.getSelectedIndex() == 4)
-			{
-				// Set the text filename if Medtronic is used.
-				// Initialise text field from preferences
-				m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_RocheExtractMeterPumpResultFilePath());			
-			}
+		if (meter == SupportedMeters.Medtronic)
+		{
+			// Set the text filename if Medtronic is used.
+			// Initialise text field from preferences
+			m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_MedtronicMeterPumpResultFilePath());
 
-			// If Medtronic or Diasend is selected, then disable the date ranges
-			m_StartDateLbl.setVisible(false);	
-			startDatePicker.setVisible(false);
-			m_EndDateLbl.setVisible(false);	
-			endDatePicker.setVisible(false);
+		}
+		else if (meter == SupportedMeters.Diasend)
+		{
+			// Set the text filename if Diasend is used.
+			// Initialise text field from preferences
+			m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_DiasendMeterPumpResultFilePath());			
+		}
+		else if (meter == SupportedMeters.OmniPod)
+		{
+			// Set the text filename if Omnipod is used.
+			// Initialise text field from preferences
+			m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_OmniPodMeterPumpResultFilePath());			
+		}
+		else if (meter == SupportedMeters.RocheSQLExtract)
+		{
+			// Set the text filename if Roche SQL Extract is used.
+			// Initialise text field from preferences
+			m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_RocheExtractMeterPumpResultFilePath());			
+		}
+		else if (meter == SupportedMeters.Tandem)
+		{
+			// Set the text filename if Tandem is used.
+			// Initialise text field from preferences
+			m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_TandemMeterPumpResultFilePath());			
+		}
+		
+		// If any of the file based loads are selected, then disable the date ranges & enable the file fields
+		m_StartDateLbl.setVisible(false);	
+		startDatePicker.setVisible(false);
+		m_EndDateLbl.setVisible(false);	
+		endDatePicker.setVisible(false);
 
-			m_FileNameTxtFld.setVisible(true);
-			m_FileNameLbl.setVisible(true);
-			m_FileSelectBtn.setVisible(true);
+		m_FileNameTxtFld.setVisible(true);
+		m_FileNameLbl.setVisible(true);
+		m_FileSelectBtn.setVisible(true);
 		}
 
 		// Finally, update preferences so we store this down
-		String meter = (String)m_ComboBox.getSelectedItem();
-		PrefsNightScoutLoader.getInstance().setM_SelectedMeter(meter);
+		PrefsNightScoutLoader.getInstance().setM_SelectedMeter(meterStr);
 	}
 
 	public void setTimeZoneLabel(String label)
