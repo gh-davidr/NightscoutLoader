@@ -43,7 +43,7 @@ Any CGM data available within selected analysis date range is also analyzed.  A 
 
 ### Inference of CGM Date Ranges
 
-![picture](resources/images/AnalysisCGMDates.jpg)
+![picture](resources/images/AnalysisCGMDates.JPG)
 
 For those without continual sensor use, identifies date ranges when sensor was worn - useful for reviewing past events & data.
 
