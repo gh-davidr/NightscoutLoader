@@ -1,5 +1,9 @@
 # NightscoutLoader
 
+## Why the name 'Nightscout' Loader?
+
+* Because [Nightscout](http://www.nightscout.info/) is the CGM in the Cloud environment that this tool supports.
+
 ## What is Nightscout Loader?
 
 A desktop application with the following purposes in mind:
