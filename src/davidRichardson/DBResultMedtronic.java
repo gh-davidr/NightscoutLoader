@@ -316,7 +316,7 @@ public class DBResultMedtronic extends DBResult
 				
 				
 			    	// Site Change
-			    	else if ((m_RecordSet[m_PrimeIndex].length() > 0) && (m_RecordSet[m_PrimeIndex] == "Fill Cannula")
+			    	else if ((m_RecordSet[m_PrimeIndex].length() > 0) && (m_RecordSet[m_PrimeIndex] == "Fill Cannula"))
 			    	{
 			    		this.m_CP_EventType = "Site Change";
 			    	}
