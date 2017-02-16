@@ -76,6 +76,7 @@ public class DBResultMedtronic extends DBResult
 	static private int m_CarbAmountIndex = 0;
 	static private int m_StandardBolusIndex = 0;
 	static private int m_BolusDurationIndex = 0;
+	static private int m_PrimeIndex = 0;
 
 	@Override
 	public boolean isValid()
@@ -311,6 +312,13 @@ public class DBResultMedtronic extends DBResult
 			    	{
 			    		this.m_Result = m_RecordSet[m_CarbAmountIndex];
 			    		this.m_ResultType = "Carbs";
+ 			    	}
+				
+				
+			    	// Site Change
+			    	else if ((m_RecordSet[m_PrimeIndex].length() > 0) && (m_RecordSet[m_PrimeIndex] == "Fill Cannula"))
+			    	{
+			    		this.m_CP_EventType = "Site Change";
 			    	}
 			    	
 			        // Not interested, so make invalid and it's discarded
@@ -344,6 +352,7 @@ public class DBResultMedtronic extends DBResult
 			m_StandardBolusIndex = fieldLocation("Bolus Volume Delivered (U)");
 			m_BolusDurationIndex = fieldLocation("Bolus Duration (hh:mm:ss)");
 //			m_Time = fieldLocation("Timestamp");
+			m_PrimeIndex = fieldLocation("Prime Type");
 						
 			m_indexesInitialized = true;
 		}
