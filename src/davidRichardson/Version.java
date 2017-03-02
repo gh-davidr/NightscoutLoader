@@ -36,7 +36,8 @@ public class Version
 		
 		// This is a static URL.
 		// m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_MTc4LThSamk2dzA";
-		m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_RnZUTmxleFkyWlU";
+		// m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_RnZUTmxleFkyWlU"; // V2.6
+		m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_d0tpQmtGZXptT28"; // V2.7
 		
 		m_AboutText += "Nightscout Loader Version" + m_Version + "\r\n\r\n";
 		m_AboutText += "Nightscout Loader\r\n\r\nThree main functions offered:\r\n\r\n";
