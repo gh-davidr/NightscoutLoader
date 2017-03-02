@@ -1,9 +1,6 @@
 package davidRichardson;
 
 import java.util.ArrayList;
-import java.util.Collections;
-
-import davidRichardson.AnalyzerTrendResultEntryComparator.AnalyzerTrendResultEntryComparatorType;
 
 public class AnalyzerTrendResultEntryAggregate 
 {

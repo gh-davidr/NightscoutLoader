@@ -901,6 +901,12 @@ public class DBResult implements DBResultInterface
 				m_CP_EventType = "Insulin Cartridge Change";
 			}
 
+			// Added for Medtronic
+			else if (resType.equals("Site Change"))
+			{
+				m_CP_EventType = "Site Change";
+			}
+
 			// Temp Basal where the start & stop are identified for us
 			else if (resType.equals("Tmp Basal Start"))
 			{

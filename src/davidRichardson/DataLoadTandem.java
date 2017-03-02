@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,9 +49,6 @@ public class DataLoadTandem extends DataLoadCSVFile
 
 		//String cvsSplitBy = ",";
 		String cvsSplitBy = getSplitBy();
-
-		// keep track of where we are in the file
-		DBResultTandem.WhichSectionOfFile whichSectionOfFile = DBResultTandem.WhichSectionOfFile.Unknown;
 
 		// at line 7 we see header for bgs
 		int ln = 0;

@@ -57,13 +57,13 @@ public class CoreNightScoutLoader
 
 	// Result Analyzer that requires more work :-)
 	// In this class so we can track messages back to core.
-//	private Analyzer             m_Analyzer;
-	
+	//	private Analyzer             m_Analyzer;
+
 	// Introduced Sep 2016 to allow for comparative trends
 	// So as analyzer runs for a recent period, it can now compare results
 	// across date range all the way back for even more insights
 	private Analyzer             m_FullHistoryAnalyzer = null;
-	
+
 
 	// String for status updates controlled by Core
 	private String               m_StatusText; 
@@ -84,7 +84,7 @@ public class CoreNightScoutLoader
 
 	// Normal and Summarised share a thread analyzer
 	private ThreadAnalyzer       m_ThreadAnalyzer;
-	
+
 	// Full range has its own thread
 	private ThreadAnalyzer       m_FullHistoryThreadAnalyzer;
 
@@ -93,14 +93,14 @@ public class CoreNightScoutLoader
 	private String               m_FileName;
 	private String               m_DateRange;
 
-	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerRoche;
-	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerRocheCSV;
-	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerMedtronic;
-	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerDiasend;
-	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerOmniPod;
-	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerTandem;
-	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerNightscout;
-	private ThreadDataLoad.DataLoadCompleteHander m_ThreadHandlerNightscoutEntries;
+	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerRoche;
+	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerRocheCSV;
+	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerMedtronic;
+	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerDiasend;
+	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerOmniPod;
+	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerTandem;
+	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerNightscout;
+	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerNightscoutEntries;
 	private ThreadDetermineSaveDifferences.DataLoadCompleteHander m_ThreadHandlerDetermineSaveDifferences;
 	private ThreadAnalyzer.AnalyzerCompleteHander m_ThreadHandlerAnalyzer;
 	private ThreadAnalyzer.AnalyzerCompleteHander m_FullHistoryThreadHandlerAnalyzer;
@@ -108,8 +108,8 @@ public class CoreNightScoutLoader
 	// A couple extra threads that run all the time
 	private ThreadMongoDBAlerterEntries    m_EntriesAlerter;
 	private ThreadMongoDBAlerterTreatments m_TreatmentsAlerter;
-	
-//	private String                         m_AnalyzerMessage;
+
+	//	private String                         m_AnalyzerMessage;
 
 	private Object                         m_Lock;
 
@@ -132,8 +132,8 @@ public class CoreNightScoutLoader
 		m_MeterArrayListDBResultsSet = new HashSet<DBResult>();
 		m_NightScoutArrayListDBResultsSet   = new HashSet<DBResult>();
 
-//		m_Analyzer = new Analyzer(m_NightScoutArrayListDBResults);
-		
+		//		m_Analyzer = new Analyzer(m_NightScoutArrayListDBResults);
+
 
 		m_StatusText = new String();
 
@@ -172,25 +172,27 @@ public class CoreNightScoutLoader
 		// Start them both
 		m_EntriesAlerter.startThread();
 		m_TreatmentsAlerter.startThread();
-		
-//		m_AnalyzerMessage = new String();
+
+		//		m_AnalyzerMessage = new String();
 	}
-	
+
 	// David - 2 Dec 2016
 	// Sensor load and analysis
 	public ArrayList <DBResultEntry> loadSensorResults()
 	{
 		ArrayList <DBResultEntry> result = null;
-		
-		try {
+
+		try 
+		{
 			m_DataLoadNightScoutEntries.loadDBResults();
-			
+
 			result = m_DataLoadNightScoutEntries.getResultsFromDB();
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} 
+		catch (UnknownHostException e) 
+		{
+			m_Logger.log(Level.SEVERE, "Exception caught loadSensorResults(): " + e.getMessage());
 		}
-		
+
 		return result;
 	}
 
@@ -227,7 +229,6 @@ public class CoreNightScoutLoader
 					{
 						int entriesLoaded      = 0; // m_ThreadDetermineSaveDifferences.getM_CountMeterEntriesLoaded();
 						int meterEntriesDuplicated  = 0; // m_ThreadDetermineSaveDifferences.getM_CountMeterEntriesDuplicated();
-						int nsEntriesDuplicated = 0;
 						int entriesAdded       = 0; // m_ThreadDetermineSaveDifferences.getM_CountMeterEntriesAdded();
 						//					int nsEntriesBefore    = 0; // m_ThreadDetermineSaveDifferences.getM_CountNightScoutEntriesBefore();
 						int nsEntriesAfter     = 0; // m_ThreadDetermineSaveDifferences.getM_CountNightScoutEntriesAfter();
@@ -244,7 +245,6 @@ public class CoreNightScoutLoader
 						public void operationComplete(Object obj, String message) 
 						{
 							entriesLoaded      = m_ThreadDetermineSaveDifferences.getM_CountMeterEntriesLoaded();
-							nsEntriesDuplicated     = m_ThreadDetermineSaveDifferences.getM_CountProximityNightScoutEntries();
 							entriesAdded       = m_ThreadDetermineSaveDifferences.getM_CountMeterEntriesAdded();
 							//						nsEntriesBefore    = m_ThreadDetermineSaveDifferences.getM_CountNightScoutEntriesBefore();
 							nsEntriesAfter     = m_ThreadDetermineSaveDifferences.getM_CountNightScoutEntriesAfter();
@@ -280,10 +280,10 @@ public class CoreNightScoutLoader
 									String statusText = new String();
 
 									statusText = String.format("Synchronize %s\n%5d meter/pump entries read.%4d new entries added.%4d ignored.%5d Treatments in NightScout. ", 
-										m_DeviceUsed, entriesLoaded, entriesAdded, meterEntriesDuplicated, nsEntriesAfter);
-									
-//									statusText = String.format("%5d meter/pump entries read.%4d new entries added.%4d ignored.%5d Treatments in NightScout. ", 
-//											entriesLoaded, entriesAdded, meterEntriesDuplicated, nsEntriesAfter);
+											m_DeviceUsed, entriesLoaded, entriesAdded, meterEntriesDuplicated, nsEntriesAfter);
+
+									//									statusText = String.format("%5d meter/pump entries read.%4d new entries added.%4d ignored.%5d Treatments in NightScout. ", 
+									//											entriesLoaded, entriesAdded, meterEntriesDuplicated, nsEntriesAfter);
 									// Add some commentary to the text pane
 									addStatusTextWithTime(statusText);
 								}
@@ -303,7 +303,7 @@ public class CoreNightScoutLoader
 
 	// Multi-threaded Nightscout Loader
 	public synchronized void threadLoadRocheMeterPump(Date startDate, Date endDate,
-			ThreadDataLoad.DataLoadCompleteHander handler)
+			ThreadDataLoad.DataLoadCompleteHandler handler)
 	{
 		if (this.getM_ThreadDataMeterLoad() != null)
 		{
@@ -329,7 +329,7 @@ public class CoreNightScoutLoader
 			// m_ThreadDataLoadNightScout.loadDBResults(handler);
 
 			m_ThreadDataLoadRoche.loadDBResults(
-					new ThreadDataLoad.DataLoadCompleteHander(handler.getM_Object()) 
+					new ThreadDataLoad.DataLoadCompleteHandler(handler.getM_Object()) 
 					{
 						//		@Override
 						public void exceptionRaised(String message) 
@@ -366,10 +366,10 @@ public class CoreNightScoutLoader
 
 							// Check whether this meter/pump load does not include Nightscout load too
 							checkMeterPumpOnlyLoad();
-							
+
 							// Invoke our stored handler
 							m_ThreadHandlerRoche.dataLoadComplete(obj, statusText);
-														
+
 							// Now clear the thread
 							setM_ThreadDataLoadRoche(null);
 							setM_ThreadDataMeterLoad(null);
@@ -378,10 +378,10 @@ public class CoreNightScoutLoader
 		}
 	}
 
-	
+
 	// Multi-threaded Roche File Loader
 	public synchronized void threadLoadRocheMeterPump(String filename,
-			ThreadDataLoad.DataLoadCompleteHander handler)
+			ThreadDataLoad.DataLoadCompleteHandler handler)
 	{
 		if (this.getM_ThreadDataMeterLoad() != null)
 		{
@@ -390,7 +390,7 @@ public class CoreNightScoutLoader
 		}
 		else
 		{
-			
+
 			m_DeviceUsed   = "Roche Meter/Pump";
 			m_FileName     = filename;
 			m_DateRange    = "";
@@ -400,15 +400,15 @@ public class CoreNightScoutLoader
 
 			// Store supplied handler
 			m_ThreadHandlerRocheCSV = handler;
-			
+
 			// Initialize the Medtronic loader with supplied dates
 			m_DataLoadRocheCSV.initialize(filename);
-			
+
 			// Install our own
 			// m_ThreadDataLoadNightScout.loadDBResults(handler);
 
 			m_ThreadDataLoadRocheCSV.loadDBResults(
-					new ThreadDataLoad.DataLoadCompleteHander(handler.getM_Object()) 
+					new ThreadDataLoad.DataLoadCompleteHandler(handler.getM_Object()) 
 					{
 						//		@Override
 						public void exceptionRaised(String message) 
@@ -443,7 +443,7 @@ public class CoreNightScoutLoader
 
 							// Check whether this meter/pump load does not include Nightscout load too
 							checkMeterPumpOnlyLoad();
-							
+
 							// Invoke our stored handler
 							m_ThreadHandlerRocheCSV.dataLoadComplete(obj, statusText);
 
@@ -455,55 +455,58 @@ public class CoreNightScoutLoader
 		}
 	}
 
-	
-	
+
+
 	private void checkMeterPumpOnlyLoad()
 	{
 		if (this.isM_MeterPumpLoadOnly() == true)
 		{
 			// We need to clone the meter results to make it seem like Nightscout load has completed also
 			this.m_NightScoutArrayListDBResults = new ArrayList<DBResult>(m_MeterArrayListDBResults);
-			
+
 			this.m_DataLoadNightScout.cloneMeterPumpOnlyResults(m_MeterArrayListDBResults);
 		}
 	}
-	
+
 	public Boolean isLoadOrDiffThreadRunning()
 	{
 		Boolean result = false; // Assume no to begin with
 
 		// Slight hit checking all, but no great shakes
-		result = (this.getM_ThreadDataLoadMedtronic()        != null) ? true : result;
-		result = (this.getM_ThreadDataLoadDiasend()          != null) ? true : result;
-		result = (this.getM_ThreadDataLoadNightScout()       != null) ? true : result;
-		result = (this.getM_ThreadDataLoadRoche()            != null) ? true : result;
-		result = (this.getM_ThreadDetermineSaveDifferences() != null) ? true : result;
+		result = (this.getM_ThreadDataLoadMedtronic()         != null) ? true : result;
+		result = (this.getM_ThreadDataLoadDiasend()           != null) ? true : result;
+		result = (this.getM_ThreadDataLoadNightScout()        != null) ? true : result;
+		result = (this.getM_ThreadDataLoadRoche()             != null) ? true : result;
+		result = (this.getM_ThreadDataLoadOmniPod()           != null) ? true : result;
+		result = (this.getM_ThreadDataLoadTandem()            != null) ? true : result;
+		result = (this.getM_ThreadDataLoadNightScoutEntries() != null) ? true : result;
+		result = (this.getM_ThreadDetermineSaveDifferences()  != null) ? true : result;
 
 		return result;
 	}
-	
+
 	public Boolean isAnalyzeThreadRunning()
 	{
 		Boolean result = false;
-		
+
 		result = (this.getM_ThreadAnalyzer() != null) ? true : result;
-		
+
 		return result;
 	}
-	
+
 	public Boolean isFullHistoryAnalyzeThreadRunning()
 	{
 		Boolean result = false;
-		
+
 		result = (this.getM_FullHistoryThreadAnalyzer() != null) ? true : result;
-		
+
 		return result;
 	}
-	
+
 
 	// Multi-threaded Nightscout Loader
 	public synchronized void threadLoadMedtronicMeterPump(String filename,
-			ThreadDataLoad.DataLoadCompleteHander handler)
+			ThreadDataLoad.DataLoadCompleteHandler handler)
 	{
 		if (this.getM_ThreadDataMeterLoad() != null)
 		{
@@ -529,7 +532,7 @@ public class CoreNightScoutLoader
 			// m_ThreadDataLoadNightScout.loadDBResults(handler);
 
 			m_ThreadDataLoadMedtronic.loadDBResults(
-					new ThreadDataLoad.DataLoadCompleteHander(handler.getM_Object()) 
+					new ThreadDataLoad.DataLoadCompleteHandler(handler.getM_Object()) 
 					{
 						//		@Override
 						public void exceptionRaised(String message) 
@@ -579,7 +582,7 @@ public class CoreNightScoutLoader
 
 	// Multi-threaded Diasend Loader
 	public synchronized void threadLoadDiasendMeterPump(String filename,
-			ThreadDataLoad.DataLoadCompleteHander handler)
+			ThreadDataLoad.DataLoadCompleteHandler handler)
 	{
 		if (this.getM_ThreadDataMeterLoad() != null)
 		{
@@ -605,7 +608,7 @@ public class CoreNightScoutLoader
 			// m_ThreadDataLoadNightScout.loadDBResults(handler);
 
 			m_ThreadDataLoadDiasend.loadDBResults(
-					new ThreadDataLoad.DataLoadCompleteHander(handler.getM_Object()) 
+					new ThreadDataLoad.DataLoadCompleteHandler(handler.getM_Object()) 
 					{
 						//		@Override
 						public void exceptionRaised(String message) 
@@ -640,7 +643,7 @@ public class CoreNightScoutLoader
 
 							// Check whether this meter/pump load does not include Nightscout load too
 							checkMeterPumpOnlyLoad();
-							
+
 							// Invoke our stored handler
 							m_ThreadHandlerDiasend.dataLoadComplete(obj, statusText);
 
@@ -654,7 +657,7 @@ public class CoreNightScoutLoader
 
 	// Multi-threaded OmniPod Loader
 	public synchronized void threadLoadOmniPodMeterPump(String filename,
-			ThreadDataLoad.DataLoadCompleteHander handler)
+			ThreadDataLoad.DataLoadCompleteHandler handler)
 	{
 		if (this.getM_ThreadDataMeterLoad() != null)
 		{
@@ -680,7 +683,7 @@ public class CoreNightScoutLoader
 			// m_ThreadDataLoadNightScout.loadDBResults(handler);
 
 			m_ThreadDataLoadOmniPod.loadDBResults(
-					new ThreadDataLoad.DataLoadCompleteHander(handler.getM_Object()) 
+					new ThreadDataLoad.DataLoadCompleteHandler(handler.getM_Object()) 
 					{
 						//		@Override
 						public void exceptionRaised(String message) 
@@ -715,7 +718,7 @@ public class CoreNightScoutLoader
 
 							// Check whether this meter/pump load does not include Nightscout load too
 							checkMeterPumpOnlyLoad();
-							
+
 							// Invoke our stored handler
 							m_ThreadHandlerOmniPod.dataLoadComplete(obj, statusText);
 
@@ -730,7 +733,7 @@ public class CoreNightScoutLoader
 
 	// Multi-threaded Tandem Loader
 	public synchronized void threadLoadTandemMeterPump(String filename,
-			ThreadDataLoad.DataLoadCompleteHander handler)
+			ThreadDataLoad.DataLoadCompleteHandler handler)
 	{
 		if (this.getM_ThreadDataMeterLoad() != null)
 		{
@@ -756,7 +759,7 @@ public class CoreNightScoutLoader
 			// m_ThreadDataLoadNightScout.loadDBResults(handler);
 
 			m_ThreadDataLoadTandem.loadDBResults(
-					new ThreadDataLoad.DataLoadCompleteHander(handler.getM_Object()) 
+					new ThreadDataLoad.DataLoadCompleteHandler(handler.getM_Object()) 
 					{
 						//		@Override
 						public void exceptionRaised(String message) 
@@ -791,7 +794,7 @@ public class CoreNightScoutLoader
 
 							// Check whether this meter/pump load does not include Nightscout load too
 							checkMeterPumpOnlyLoad();
-							
+
 							// Invoke our stored handler
 							m_ThreadHandlerTandem.dataLoadComplete(obj, statusText);
 
@@ -803,7 +806,7 @@ public class CoreNightScoutLoader
 		}
 	}
 
-	
+
 	public void loadRocheMeterPump(Date startDate, Date endDate)
 	{
 		try
@@ -881,7 +884,7 @@ public class CoreNightScoutLoader
 
 
 	// Multi-threaded Nightscout Loader
-	public synchronized void threadLoadNightScout(ThreadDataLoad.DataLoadCompleteHander handler)
+	public synchronized void threadLoadNightScout(ThreadDataLoad.DataLoadCompleteHandler handler)
 	{
 		if (this.getM_ThreadDataLoadNightScout() != null)
 		{
@@ -892,7 +895,7 @@ public class CoreNightScoutLoader
 		{
 			// Add some detail on the current timezone
 			addStatusText("Current Local Timezone is: " + CommonUtils.locTZ.getDisplayName());
-			
+
 			this.setM_ThreadDataLoadNightScout(new ThreadDataLoad(m_DataLoadNightScout));
 
 			// Store supplied handler
@@ -902,7 +905,7 @@ public class CoreNightScoutLoader
 			// m_ThreadDataLoadNightScout.loadDBResults(handler);
 
 			m_ThreadDataLoadNightScout.loadDBResults(
-					new ThreadDataLoad.DataLoadCompleteHander(handler.getM_Object()) 
+					new ThreadDataLoad.DataLoadCompleteHandler(handler.getM_Object()) 
 					{
 						//		@Override
 						public void exceptionRaised(String message) 
@@ -946,7 +949,7 @@ public class CoreNightScoutLoader
 	}
 
 	// Multi-threaded Nightscout Loader
-	public synchronized void threadLoadNightScoutEntries(ThreadDataLoad.DataLoadCompleteHander handler)
+	public synchronized void threadLoadNightScoutEntries(ThreadDataLoad.DataLoadCompleteHandler handler)
 	{
 		if (this.getM_ThreadDataLoadNightScoutEntries() != null)
 		{
@@ -957,7 +960,7 @@ public class CoreNightScoutLoader
 		{
 			// Add some detail on the current timezone
 			addStatusText("Current Local Timezone is: " + CommonUtils.locTZ.getDisplayName());
-			
+
 			this.setM_ThreadDataLoadNightScoutEntries(new ThreadDataLoad(m_DataLoadNightScoutEntries));
 
 			// Store supplied handler
@@ -967,7 +970,7 @@ public class CoreNightScoutLoader
 			// m_ThreadDataLoadNightScout.loadDBResults(handler);
 
 			m_ThreadDataLoadNightScoutEntries.loadDBResults(
-					new ThreadDataLoad.DataLoadCompleteHander(handler.getM_Object()) 
+					new ThreadDataLoad.DataLoadCompleteHandler(handler.getM_Object()) 
 					{
 						//		@Override
 						public void exceptionRaised(String message) 
@@ -979,12 +982,12 @@ public class CoreNightScoutLoader
 						public void dataLoadComplete(Object obj, String message) 
 						{
 							m_NightScoutArrayListDBResultEntries = m_DataLoadNightScoutEntries.getResultsFromDB();
-							
-//							synchronized(m_Lock)
-//							{
-//								// Tell the Analyzer this is done
-//								m_ThreadAnalyzer.getM_Analyzer().initialize(m_NightScoutArrayListDBResultEntries);
-//							}
+
+							//							synchronized(m_Lock)
+							//							{
+							//								// Tell the Analyzer this is done
+							//								m_ThreadAnalyzer.getM_Analyzer().initialize(m_NightScoutArrayListDBResultEntries);
+							//							}
 
 							// Sort the Mongo Results
 							Collections.sort(m_NightScoutArrayListDBResultEntries, new ResultFromDBComparator());
@@ -1131,25 +1134,25 @@ public class CoreNightScoutLoader
 		}
 	}
 
-//	public void analyseResults()
-//	{
-//		try
-//		{
-//			m_Analyzer.scanForGaps(m_NightScoutArrayListDBResults);
-//		} 
-//		catch (ParseException e) 
-//		{
-//			addErrorText("analyseResults: Just Caught Exception " + e.getMessage() + "-" + e.getLocalizedMessage());
-//		}
-//	}
-	
+	//	public void analyseResults()
+	//	{
+	//		try
+	//		{
+	//			m_Analyzer.scanForGaps(m_NightScoutArrayListDBResults);
+	//		} 
+	//		catch (ParseException e) 
+	//		{
+	//			addErrorText("analyseResults: Just Caught Exception " + e.getMessage() + "-" + e.getLocalizedMessage());
+	//		}
+	//	}
+
 	public void resetAnalyzeDateRange()
 	{
 		Date endDate = Analyzer.getLastDateFromDBResults(this.getM_ResultsMongoDB());
 		PrefsNightScoutLoader.getInstance().resetAnalyzeDateRange(endDate);
 	}
 
-	public void doThreadAnalyzeResults(String excelFilename, AnalyzerCompleteHander handler)
+	public void doThreadAnalyzeResults(WinTextWin autotunerWin, String excelFilename, AnalyzerCompleteHander handler)
 	{
 		if (this.getM_ThreadAnalyzer() != null)
 		{
@@ -1161,22 +1164,23 @@ public class CoreNightScoutLoader
 			// David 27 Jul
 			// Noticed issues on 2nd analyze 
 			// Not sure why need to reuse same analyer so get thread to create one
-//			setM_ThreadAnalyzer(new ThreadAnalyzer(m_Analyzer));
+			//			setM_ThreadAnalyzer(new ThreadAnalyzer(m_Analyzer));
 			synchronized(m_Lock)
 			{
-			setM_ThreadAnalyzer(new ThreadAnalyzer(this.getM_ResultsMongoDB(), this.m_NightScoutArrayListDBResultEntries));
+				setM_ThreadAnalyzer(new ThreadAnalyzer(this.getM_ResultsMongoDB(), this.m_NightScoutArrayListDBResultEntries));
 			}
 
 			// Store supplied handler
 			m_ThreadHandlerAnalyzer = handler;
-			
+
 			m_Logger.log(Level.FINE, "<"+this.getClass().getName()+"> Core.doThreadAnalyzeResults BEFORE Sort First Entry is " + 
 					(getM_ResultsMongoDB().size() > 0 ? getM_ResultsMongoDB().get(0).toString() : "EMPTY LIST"));
 			m_ThreadAnalyzer.setM_DBResultList(getM_ResultsMongoDB());
 			m_Logger.log(Level.FINE, "<"+this.getClass().getName()+"> Core.doThreadAnalyzeResults AFTER Sort First Entry is " + 
 					(getM_ResultsMongoDB().size() > 0 ? getM_ResultsMongoDB().get(0).toString() : "EMPTY LIST"));
-			
+
 			m_ThreadAnalyzer.setM_ExcelFilename(excelFilename);
+			m_ThreadAnalyzer.setM_AutotunerWin(autotunerWin);
 
 			m_ThreadAnalyzer.analyzeResults(
 					new AnalyzerCompleteHander(handler.getM_Object())
@@ -1187,7 +1191,7 @@ public class CoreNightScoutLoader
 							// Display popup ... not working for some reason
 							JOptionPane.showMessageDialog(null, message);							
 							setM_ThreadAnalyzer(null);
-							
+
 							// Invoke our stored handler
 							m_ThreadHandlerAnalyzer.exceptionRaised(message);
 						}
@@ -1220,7 +1224,7 @@ public class CoreNightScoutLoader
 					);
 		}
 	}
-	
+
 
 	public void doSummarisedThreadAnalyzeResults(AnalyzerCompleteHander handler)
 	{
@@ -1234,8 +1238,8 @@ public class CoreNightScoutLoader
 			// David 27 Jul
 			// Noticed issues on 2nd analyze 
 			// Not sure why need to reuse same analyer so get thread to create one
-//			setM_ThreadAnalyzer(new ThreadAnalyzer(m_Analyzer));
-//			setM_ThreadAnalyzer(new ThreadAnalyzer(this.getM_ResultsMongoDB(), true));
+			//			setM_ThreadAnalyzer(new ThreadAnalyzer(m_Analyzer));
+			//			setM_ThreadAnalyzer(new ThreadAnalyzer(this.getM_ResultsMongoDB(), true));
 			setM_ThreadAnalyzer(new ThreadAnalyzer(this.getM_ResultsMongoDB(), 
 					this.m_NightScoutArrayListDBResultEntries, Analyzer.AnalyzerMode.summaryOnly));
 
@@ -1247,7 +1251,7 @@ public class CoreNightScoutLoader
 			m_ThreadAnalyzer.setM_DBResultList(getM_ResultsMongoDB());
 			m_Logger.log(Level.FINE, "<"+this.getClass().getName()+"> Core.doThreadAnalyzeResults AFTER Sort First Entry is " + 
 					(getM_ResultsMongoDB().size() > 0 ? getM_ResultsMongoDB().get(0).toString() : "EMPTY LIST"));
-			
+
 			m_ThreadAnalyzer.analyzeResults(
 					new AnalyzerCompleteHander(handler.getM_Object())
 					{
@@ -1282,10 +1286,10 @@ public class CoreNightScoutLoader
 		}
 	}
 
-	
+
 	public void doFullHistoryThreadAnalyzeResults(AnalyzerCompleteHander handler)
 	{
- 		if (this.getM_FullHistoryThreadAnalyzer() != null)
+		if (this.getM_FullHistoryThreadAnalyzer() != null)
 		{
 			// Need better way than this!
 			addErrorText("doFullHistoryThreadAnalyzeResults Thread Already Running!!");
@@ -1294,23 +1298,23 @@ public class CoreNightScoutLoader
 		{
 			// Reset any previous history analyzer to null in case a manual analysis runs.  We don't include full history
 			this.setM_FullHistoryAnalyzer(null);
-			
+
 			// David 27 Jul
 			// Noticed issues on 2nd analyze 
 			// Not sure why need to reuse same analyer so get thread to create one
-//			setM_ThreadAnalyzer(new ThreadAnalyzer(m_Analyzer));
+			//			setM_ThreadAnalyzer(new ThreadAnalyzer(m_Analyzer));
 			setM_FullHistoryThreadAnalyzer(new ThreadAnalyzer(this.getM_ResultsMongoDB(), 
 					this.m_NightScoutArrayListDBResultEntries, Analyzer.AnalyzerMode.fullHistory));
 
 			// Store supplied handler
 			m_FullHistoryThreadHandlerAnalyzer = handler;
-			
+
 			m_Logger.log(Level.FINE, "<"+this.getClass().getName()+"> Core.doFullHistoryThreadAnalyzeResults BEFORE Sort First Entry is " + 
 					(getM_ResultsMongoDB().size() > 0 ? getM_ResultsMongoDB().get(0).toString() : "EMPTY LIST"));
 			m_FullHistoryThreadAnalyzer.setM_DBResultList(getM_ResultsMongoDB());
 			m_Logger.log(Level.FINE, "<"+this.getClass().getName()+"> Core.doFullHistoryThreadAnalyzeResults AFTER Sort First Entry is " + 
 					(getM_ResultsMongoDB().size() > 0 ? getM_ResultsMongoDB().get(0).toString() : "EMPTY LIST"));
-			
+
 			m_FullHistoryThreadAnalyzer.analyzeResults(
 					new AnalyzerCompleteHander(handler.getM_Object())
 					{
@@ -1323,10 +1327,10 @@ public class CoreNightScoutLoader
 						//		@Override
 						public void analyzeResultsComplete(Object obj) 
 						{
-							
+
 							// Keep a record of the Analyzer so that future analyzers can make use of it
 							setM_FullHistoryAnalyzer(m_FullHistoryThreadAnalyzer.getM_Analyzer());
-							
+
 							// We want to do this UI change in the main thread, and not the DB worker thread that's just
 							// notified back
 							EventQueue.invokeLater(new 
@@ -1348,14 +1352,14 @@ public class CoreNightScoutLoader
 					);
 		}
 	}
-	
-	
-//	public void analyseResults(String excelFileName)
-//	{
-////		int daysBack = PrefsNightScoutLoader.getInstance().getM_AnalyzerDaysBack();
-////		m_Analyzer.analyzeResults(m_NightScoutArrayListDBResults, daysBack, excelFileName);	
-//		m_Analyzer.analyzeResults(m_NightScoutArrayListDBResults, excelFileName);	
-//	}
+
+
+	//	public void analyseResults(String excelFileName)
+	//	{
+	////		int daysBack = PrefsNightScoutLoader.getInstance().getM_AnalyzerDaysBack();
+	////		m_Analyzer.analyzeResults(m_NightScoutArrayListDBResults, daysBack, excelFileName);	
+	//		m_Analyzer.analyzeResults(m_NightScoutArrayListDBResults, excelFileName);	
+	//	}
 
 
 	public int countNightScoutTreatments()
@@ -1409,7 +1413,7 @@ public class CoreNightScoutLoader
 			} 
 			catch (UnknownHostException e) 
 			{
-				m_Logger.severe("Unknown Host Exception caught. " + e.getMessage());
+				m_Logger.log(Level.SEVERE, "Unknown Host Exception caught. " + e.getMessage());
 			}
 
 
@@ -1449,7 +1453,7 @@ public class CoreNightScoutLoader
 
 			// Instead of using the date ranges as above, load all results in...
 			m_DataLoadNightScout.deleteLoadedTreatment(entry, true);
-			
+
 
 			// Update all success entries as deleted and store an audit Log entry for the deletion
 			Date now = new Date();
@@ -1466,13 +1470,13 @@ public class CoreNightScoutLoader
 
 				// Reload to get latest id
 				AuditHistory.getInstance().loadAuditHistory();
-				
+
 				// Could also tell the Audit Window to refresh too
 				// However we're in Core and some distance away ...
 			} 
 			catch (UnknownHostException e) 
 			{
-				m_Logger.severe("Unknown Host Exception caught. " + e.getMessage());
+				m_Logger.log(Level.SEVERE, "Unknown Host Exception caught. " + e.getMessage());
 			}
 
 
@@ -1501,15 +1505,15 @@ public class CoreNightScoutLoader
 			addErrorText("ERROR - Delete Treatment NightScout. Caught Exception " + e.getMessage() + "-" + e.getLocalizedMessage());
 		}
 	}
-	
-	
-	
+
+
+
 	public void deleteLoadedTreatment(DBResult res)
 	{
 		try
 		{
 			m_DataLoadNightScout.deleteLoadedTreatment(res);
-			
+
 			// Delete the alerter threads and restart them
 			m_EntriesAlerter.interrupThread();
 			m_TreatmentsAlerter.interrupThread();
@@ -1536,7 +1540,7 @@ public class CoreNightScoutLoader
 
 	}
 
-	
+
 	public void deleteLoadedTreatment(AuditLog entry)
 	{
 		try
@@ -1546,7 +1550,7 @@ public class CoreNightScoutLoader
 
 			// Instead of using the date ranges as above, load all results in...
 			m_DataLoadNightScout.deleteLoadedTreatment(entry);
-			
+
 			// Check if there are any proximity as need to delete those too ...
 			if (entry.getM_ProximityMeterEntries() > 0 || entry.getM_ProximityNSEntries() > 0)
 			{
@@ -1571,7 +1575,7 @@ public class CoreNightScoutLoader
 			} 
 			catch (UnknownHostException e) 
 			{
-				m_Logger.severe("Unknown Host Exception caught. " + e.getMessage());
+				m_Logger.log(Level.SEVERE, "Unknown Host Exception caught. " + e.getMessage());
 			}
 
 
@@ -1654,10 +1658,10 @@ public class CoreNightScoutLoader
 
 		addStatusText(sb.toString(), false);
 	}
-	
+
 	public void popupADialog(String text)
 	{
-		
+
 	}
 
 	public void addErrorText(String text)

@@ -29,6 +29,8 @@ import davidRichardson.ThreadAnalyzer.AnalyzerCompleteHander;
 
 import javax.swing.border.EtchedBorder;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Component;
@@ -43,7 +45,7 @@ import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar; 
+import java.util.Calendar;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,7 +63,6 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -70,7 +71,6 @@ import java.net.URL;
 import java.awt.FlowLayout;
 import javax.swing.border.BevelBorder;
 import java.awt.Rectangle;
-import java.awt.Graphics;
 
 
 
@@ -102,6 +102,7 @@ public class WinNightScoutLoader extends JFrame {
 	//	private WinFind          find;
 	private WinAnalyzer      analyzer;
 	private ThreadHelpLauncher m_ThreadHelpLauncher = null;
+	private WinTextWin       m_AutotunerWin = null;
 
 	private JTable m_NightScoutTable;
 	private JScrollPane m_NightscoutScrollPane;
@@ -165,11 +166,12 @@ public class WinNightScoutLoader extends JFrame {
 	private JMenuItem m_mntmLoadMeterPumpOnly;
 	private JMenuItem m_mntmLoadNightscout;
 	private JMenuItem m_mntmAnalyzeResults;
+	private JMenuItem m_mntmAutotuneManagement;
+	private JMenuItem m_mntmAutotuneQuickRun;
 	private JMenuItem m_mntmDeleteLoadedTreatments;
 
 	private String    m_SaveDiffMessage = null;
 
-	private Graphics  m_EntriesGraphic  = null;
 
 	/**
 	 * Create the frame.
@@ -334,7 +336,8 @@ public class WinNightScoutLoader extends JFrame {
 		auditHistory = new WinAuditHistory(this, "Nightscout Loader " + Version.getInstance().getM_Version() + " - Audit History");
 		//		find = new WinFind(this, "Nightscout Loader " + Version.getInstance().getM_Version() + " - Details");
 		analyzer = new WinAnalyzer(this, "Nightscout Loader " + Version.getInstance().getM_Version() + " - Analyzer");
-
+		// m_AutotunerWin = new WinRemoteLinuxServer("Nightscout Loader " + Version.getInstance().getM_Version() + " - Autotune (within Analysis)");
+		m_AutotunerWin = new WinTextWin("Nightscout Loader " + Version.getInstance().getM_Version() + " - Autotune (within Analysis)");
 
 		UtilDateModel startDateModel = new UtilDateModel();
 		UtilDateModel endDateModel = new UtilDateModel();
@@ -356,7 +359,8 @@ public class WinNightScoutLoader extends JFrame {
 		}
 
 		//		m_ComboBox = new JComboBox<String>(m_SupportedMeters);  // After new Ecliplse install 28 Feb, this breaks Window Builder parsing
-		m_ComboBox.addActionListener(new ActionListener() {
+		m_ComboBox.addActionListener(new ActionListener() 
+		{
 			public void actionPerformed(ActionEvent arg0) {
 				meterSelected();
 			}
@@ -400,7 +404,7 @@ public class WinNightScoutLoader extends JFrame {
 
 				String meterStr = new String((String)m_ComboBox.getSelectedItem());
 				SupportedMeters meter = getSelectedMeter(meterStr);
-				
+
 				JFileChooser chooser = new JFileChooser();
 				chooser.setDialogTitle("Select " + meter + " file.  Action ==> Synchronize will then load");
 
@@ -663,6 +667,7 @@ public class WinNightScoutLoader extends JFrame {
 			}
 		});
 		mnFile.add(m_mntmExportResults);
+		mnFile.add(new JSeparator()); // SEPARATOR
 
 		JMenuItem mntmDownloadTreatments = new JMenuItem("Download Treatment Data");
 		mntmDownloadTreatments.addActionListener(new ActionListener() {
@@ -679,6 +684,7 @@ public class WinNightScoutLoader extends JFrame {
 			}
 		});
 		mnFile.add(mntmDownloadSensor);
+		mnFile.add(new JSeparator()); // SEPARATOR
 
 
 		JMenuItem mntmExit = new JMenuItem("Exit");
@@ -699,9 +705,10 @@ public class WinNightScoutLoader extends JFrame {
 			@Override
 			public void mouseClicked(MouseEvent arg0) 
 			{
-				Boolean advancedSettings = PrefsNightScoutLoader.getInstance().isM_AdvancedSettings();
-				Boolean synchThreadsRunning  = m_NightScoutLoaderCore.isLoadOrDiffThreadRunning();
+				Boolean advancedSettings      = PrefsNightScoutLoader.getInstance().isM_AdvancedSettings();
+				Boolean synchThreadsRunning   = m_NightScoutLoaderCore.isLoadOrDiffThreadRunning();
 				Boolean analyzeThreadsRunning = m_NightScoutLoaderCore.isAnalyzeThreadRunning();
+				Boolean autotuneEnabled       = PrefsNightScoutLoader.getInstance().isM_AutoTuneInvoked();
 
 				m_Logger.log(Level.FINER, "NightScoutLoader.ActionMenuHandler: Adv: " + advancedSettings + " Sync: " + synchThreadsRunning);
 
@@ -713,6 +720,12 @@ public class WinNightScoutLoader extends JFrame {
 				m_mntmLoadMeterPumpOnly.setEnabled(synchThreadsRunning ? false : true);
 				m_mntmLoadNightscout.setEnabled(synchThreadsRunning ? false : true);
 				m_mntmAnalyzeResults.setEnabled(synchThreadsRunning ? false : true);
+				m_mntmAutotuneManagement.setEnabled(synchThreadsRunning ? false : true);
+				m_mntmAutotuneQuickRun.setEnabled(synchThreadsRunning ? false : true);
+
+				// Set enabled for Autotune menues too
+				m_mntmAutotuneManagement.setEnabled(autotuneEnabled);
+				m_mntmAutotuneQuickRun.setEnabled(autotuneEnabled);
 			}
 		});
 		mnAction.addActionListener(new ActionListener() {
@@ -733,6 +746,8 @@ public class WinNightScoutLoader extends JFrame {
 		});
 		mnAction.add(m_mntmSychronize);
 
+		mnAction.add(new JSeparator()); // SEPARATOR
+
 		m_mntmLoadMeterPumpOnly = new JMenuItem("Load Meter/Pump Only");
 		m_mntmLoadMeterPumpOnly.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -749,6 +764,8 @@ public class WinNightScoutLoader extends JFrame {
 		});
 		mnAction.add(m_mntmLoadNightscout);
 
+		mnAction.add(new JSeparator()); // SEPARATOR
+
 		m_mntmAnalyzeResults = new JMenuItem("Analyze Results");
 		m_mntmAnalyzeResults.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -756,6 +773,26 @@ public class WinNightScoutLoader extends JFrame {
 			}
 		});
 		mnAction.add(m_mntmAnalyzeResults);
+		mnAction.add(new JSeparator()); // SEPARATOR
+
+		m_mntmAutotuneQuickRun = new JMenuItem("Autotune - Quick Run");
+		m_mntmAutotuneQuickRun.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				doAutotuneQuickRun();
+			}
+		});
+		mnAction.add(m_mntmAutotuneQuickRun);		
+
+
+		m_mntmAutotuneManagement = new JMenuItem("Autotune - Management");
+		m_mntmAutotuneManagement.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				doAutotuneManagement();
+			}
+		});
+		mnAction.add(m_mntmAutotuneManagement);		
+
+		mnAction.add(new JSeparator()); // SEPARATOR
 
 		m_mntmDeleteLoadedTreatments = new JMenuItem("Delete Loaded Treatments");
 		Boolean advancedSettings = PrefsNightScoutLoader.getInstance().isM_AdvancedSettings();
@@ -835,6 +872,7 @@ public class WinNightScoutLoader extends JFrame {
 			}
 		});
 		mnHelp.add(mntmOnlineHelp);
+		mnHelp.add(new JSeparator()); // SEPARATOR
 
 		JMenuItem mntmAbout = new JMenuItem("About");
 		mntmAbout.addActionListener(new ActionListener() {
@@ -888,6 +926,7 @@ public class WinNightScoutLoader extends JFrame {
 			}
 		});
 		mnHelp.add(mntmFeedback);
+		mnHelp.add(new JSeparator()); // SEPARATOR
 
 		JMenuItem mntmDetailedHelp = new JMenuItem("Offline Help");
 		mntmDetailedHelp.addActionListener(new ActionListener() 
@@ -976,7 +1015,7 @@ public class WinNightScoutLoader extends JFrame {
 		{
 			Object obj = new Boolean(initialRun);
 			m_NightScoutLoaderCore.threadLoadNightScout(
-					new ThreadDataLoad.DataLoadCompleteHander(obj) 
+					new ThreadDataLoad.DataLoadCompleteHandler(obj) 
 					{
 
 						//		@Override
@@ -1048,7 +1087,7 @@ public class WinNightScoutLoader extends JFrame {
 			{
 				Object obj = new Boolean(initialRun);
 				m_NightScoutLoaderCore.threadLoadNightScoutEntries(
-						new ThreadDataLoad.DataLoadCompleteHander(obj) 
+						new ThreadDataLoad.DataLoadCompleteHandler(obj) 
 						{
 
 							//		@Override
@@ -1060,7 +1099,6 @@ public class WinNightScoutLoader extends JFrame {
 							//		@Override
 							public void dataLoadComplete(Object obj, String message) 
 							{
-								Boolean initialRun = (Boolean)obj;
 								m_MongoResultEntries = m_NightScoutLoaderCore.getM_DataLoadNightScoutEntries().getResultsFromDB();
 								//m_MongoResults = m_NightScoutLoaderCore.getM_ResultsMongoDB();
 
@@ -1074,7 +1112,7 @@ public class WinNightScoutLoader extends JFrame {
 									{ 
 										m_CGMEntriesLoadedLbl.setText("CGM : " + NumberFormat.getIntegerInstance().format(m_MongoResultEntries.size()));
 										m_CGMEntriesLoadedLbl.setVisible(true);
-										m_CGMEntriesLoadedLbl.setForeground(m_MongoResultEntries.size() == 0 ? Color.RED : Color.BLUE); // setBackground(Color.YELLOW);
+										m_CGMEntriesLoadedLbl.setForeground(m_MongoResultEntries.size() == 0 ? Color.RED : Color.BLUE); // setBackground(Color.YELLOW);										
 									}
 								});
 
@@ -1127,7 +1165,7 @@ public class WinNightScoutLoader extends JFrame {
 
 			// Threaded load instead
 			m_NightScoutLoaderCore.threadLoadRocheMeterPump(startDate, c.getTime(),
-					new ThreadDataLoad.DataLoadCompleteHander(null) 
+					new ThreadDataLoad.DataLoadCompleteHandler(null) 
 			{
 				public void exceptionRaised(String message) { }
 				public void dataLoadComplete(Object obj, String message) 
@@ -1169,7 +1207,7 @@ public class WinNightScoutLoader extends JFrame {
 	//		{
 	//			// Threaded load instead
 	//			m_NightScoutLoaderCore.threadLoadMedtronicMeterPump(m_FileNameTxtFld.getText(),
-	//					new ThreadDataLoad.DataLoadCompleteHander(null) 
+	//					new ThreadDataLoad.DataLoadCompleteHandler(null) 
 	//			{
 	//				public void exceptionRaised(String message) { }
 	//				public void dataLoadComplete(Object obj, String message) 
@@ -1214,7 +1252,7 @@ public class WinNightScoutLoader extends JFrame {
 	//		try
 	//		{
 	//			m_NightScoutLoaderCore.threadLoadDiasendMeterPump(m_FileNameTxtFld.getText(),
-	//					new ThreadDataLoad.DataLoadCompleteHander(null) 
+	//					new ThreadDataLoad.DataLoadCompleteHandler(null) 
 	//			{
 	//				public void exceptionRaised(String message) { }
 	//				public void dataLoadComplete(Object obj, String message) 
@@ -1264,7 +1302,7 @@ public class WinNightScoutLoader extends JFrame {
 
 				// Threaded load instead
 				m_NightScoutLoaderCore.threadLoadMedtronicMeterPump(m_FileNameTxtFld.getText(),
-						new ThreadDataLoad.DataLoadCompleteHander(null) 
+						new ThreadDataLoad.DataLoadCompleteHandler(null) 
 				{
 					public void exceptionRaised(String message) { }
 					public void dataLoadComplete(Object obj, String message) 
@@ -1303,7 +1341,7 @@ public class WinNightScoutLoader extends JFrame {
 
 				// Threaded load instead
 				m_NightScoutLoaderCore.threadLoadDiasendMeterPump(m_FileNameTxtFld.getText(),
-						new ThreadDataLoad.DataLoadCompleteHander(null) 
+						new ThreadDataLoad.DataLoadCompleteHandler(null) 
 				{
 					public void exceptionRaised(String message) { }
 					public void dataLoadComplete(Object obj, String message) 
@@ -1337,7 +1375,7 @@ public class WinNightScoutLoader extends JFrame {
 			else if (fileType == FileChecker.FileCheckType.OmniPod)
 			{
 				m_NightScoutLoaderCore.threadLoadOmniPodMeterPump(m_FileNameTxtFld.getText(),
-						new ThreadDataLoad.DataLoadCompleteHander(null) 
+						new ThreadDataLoad.DataLoadCompleteHandler(null) 
 				{
 					public void exceptionRaised(String message) { }
 					public void dataLoadComplete(Object obj, String message) 
@@ -1371,7 +1409,7 @@ public class WinNightScoutLoader extends JFrame {
 			else if (fileType == FileChecker.FileCheckType.RocheSQLExtract)
 			{
 				m_NightScoutLoaderCore.threadLoadRocheMeterPump(m_FileNameTxtFld.getText(),
-						new ThreadDataLoad.DataLoadCompleteHander(null) 
+						new ThreadDataLoad.DataLoadCompleteHandler(null) 
 				{
 					public void exceptionRaised(String message) { }
 					public void dataLoadComplete(Object obj, String message) 
@@ -1405,7 +1443,7 @@ public class WinNightScoutLoader extends JFrame {
 			else if (fileType == FileChecker.FileCheckType.Tandem)
 			{
 				m_NightScoutLoaderCore.threadLoadTandemMeterPump(m_FileNameTxtFld.getText(),
-						new ThreadDataLoad.DataLoadCompleteHander(null) 
+						new ThreadDataLoad.DataLoadCompleteHandler(null) 
 				{
 					public void exceptionRaised(String message) { }
 					public void dataLoadComplete(Object obj, String message) 
@@ -1449,7 +1487,7 @@ public class WinNightScoutLoader extends JFrame {
 	//		try
 	//		{
 	//			m_NightScoutLoaderCore.threadLoadOmniPodMeterPump(m_FileNameTxtFld.getText(),
-	//					new ThreadDataLoad.DataLoadCompleteHander(null) 
+	//					new ThreadDataLoad.DataLoadCompleteHandler(null) 
 	//			{
 	//				public void exceptionRaised(String message) { }
 	//				public void dataLoadComplete(Object obj, String message) 
@@ -1568,8 +1606,6 @@ public class WinNightScoutLoader extends JFrame {
 		// If Roche is selected, then enable the date ranges
 		String meterStr = new String((String)m_ComboBox.getSelectedItem());
 		SupportedMeters meter = getSelectedMeter(meterStr);
-		
-		FileNameExtensionFilter filter = null;
 
 		if (meter == SupportedMeters.RocheCombo)
 		{
@@ -1837,6 +1873,88 @@ public class WinNightScoutLoader extends JFrame {
 			}
 		}
 	}
+
+	private void doAutotuneQuickRun()
+	{
+		if (CoreNightScoutLoader.getInstance().getM_NightScoutArrayListDBResultEntries().size() > 0)
+		{
+			WinRemoteLinuxServer win = createRemoteLinuxManagementWin();
+			if (win != null)
+			{
+				win.runAutotune();
+			}
+			else
+			{
+				JOptionPane.showMessageDialog(null, 
+						"Autotune is currently disabled.  The option is on the Analyzer window.");
+			}
+		}
+		else
+		{
+			JOptionPane.showMessageDialog(null, 
+					"CGM still loading.");		
+		}
+	}
+
+	private void doAutotuneManagement()
+	{
+		if (CoreNightScoutLoader.getInstance().getM_NightScoutArrayListDBResultEntries().size() > 0)
+		{
+			WinRemoteLinuxServer win = createRemoteLinuxManagementWin();
+			if (win == null)
+			{
+				JOptionPane.showMessageDialog(null, 
+						"Autotune is currently disabled.  The option is on the Analyzer window.");		
+			}
+		}
+		else
+		{
+			JOptionPane.showMessageDialog(null, 
+					"CGM still loading.");		
+		}
+	}
+
+	private WinRemoteLinuxServer createRemoteLinuxManagementWin()
+	{
+		WinRemoteLinuxServer result = null;
+
+		// Only do RemoteLinuxServer if setting is enabled
+		if (PrefsNightScoutLoader.getInstance().isM_AutoTuneInvoked())
+		{
+
+			AnalyzerEntries anEntries = new AnalyzerEntries(CoreNightScoutLoader.getInstance().getM_NightScoutArrayListDBResultEntries(),
+					CoreNightScoutLoader.getInstance().getM_ResultsMongoDB());
+			anEntries.initialize(CoreNightScoutLoader.getInstance().getM_NightScoutArrayListDBResultEntries());		
+			ArrayList<AnalyzerEntriesCGMRange> cgmRanges = anEntries.getM_CGMRanges();
+			Date startDate = new Date(0);
+			Date endDate   = new Date(0);
+
+			if (cgmRanges.size() > 0)
+			{
+				// Get the last entry...
+				AnalyzerEntriesCGMRange mostRecentCGMRange = cgmRanges.get(cgmRanges.size() - 1);
+				startDate = mostRecentCGMRange.getM_StartDate();
+				endDate   = mostRecentCGMRange.getM_EndDate();
+
+				Date fortnightearlier = CommonUtils.addDaysToDate(endDate, 14);
+
+				// Are there more than 14 days between start and end?
+				if (CommonUtils.isTimeBetween(startDate, endDate, fortnightearlier))
+				{
+					startDate = fortnightearlier;
+				}
+				WinRemoteLinuxServer win = new WinRemoteLinuxServer("Nightscout Loader " + Version.getInstance().getM_Version() + " - Autotune");
+				win.setM_DefaultStartDate(startDate);
+				win.setM_DefaultEndDate(endDate);			
+				win.addTextLine("Dates initialized from most recent CGM data (up to two weeks back)\n\n");
+				win.setVisible(true);
+				result = win;
+			}
+		}
+
+		return result;
+	}
+
 
 	private void doDeleteLoadedTreatments()
 	{
@@ -2364,18 +2482,10 @@ public class WinNightScoutLoader extends JFrame {
 		}
 	}
 
-	public void setAnalyzeMethodEnabled(boolean enabled)
-	{
-
-	}
-
-	public void displayCGMChart()
-	{
-		// Experimental - create a chart
-		CGMChart chart = new CGMChart(this.m_NightScoutLoaderCore.getM_NightScoutArrayListDBResultEntries());
-		chart.setVisible(true);
-	}
-
+	//	public void setAnalyzeMethodEnabled(boolean enabled)
+	//	{
+	//
+	//	}
 
 	public boolean threadDeeperAnalyseResults(ThreadAnalyzer.AnalyzerCompleteHander handler)
 	{
@@ -2394,7 +2504,7 @@ public class WinNightScoutLoader extends JFrame {
 			// This is essential to be able to then load Excel with the file
 			this.analyzer.setSelectedExcelFile(excelFile);
 
-			m_NightScoutLoaderCore.doThreadAnalyzeResults(excelFile, handler);		
+			m_NightScoutLoaderCore.doThreadAnalyzeResults(m_AutotunerWin, excelFile, handler);		
 			result = true;
 		}
 
@@ -2561,7 +2671,7 @@ public class WinNightScoutLoader extends JFrame {
 	{
 		String meterStr = new String((String)m_ComboBox.getSelectedItem());
 		SupportedMeters meter = getSelectedMeter(meterStr);
-		
+
 		if (meter == SupportedMeters.RocheCombo)
 		{
 			m_StartDateLbl.setVisible(true);	
@@ -2575,47 +2685,47 @@ public class WinNightScoutLoader extends JFrame {
 		}
 		else
 		{
-		if (meter == SupportedMeters.Medtronic)
-		{
-			// Set the text filename if Medtronic is used.
-			// Initialise text field from preferences
-			m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_MedtronicMeterPumpResultFilePath());
+			if (meter == SupportedMeters.Medtronic)
+			{
+				// Set the text filename if Medtronic is used.
+				// Initialise text field from preferences
+				m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_MedtronicMeterPumpResultFilePath());
 
-		}
-		else if (meter == SupportedMeters.Diasend)
-		{
-			// Set the text filename if Diasend is used.
-			// Initialise text field from preferences
-			m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_DiasendMeterPumpResultFilePath());			
-		}
-		else if (meter == SupportedMeters.OmniPod)
-		{
-			// Set the text filename if Omnipod is used.
-			// Initialise text field from preferences
-			m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_OmniPodMeterPumpResultFilePath());			
-		}
-		else if (meter == SupportedMeters.RocheSQLExtract)
-		{
-			// Set the text filename if Roche SQL Extract is used.
-			// Initialise text field from preferences
-			m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_RocheExtractMeterPumpResultFilePath());			
-		}
-		else if (meter == SupportedMeters.Tandem)
-		{
-			// Set the text filename if Tandem is used.
-			// Initialise text field from preferences
-			m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_TandemMeterPumpResultFilePath());			
-		}
-		
-		// If any of the file based loads are selected, then disable the date ranges & enable the file fields
-		m_StartDateLbl.setVisible(false);	
-		startDatePicker.setVisible(false);
-		m_EndDateLbl.setVisible(false);	
-		endDatePicker.setVisible(false);
+			}
+			else if (meter == SupportedMeters.Diasend)
+			{
+				// Set the text filename if Diasend is used.
+				// Initialise text field from preferences
+				m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_DiasendMeterPumpResultFilePath());			
+			}
+			else if (meter == SupportedMeters.OmniPod)
+			{
+				// Set the text filename if Omnipod is used.
+				// Initialise text field from preferences
+				m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_OmniPodMeterPumpResultFilePath());			
+			}
+			else if (meter == SupportedMeters.RocheSQLExtract)
+			{
+				// Set the text filename if Roche SQL Extract is used.
+				// Initialise text field from preferences
+				m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_RocheExtractMeterPumpResultFilePath());			
+			}
+			else if (meter == SupportedMeters.Tandem)
+			{
+				// Set the text filename if Tandem is used.
+				// Initialise text field from preferences
+				m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_TandemMeterPumpResultFilePath());			
+			}
 
-		m_FileNameTxtFld.setVisible(true);
-		m_FileNameLbl.setVisible(true);
-		m_FileSelectBtn.setVisible(true);
+			// If any of the file based loads are selected, then disable the date ranges & enable the file fields
+			m_StartDateLbl.setVisible(false);	
+			startDatePicker.setVisible(false);
+			m_EndDateLbl.setVisible(false);	
+			endDatePicker.setVisible(false);
+
+			m_FileNameTxtFld.setVisible(true);
+			m_FileNameLbl.setVisible(true);
+			m_FileSelectBtn.setVisible(true);
 		}
 
 		// Finally, update preferences so we store this down
@@ -2716,7 +2826,7 @@ public class WinNightScoutLoader extends JFrame {
 		// From selected rowNum, decrease by 1 and return DBResult
 		// If at the top then return null
 
-		if (rowNum >= 0 && rowNum < m_MongoResults.size())
+		if (rowNum >= 0 && rowNum < m_MongoResults.size() - 1)
 		{
 			displayMongoFormDown(m_MongoResults.get(rowNum + 1), rowNum + 1);	
 		}

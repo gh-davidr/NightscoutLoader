@@ -29,7 +29,8 @@ public class WinAbout extends JDialog {
 	/**
 	 * Create the dialog.
 	 */
-	public WinAbout(String title) {
+	public WinAbout(String title) 
+	{
 		super.setTitle(title);
 
 		URL url = MainNightScoutLoader.class.getResource("/Nightscout.jpg");

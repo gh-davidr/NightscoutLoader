@@ -32,7 +32,10 @@ public class MainNightScoutLoader
 			public void run() 
 			{
 				try 
-				{					
+				{
+					//http://stackoverflow.com/questions/7612592/jframe-and-nimbus-look-and-feel
+//					JFrame.setDefaultLookAndFeelDecorated(true); //before creating JFrames
+
 					WinNightScoutLoader mainWin;
 					mainWin = new WinNightScoutLoader();
 					mainWin.setVisible(true);

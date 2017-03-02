@@ -5,8 +5,6 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import davidRichardson.Analyzer.AnalyzerTrendResultTypeEnum;
-
 public class AnalyzerEntriesCGMDay
 {
 	private static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());

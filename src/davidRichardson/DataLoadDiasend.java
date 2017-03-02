@@ -6,7 +6,6 @@ import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -40,27 +39,30 @@ public class DataLoadDiasend extends DataLoadBase
 	final static int m_InsulinRowDataHeaders = 1;
 	final static int m_InsulinRowDataStart   = 2;
 
-	final static String m_SettingsBasalStartString  = "Basal profiles";
-	final static String m_SettingsIntervalString    = "Interval";
-	final static String m_SettingsActiveBasalString = "Active basal program";
-	final static String m_SettingsBasalsEndString   = "I:C ratio settings";
+	final static String m_SettingsBasalStartString     = "Basal profiles";
+	final static String m_SettingsIntervalString       = "Interval";
+	final static String m_SettingsActiveBasalString    = "Active basal program";
+	final static String m_SettingsISFStartString       = "ISF programs";
+	final static String m_SettingsCarbRatioStartString = "I:C ratio settings";
 
+	
+	
 	POIFSFileSystem m_ExcelFileSystem        = null;
 	HSSFWorkbook    m_ExcelWorkBook          = null;
 
 	// Loaded from raw device such as meter, pump DB or file
-	protected ArrayList <DBResultDiasendBasalSetting> m_BasalSettings;
-
-	protected ArrayList <DBResultDiasendBasalSetting> m_BasalSettings1;
-	protected ArrayList <DBResultDiasendBasalSetting> m_BasalSettings2;
-	protected ArrayList <DBResultDiasendBasalSetting> m_BasalSettings3;
-	protected ArrayList <DBResultDiasendBasalSetting> m_BasalSettings4;
-	protected ArrayList <DBResultDiasendBasalSetting> m_BasalSettings5;
-	protected ArrayList <DBResultDiasendBasalSetting> m_BasalSettings6;
-	protected ArrayList <DBResultDiasendBasalSetting> m_BasalSettings7;
-
-	protected String                                  m_ActiveBasal;
-
+	protected ArrayList <DBResultDiasendBasalSetting>     m_BasalSettings;
+	protected ArrayList <DBResultDiasendBasalSetting>     m_BasalSettings1;
+	protected ArrayList <DBResultDiasendBasalSetting>     m_BasalSettings2;
+	protected ArrayList <DBResultDiasendBasalSetting>     m_BasalSettings3;
+	protected ArrayList <DBResultDiasendBasalSetting>     m_BasalSettings4;
+	protected ArrayList <DBResultDiasendBasalSetting>     m_BasalSettings5;
+	protected ArrayList <DBResultDiasendBasalSetting>     m_BasalSettings6;
+	protected ArrayList <DBResultDiasendBasalSetting>     m_BasalSettings7;
+	protected String                                      m_ActiveBasal;
+	protected ArrayList <DBResultDiasendISFSetting>       m_ISFSettings;
+	protected ArrayList <DBResultDiasendCarbRatioSetting> m_CarbRatioSettings;
+	
 	@Override
 	protected String getDevice() 
 	{
@@ -80,10 +82,35 @@ public class DataLoadDiasend extends DataLoadBase
 		m_BasalSettings7 = null;
 
 		m_ActiveBasal    = null;
+		
+		m_ISFSettings    = null;
 
 		initialize(fileName);
 		loadDBResults();
 	}
+	
+	public void loadPumpSettings(String fileName) throws UnknownHostException, SQLException, ClassNotFoundException, IOException 
+	{
+		m_BasalSettings  = null;
+
+		m_BasalSettings1 = null;
+		m_BasalSettings2 = null;
+		m_BasalSettings3 = null;
+		m_BasalSettings4 = null;
+		m_BasalSettings5 = null;
+		m_BasalSettings6 = null;
+		m_BasalSettings7 = null;
+
+		m_ActiveBasal    = null;
+		m_ISFSettings    = null;
+
+		initialize(fileName);
+		loadInsulinPumpSettings();     // Load Settings first
+		
+		// Now close the workbook
+		m_ExcelWorkBook.close();
+	}
+
 
 	@Override
 	public void loadDBResults() throws UnknownHostException, SQLException, ClassNotFoundException, IOException 
@@ -261,7 +288,156 @@ public class DataLoadDiasend extends DataLoadBase
 
 		return result;
 	}
+	
+	
+	private ArrayList <DBResultDiasendISFSetting> loadISFSettings(HSSFSheet sheet)
+	{
+		ArrayList <DBResultDiasendISFSetting> result = null;
 
+		try 
+		{
+			if (sheet != null)
+			{
+				HSSFRow row;
+
+				int rows; // No of rows
+				rows = sheet.getPhysicalNumberOfRows();
+
+				int cols = 0; // No of columns
+				int tmp = 0;
+
+				// Interested in loading the ISF profiles.
+				// At this stage, not sure how data looks when device has multiple ISF profiles setup
+				// Will need to see
+
+				// This trick ensures that we get the data properly even if it doesn't start from first few rows
+				for(int i = 0; i < 10 || i < rows; i++) 
+				{
+					row = sheet.getRow(i);
+					if(row != null) 
+					{
+						tmp = sheet.getRow(i).getPhysicalNumberOfCells();
+						if(tmp > cols) cols = tmp;
+					}
+				}
+
+				boolean foundISFSection         = false;
+				boolean inProfileSection        = false;
+				boolean completedProfileSection = false;
+
+				for(int r = 0; r <= rows && !completedProfileSection; r++) 
+				{
+					row = sheet.getRow(r);
+
+					if (row == null && inProfileSection)
+					{
+						completedProfileSection = true;
+					}
+					else if (row != null)
+					{
+						String cell1 = DBResultDiasendISFSetting.getCellAsString(row, 0);
+
+						if (cell1.equals(m_SettingsISFStartString))
+						{
+							foundISFSection = true;
+							result = new ArrayList <DBResultDiasendISFSetting>();
+						}
+						else if (foundISFSection && cell1.equals(m_SettingsIntervalString))
+						{
+							inProfileSection = true;
+						}
+						else if (foundISFSection && inProfileSection)
+						{
+							DBResultDiasendISFSetting basal = new DBResultDiasendISFSetting(row);
+							result.add(basal);
+						}
+					}
+				}
+			}
+		} 
+		catch(Exception ioe) 
+		{
+			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " Exception loading ISF " + ioe.getMessage());
+		}
+
+		return result;
+	}
+	
+	private ArrayList <DBResultDiasendCarbRatioSetting> loadCarbRatioSettings(HSSFSheet sheet)
+	{
+		ArrayList <DBResultDiasendCarbRatioSetting> result = null;
+
+		try 
+		{
+			if (sheet != null)
+			{
+				HSSFRow row;
+
+				int rows; // No of rows
+				rows = sheet.getPhysicalNumberOfRows();
+
+				int cols = 0; // No of columns
+				int tmp = 0;
+
+				// Interested in loading the CarbRatio profiles.
+				// At this stage, not sure how data looks when device has multiple CarbRatio profiles setup
+				// Will need to see
+
+				// This trick ensures that we get the data properly even if it doesn't start from first few rows
+				for(int i = 0; i < 10 || i < rows; i++) 
+				{
+					row = sheet.getRow(i);
+					if(row != null) 
+					{
+						tmp = sheet.getRow(i).getPhysicalNumberOfCells();
+						if(tmp > cols) cols = tmp;
+					}
+				}
+
+				boolean foundCarbRatioSection         = false;
+				boolean inProfileSection        = false;
+				boolean completedProfileSection = false;
+
+				for(int r = 0; r <= rows && !completedProfileSection; r++) 
+				{
+					row = sheet.getRow(r);
+
+					if (row == null && inProfileSection)
+					{
+						completedProfileSection = true;
+					}
+					else if (row != null)
+					{
+						String cell1 = DBResultDiasendCarbRatioSetting.getCellAsString(row, 0);
+
+						if (cell1.equals(m_SettingsCarbRatioStartString))
+						{
+							foundCarbRatioSection = true;
+							result = new ArrayList <DBResultDiasendCarbRatioSetting>();
+						}
+						else if (foundCarbRatioSection && cell1.equals(m_SettingsIntervalString))
+						{
+							inProfileSection = true;
+						}
+						else if (foundCarbRatioSection && inProfileSection)
+						{
+							DBResultDiasendCarbRatioSetting basal = new DBResultDiasendCarbRatioSetting(row);
+							result.add(basal);
+						}
+					}
+				}
+			}
+		} 
+		catch(Exception ioe) 
+		{
+			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " Exception loading CarbRatio " + ioe.getMessage());
+		}
+
+		return result;
+	}
+
+	
+	
 	private String getActiveBasalRate(HSSFSheet sheet)
 	{
 		String result = null;
@@ -343,6 +519,9 @@ public class DataLoadDiasend extends DataLoadBase
 				m_BasalSettings = (m_ActiveBasal.equals("Program: 6")) ? m_BasalSettings6 : m_BasalSettings;
 				m_BasalSettings = (m_ActiveBasal.equals("Program: 7")) ? m_BasalSettings7 : m_BasalSettings;
 			}
+			
+			m_ISFSettings       = loadISFSettings(sheet);
+			m_CarbRatioSettings = loadCarbRatioSettings(sheet);
 		}
 	}
 
@@ -605,5 +784,26 @@ public class DataLoadDiasend extends DataLoadBase
 		}
 
 		return result;
+	}
+
+	/**
+	 * @return the m_BasalSettings
+	 */
+	public synchronized ArrayList<DBResultDiasendBasalSetting> getM_BasalSettings() {
+		return m_BasalSettings;
+	}
+
+	/**
+	 * @return the m_ISFSettings
+	 */
+	public synchronized ArrayList<DBResultDiasendISFSetting> getM_ISFSettings() {
+		return m_ISFSettings;
+	}
+
+	/**
+	 * @return the m_CarbRatioSettings
+	 */
+	public synchronized ArrayList<DBResultDiasendCarbRatioSetting> getM_CarbRatioSettings() {
+		return m_CarbRatioSettings;
 	}
 }

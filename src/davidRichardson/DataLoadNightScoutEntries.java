@@ -10,8 +10,6 @@ import com.mongodb.MongoClientURI;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.text.SimpleDateFormat;
-import java.text.DateFormat;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -116,9 +114,9 @@ public class DataLoadNightScoutEntries extends DataLoadNightScout
 		long thenLong = nowLong - ((long)weeksBack * 7 * 24 * 3600 * 1000); // Arrghh - need to cast this weeks back else get garbage future date!
 		Date startDate = new Date(thenLong);
 		
-		final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
-		String nowString = new String(df.format(now));
-		String startDatetring = new String(df.format(startDate));
+//		final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
+//		String nowString = new String(df.format(now));
+//		String startDatetring = new String(df.format(startDate));
 		
 		loadDBResults(startDate);
 	}

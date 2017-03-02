@@ -24,7 +24,6 @@ import java.net.UnknownHostException;
 public class DataLoadNightScoutTreatments extends DataLoadNightScout 
 {
 	private static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());
-	private static final int m_FailedTestLimit = 2;
 
 //	private static Integer m_FailedTests = 0;
 

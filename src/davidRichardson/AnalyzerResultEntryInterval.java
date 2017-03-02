@@ -235,7 +235,6 @@ public class AnalyzerResultEntryInterval
 			
 			Double hypo            = PrefsNightScoutLoader.getInstance().getM_AnalyzerLowRangeThreshold();
 			Double hyper           = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighThreshold();
-			Double highRange       = PrefsNightScoutLoader.getInstance().getM_AnalyzerHighRangeThreshold();
 			Double changeThreshold = PrefsNightScoutLoader.getInstance().getM_EntryAnalyzerSteepChange();
 			boolean extremesOverrideDirection = PrefsNightScoutLoader.getInstance().isM_EntryExtremesOverrideDirection();
 

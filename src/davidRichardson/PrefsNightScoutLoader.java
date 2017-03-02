@@ -3,12 +3,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Date;
 import java.util.Calendar;
-import java.util.Formatter;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.InvalidPreferencesFormatException;
 import java.util.prefs.Preferences;
@@ -169,6 +167,14 @@ public class PrefsNightScoutLoader
 	final private double  def_M_EntryAnalyzerSteepChange           = 3.0;
 	final private boolean def_M_EntryExtremesOverrideDirection     = true;
 	
+	final private boolean def_M_AutoTuneInvoked                    = true;
+	final private String  def_M_AutoTuneServer                     = "";
+	final private String  def_M_AutoTuneNSURL                      = ""; // We've managed without the URL all this time :-)
+	final private boolean def_M_AutoTuneSSH2KeyLogin               = true;
+	final private String  def_M_AutoTuneKeyFile                    = "";
+	final private String  def_M_AutoTuneLocalFolderForBackups      = "C:\\Temp\\NightscoutLoaderAutotuneBackups";
+	final private String  def_M_AutoTuneLocalProfileFileLoaded     = "";
+	
 	
 	private int     m_BGUnits;    // 0 ==> mmol/L 1 ==> mg/
 	private String  m_SelectedMeter;
@@ -275,6 +281,14 @@ public class PrefsNightScoutLoader
 	private double  m_EntryAnalyzerSteepChange;
 	private boolean m_EntryExtremesOverrideDirection;
 
+	private boolean m_AutoTuneInvoked;
+	private String  m_AutoTuneServer;
+	private String  m_AutoTuneNSURL; // We've managed without the URL all this time :-)
+	private boolean m_AutoTuneSSH2KeyLogin;
+	private String  m_AutoTuneKeyFile;
+	private String  m_AutoTuneLocalFolderForBackups;
+	private String  m_AutoTuneLocalProfileFileLoaded;
+
 
 	// Handles to retrieve preferences
 	final private String pref_BGUnits                           = "NSL_BGUnits";
@@ -372,6 +386,14 @@ public class PrefsNightScoutLoader
 	final private String  pref_EntryAnalyzerSteepChange             = "NSL_EntryAnalyzerSteepChange";
 	final private String  pref_EntryExtremesOverrideDirection       = "NSL_EntryExtremesOverrideDirection";
 	
+	final private String  pref_AutoTuneInvoked                      = "NSL_AutoTuneInvoked";
+	final private String  pref_AutoTuneServer                       = "NSL_AutoTuneServer";
+	final private String  pref_AutoTuneNSURL                        = "NSL_AutoTuneNSURL";
+	final private String  pref_AutoTuneSSH2KeyLogin                 = "NSL_AutoTuneSSH2KeyLogin";
+	final private String  pref_AutoTuneKeyFile                      = "NSL_AutoTuneKeyFile";
+	final private String  pref_AutoTuneLocalFolderForBackups        = "NSL_AutoTuneLocalFolderForBackups";
+	final private String  pref_AutoTuneLocalProfileFileLoaded       = "NSL_AutoTuneLocalProfileFileLoaded";
+		
 	static int getBGUnitMultiplier()
 	{
 		int result = 1;  // Default is mmol/L
@@ -455,7 +477,7 @@ public class PrefsNightScoutLoader
 	public void importPreferences(String filename) throws FileNotFoundException, IOException, BackingStoreException, InvalidPreferencesFormatException
 	{
 		FileInputStream fis = new FileInputStream(filename);
-		prefs.importPreferences(fis);
+		Preferences.importPreferences(fis);
 		fis.close();
 	}
 	
@@ -510,6 +532,14 @@ public class PrefsNightScoutLoader
 		m_EntryAnalyzerIntervalHours           = def_M_EntryAnalyzerIntervalHours;
 		m_EntryAnalyzerSteepChange             = def_M_EntryAnalyzerSteepChange * getBGUnitMultiplier();
 		m_EntryExtremesOverrideDirection       = def_M_EntryExtremesOverrideDirection;
+
+		m_AutoTuneInvoked                      = def_M_AutoTuneInvoked;
+		m_AutoTuneServer                       = def_M_AutoTuneServer;
+		m_AutoTuneNSURL                        = def_M_AutoTuneServer; // We've managed without the URL all this time :-)
+		m_AutoTuneSSH2KeyLogin                 = def_M_AutoTuneSSH2KeyLogin;
+		m_AutoTuneKeyFile                      = def_M_AutoTuneKeyFile;
+		m_AutoTuneLocalFolderForBackups        = def_M_AutoTuneLocalFolderForBackups;
+		m_AutoTuneLocalProfileFileLoaded       = def_M_AutoTuneLocalProfileFileLoaded;
 	}
 	
 	private void resetBGValues()
@@ -637,6 +667,14 @@ public class PrefsNightScoutLoader
 		prefs.putFloat(pref_EntryAnalyzerSteepChange, (float)m_EntryAnalyzerSteepChange);
 		prefs.putBoolean(pref_EntryExtremesOverrideDirection, m_EntryExtremesOverrideDirection);
 
+		prefs.putBoolean(pref_AutoTuneInvoked, m_AutoTuneInvoked);
+		prefs.put(pref_AutoTuneServer,   m_AutoTuneServer);
+		prefs.put(pref_AutoTuneNSURL,   m_AutoTuneNSURL);
+		prefs.putBoolean(pref_AutoTuneSSH2KeyLogin, m_AutoTuneSSH2KeyLogin);
+		prefs.put(pref_AutoTuneKeyFile,   m_AutoTuneKeyFile);
+		prefs.put(pref_AutoTuneLocalFolderForBackups, m_AutoTuneLocalFolderForBackups);
+		prefs.put(pref_AutoTuneLocalProfileFileLoaded, m_AutoTuneLocalProfileFileLoaded);
+
 	}
 	
 	private void loadPreferences()
@@ -748,6 +786,14 @@ public class PrefsNightScoutLoader
 		m_EntryAnalyzerIntervalHours        = prefs.getInt(pref_EntryAnalyzerIntervalHours, def_M_EntryAnalyzerIntervalHours);
 		m_EntryAnalyzerSteepChange          = prefs.getFloat(pref_EntryAnalyzerSteepChange, (float)def_M_EntryAnalyzerSteepChange);
 		m_EntryExtremesOverrideDirection    = prefs.getBoolean(pref_EntryExtremesOverrideDirection, def_M_EntryExtremesOverrideDirection);
+
+		m_AutoTuneInvoked                   = prefs.getBoolean(pref_AutoTuneInvoked, def_M_AutoTuneInvoked);
+		m_AutoTuneServer                    = prefs.get(pref_AutoTuneServer,   def_M_AutoTuneServer);
+		m_AutoTuneNSURL                     = prefs.get(pref_AutoTuneNSURL,   def_M_AutoTuneNSURL);
+		m_AutoTuneSSH2KeyLogin              = prefs.getBoolean(pref_AutoTuneSSH2KeyLogin, def_M_AutoTuneSSH2KeyLogin);
+		m_AutoTuneKeyFile                   = prefs.get(pref_AutoTuneKeyFile,   def_M_AutoTuneKeyFile);
+		m_AutoTuneLocalFolderForBackups     = prefs.get(pref_AutoTuneLocalFolderForBackups, def_M_AutoTuneLocalFolderForBackups);
+		m_AutoTuneLocalProfileFileLoaded    = prefs.get(pref_AutoTuneLocalProfileFileLoaded, def_M_AutoTuneLocalProfileFileLoaded);
 
 	//	prefs.nodeExists(arg0)
 	}
@@ -1996,6 +2042,104 @@ public class PrefsNightScoutLoader
 	 */
 	public synchronized void setM_EntryExtremesOverrideDirection(boolean m_EntryExtremesOverrideDirection) {
 		this.m_EntryExtremesOverrideDirection = m_EntryExtremesOverrideDirection;
+	}
+
+	/**
+	 * @return the m_AutoTuneInvoked
+	 */
+	public synchronized boolean isM_AutoTuneInvoked() {
+		return m_AutoTuneInvoked;
+	}
+
+	/**
+	 * @param m_AutoTuneInvoked the m_AutoTuneInvoked to set
+	 */
+	public synchronized void setM_AutoTuneInvoked(boolean m_AutoTuneInvoked) {
+		this.m_AutoTuneInvoked = m_AutoTuneInvoked;
+	}
+
+	/**
+	 * @return the m_AutoTuneServer
+	 */
+	public synchronized String getM_AutoTuneServer() {
+		return m_AutoTuneServer;
+	}
+
+	/**
+	 * @param m_AutoTuneServer the m_AutoTuneServer to set
+	 */
+	public synchronized void setM_AutoTuneServer(String m_AutoTuneServer) {
+		this.m_AutoTuneServer = m_AutoTuneServer;
+	}
+
+	/**
+	 * @return the m_AutoTuneNSURL
+	 */
+	public synchronized String getM_AutoTuneNSURL() {
+		return m_AutoTuneNSURL;
+	}
+
+	/**
+	 * @param m_AutoTuneNSURL the m_AutoTuneNSURL to set
+	 */
+	public synchronized void setM_AutoTuneNSURL(String m_AutoTuneNSURL) {
+		this.m_AutoTuneNSURL = m_AutoTuneNSURL;
+	}
+
+	/**
+	 * @return the m_AutoTuneSSH2KeyLogin
+	 */
+	public synchronized boolean isM_AutoTuneSSH2KeyLogin() {
+		return m_AutoTuneSSH2KeyLogin;
+	}
+
+	/**
+	 * @param m_AutoTuneSSH2KeyLogin the m_AutoTuneSSH2KeyLogin to set
+	 */
+	public synchronized void setM_AutoTuneSSH2KeyLogin(boolean m_AutoTuneSSH2KeyLogin) {
+		this.m_AutoTuneSSH2KeyLogin = m_AutoTuneSSH2KeyLogin;
+	}
+
+	/**
+	 * @return the m_AutoTuneKeyFile
+	 */
+	public synchronized String getM_AutoTuneKeyFile() {
+		return m_AutoTuneKeyFile;
+	}
+
+	/**
+	 * @param m_AutoTuneKeyFile the m_AutoTuneKeyFile to set
+	 */
+	public synchronized void setM_AutoTuneKeyFile(String m_AutoTuneKeyFile) {
+		this.m_AutoTuneKeyFile = m_AutoTuneKeyFile;
+	}
+
+	/**
+	 * @return the m_AutoTuneLocalFolderForBackups
+	 */
+	public synchronized String getM_AutoTuneLocalFolderForBackups() {
+		return m_AutoTuneLocalFolderForBackups;
+	}
+
+	/**
+	 * @param m_AutoTuneLocalFolderForBackups the m_AutoTuneLocalFolderForBackups to set
+	 */
+	public synchronized void setM_AutoTuneLocalFolderForBackups(String m_AutoTuneLocalFolderForBackups) {
+		this.m_AutoTuneLocalFolderForBackups = m_AutoTuneLocalFolderForBackups;
+	}
+
+	/**
+	 * @return the m_AutoTuneLocalProfileFileLoaded
+	 */
+	public synchronized String getM_AutoTuneLocalProfileFileLoaded() {
+		return m_AutoTuneLocalProfileFileLoaded;
+	}
+
+	/**
+	 * @param m_AutoTuneLocalProfileFileLoaded the m_AutoTuneLocalProfileFileLoaded to set
+	 */
+	public synchronized void setM_AutoTuneLocalProfileFileLoaded(String m_AutoTuneLocalProfileFileLoaded) {
+		this.m_AutoTuneLocalProfileFileLoaded = m_AutoTuneLocalProfileFileLoaded;
 	}
 
 

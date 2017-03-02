@@ -1,14 +1,10 @@
 package davidRichardson;
 
 import java.util.Date;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.Calendar; 
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 public class DBResultTandem extends DBResult 
@@ -107,8 +103,6 @@ public class DBResultTandem extends DBResult
 	static private int m_PumpDateTimeIndex = 0;
 	static private int m_PumpBGIndex = 0;		
 	static private int m_PumpBolusTypeIndex = 0;
-	static private int m_PumpTempBasalAmountIndex = 0;
-	static private int m_PumpTempBasalDurationIndex = 0;
 	static private int m_PumpCarbAmountIndex = 0;
 	static private int m_PumpStandardBolusIndex = 0;
 	static private int m_PumpBolusDurationIndex = 0;

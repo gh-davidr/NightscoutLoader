@@ -1,14 +1,12 @@
 package davidRichardson;
 
 import java.util.Date;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Calendar; 
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 public class DBResultMedtronic extends DBResult 
@@ -316,9 +314,9 @@ public class DBResultMedtronic extends DBResult
 				
 				
 			    	// Site Change
-			    	else if ((m_RecordSet[m_PrimeIndex].length() > 0) && (m_RecordSet[m_PrimeIndex] == "Fill Cannula"))
+			    	else if ((m_RecordSet[m_PrimeIndex].length() > 0) && (m_RecordSet[m_PrimeIndex].equals("Fill Cannula")))
 			    	{
-			    		this.m_CP_EventType = "Site Change";
+			    		this.m_ResultType = "Site Change";
 			    	}
 			    	
 			        // Not interested, so make invalid and it's discarded

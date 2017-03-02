@@ -73,7 +73,10 @@ public class DataLoadMedtronic extends DataLoadCSVFile
 				{
 					// There could be more than one meter, so allow index to drift forward by one
 					// each time we see a separate meter line
-					if ((rs.length > 0 && rs[0].equals("Meter:")))
+					// 
+					// 19 Feb 2017
+					// Seen Pump: at line 6 in file from Melanie Mason
+					if ((rs.length > 0 && (rs[0].equals("Meter:") || rs[0].equals("Pump:"))))
 					{
 						index++;
 						meter++;

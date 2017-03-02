@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 
-import davidRichardson.AnalyzerResultEntryInterval.DBResultEntryProfile;
-import davidRichardson.AnalyzerResultEntryInterval.DBResultEntryProfileDirection;
-
 public class AnalyzerEntries 
 {
 	private ArrayList<DBResultEntry>                   m_DBResultEntries;

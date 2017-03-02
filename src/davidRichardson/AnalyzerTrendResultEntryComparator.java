@@ -2,7 +2,6 @@ package davidRichardson;
 
 import java.util.Comparator;
 
-import davidRichardson.AnalyzerResultEntryInterval.DBResultEntryProfileChange;
 import davidRichardson.AnalyzerResultEntryInterval.DBResultEntryProfileDirection;
 
 public class AnalyzerTrendResultEntryComparator implements Comparator<AnalyzerTrendResultEntry> 

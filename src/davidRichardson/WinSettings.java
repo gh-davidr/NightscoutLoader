@@ -27,9 +27,7 @@ import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.URL;
-import java.net.UnknownHostException;
 
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
@@ -39,14 +37,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.InvalidPreferencesFormatException;
-import java.awt.BorderLayout;
 import java.awt.Color;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 
-public class WinSettings extends JDialog {
+public class WinSettings extends JDialog 
+//public class WinSettings extends JFrame   -- Interesting.  Doesn't launch when a JFrame
+{
 
 	/**
 	 * 
@@ -137,7 +136,7 @@ public class WinSettings extends JDialog {
 	private JSpinner sp_DupeCarbDecPlace;
 	private JSpinner sp_DupeInsulinDecPlace;
 	private JSpinner sp_WeeksBackToLoadEntries;
-	private JComboBox cb_DuplicateCheckType;
+	private JComboBox<String> cb_DuplicateCheckType;
 
 	/**
 	 * Launch the application.
@@ -216,6 +215,11 @@ public class WinSettings extends JDialog {
 
 		JPanel centrePanel = new JPanel(gbl_centrePanel)
 		{
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
 			// Useful trick I found to display grid lines
 			// http://stackoverflow.com/questions/2444004/how-do-we-show-the-gridline-in-gridlayout
 			@Override
@@ -711,7 +715,7 @@ public class WinSettings extends JDialog {
 
 		cb_DuplicateCheckType = new JComboBox<String>();
 		cb_DuplicateCheckType.setToolTipText("<html>For duplicate detection.  <br>Controls Duplicate checking.  <br>Duplicates are either existing entries or new entries.  <br>Spinner below controls time difference for dupes.</html>");
-		cb_DuplicateCheckType.setModel(new DefaultComboBoxModel(new String[] {"No Duplicate Checking", "Existing Dupe in mins", "New Dupe in mins"}));
+		cb_DuplicateCheckType.setModel(new DefaultComboBoxModel<String>(new String[] {"No Duplicate Checking", "Existing Dupe in mins", "New Dupe in mins"}));
 		cb_DuplicateCheckType.setSelectedIndex(PrefsNightScoutLoader.getInstance().getM_ProximityCheckType());
 		cb_DuplicateCheckType.setEnabled(true);
 		GridBagConstraints gbc_cbDuplicateChecking = new GridBagConstraints();

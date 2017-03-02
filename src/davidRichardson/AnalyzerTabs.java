@@ -1,6 +1,7 @@
 package davidRichardson;
 
 import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class AnalyzerTabs 
@@ -96,82 +97,10 @@ public class AnalyzerTabs
 		setupListOfTabs(this.m_ListOfTabs, excelOutputLevel);
 		setupListOfTabs(this.m_MinimalListOfTabs, 0);
 		
-	}
-
-/*	private void setupFullListOfTabs()
-	{		
-		m_ListOfTabs.clear();
-
-		m_ListOfTabs.add(new Tab("Guide to Tabs", true));
-		m_ListOfTabs.add(new Tab("Recurring Trends", true));
-		m_ListOfTabs.add(new Tab("Trends", true));
-		m_ListOfTabs.add(new Tab("Skipped Meal Trends", true));
-		m_ListOfTabs.add(new Tab("CGM Summary", true));
-		m_ListOfTabs.add(new Tab("CGM Heat Map", true));
-		m_ListOfTabs.add(new Tab("BGs Outside Range", true));
-		m_ListOfTabs.add(new Tab("Day Summaries", true));
-		m_ListOfTabs.add(new Tab("Single Results", true));
-		m_ListOfTabs.add(new Tab("Treatment Data Analyzed", true));
-		m_ListOfTabs.add(new Tab("In Range CGM Trend Result Entries", true));
-		m_ListOfTabs.add(new Tab("In Range CGM Entry Intervals", true));
-		m_ListOfTabs.add(new Tab("In Range CGM Results", true));
-		m_ListOfTabs.add(new Tab("Full History Trends", true));
-		m_ListOfTabs.add(new Tab("Comparison To Full History", true));
-		m_ListOfTabs.add(new Tab("Parameters", true));
-		m_ListOfTabs.add(new Tab("Settings", true));
-		m_ListOfTabs.add(new Tab("Trend Explanations", true));
-	}
-
-	private void setupMediumListOfTabs()
-	{		
-		m_ListOfTabs.clear();
-
-		
-		m_ListOfTabs.add(new Tab("Guide to Tabs", true));
-		m_ListOfTabs.add(new Tab("Recurring Trends", true));
-//		m_ListOfTabs.add(new Tab("Trends", true));
-		m_ListOfTabs.add(new Tab("Skipped Meal Trends", true));
-		m_ListOfTabs.add(new Tab("CGM Summary", true));
-		m_ListOfTabs.add(new Tab("CGM Heat Map", true));
-		m_ListOfTabs.add(new Tab("BGs Outside Range", true));
-		m_ListOfTabs.add(new Tab("Day Summaries", true));
-//		m_ListOfTabs.add(new Tab("Single Results", true));
-//		m_ListOfTabs.add(new Tab("Treatment Data Analyzed", true));
-//		m_ListOfTabs.add(new Tab("In Range CGM Trend Result Entries", true));
-//		m_ListOfTabs.add(new Tab("In Range CGM Entry Intervals", true));
-//		m_ListOfTabs.add(new Tab("In Range CGM Results", true));
-//		m_ListOfTabs.add(new Tab("Full History Trends", true));
-		m_ListOfTabs.add(new Tab("Comparison To Full History", true));
-		m_ListOfTabs.add(new Tab("Parameters", true));
-		m_ListOfTabs.add(new Tab("Settings", true));
-		m_ListOfTabs.add(new Tab("Trend Explanations", true));
+		m_Logger.log(Level.FINE, "Added full list");
 	}
 
 
-	private void setupMinimalListOfTabs(ArrayList<Tab> searchList)
-	{		
-		searchList.clear();
-
-		searchList.add(new Tab("Guide to Tabs", true));
-		searchList.add(new Tab("Recurring Trends", true));
-//		searchList.add(new Tab("Trends", true));
-//		searchList.add(new Tab("Skipped Meal Trends", true));
-		searchList.add(new Tab("CGM Summary", true));
-		searchList.add(new Tab("CGM Heat Map", true));
-//		searchList.add(new Tab("BGs Outside Range", true));
-//		searchList.add(new Tab("Day Summaries", true));
-//		searchList.add(new Tab("Single Results", true));
-//		searchList.add(new Tab("Treatment Data Analyzed", true));
-//		searchList.add(new Tab("In Range CGM Trend Result Entries", true));
-//		searchList.add(new Tab("In Range CGM Entry Intervals", true));
-//		searchList.add(new Tab("In Range CGM Results", true));
-//		searchList.add(new Tab("Full History Trends", true));
-//		searchList.add(new Tab("Comparison To Full History", true));
-		searchList.add(new Tab("Parameters", true));
-		searchList.add(new Tab("Settings", true));
-		searchList.add(new Tab("Trend Explanations", true));
-	}
-*/	
 	private void setupListOfTabs(ArrayList<Tab> searchList, int level)
 	{		
 		searchList.clear();
@@ -181,6 +110,7 @@ public class AnalyzerTabs
 		// level = 2 ==> Maximum
 
 		if (level >= 0) searchList.add(new Tab("Guide to Tabs", true));
+		if (level >= 0) searchList.add(new Tab("Autotune", true));
 		if (level >= 0) searchList.add(new Tab("Recurring Trends", true));
 		if (level == 2) searchList.add(new Tab("Trends", true));
 		if (level >= 1) searchList.add(new Tab("Skipped Meal Trends", true));

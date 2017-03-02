@@ -12,9 +12,9 @@ public class ThreadAnalyzer implements Runnable
 	// Separate thread for Analyzer to run
 	private Thread                    m_AnalyzerThread;
 
-	private String                    m_ExcelFilename = new String("");
-	private ArrayList <DBResult>      m_DBResultList  = null;
-	private ArrayList <DBResultEntry> m_DBResultEntryList  = null;
+	private String                    m_ExcelFilename      = new String("");
+	private WinTextWin                m_AutotunerWin       = null;
+	private ArrayList <DBResult>      m_DBResultList       = null;
 
 	// Analyzer used by thread
 	private Analyzer                 m_Analyzer;
@@ -23,12 +23,6 @@ public class ThreadAnalyzer implements Runnable
 	//	static Object                    m_Lock = new Object();
 	private Object                   m_Lock;
 	
-	
-	private boolean                  m_SummaryOnly       = false;
-	private boolean                  m_FullRangeAnalysis = false;
-	
-	private Analyzer.AnalyzerMode    m_AnalyzerMode      = Analyzer.AnalyzerMode.normal;
-
 	// Thread Synchronization
 	public void waitUntilFree()
 	{
@@ -101,7 +95,6 @@ public class ThreadAnalyzer implements Runnable
 
 		// Thread synchronization
 		m_Lock            = new Object();
-		m_SummaryOnly     = summaryOnly;
 	}
 
 	public ThreadAnalyzer(ArrayList <DBResult> results, ArrayList <DBResultEntry> resultEntries, Analyzer.AnalyzerMode mode)
@@ -112,9 +105,7 @@ public class ThreadAnalyzer implements Runnable
 		m_CompleteHandler = null;
 
 		// Thread synchronization
-		m_Lock            = new Object();
-		
-		m_AnalyzerMode    = mode;
+		m_Lock            = new Object();	
 	}
 
 	public void analyzeResults(AnalyzerCompleteHander completeHandler)
@@ -130,7 +121,8 @@ public class ThreadAnalyzer implements Runnable
 		{
 			// Launch the analyze method
 			
-			Analyzer.AnalyzerResult analyzerResult = m_Analyzer.analyzeResults(m_DBResultList, m_ExcelFilename);
+//			Analyzer.AnalyzerResult analyzerResult = m_Analyzer.analyzeResults(m_DBResultList, m_ExcelFilename);
+			Analyzer.AnalyzerResult analyzerResult = m_Analyzer.analyzeResults(m_DBResultList, m_ExcelFilename, m_AutotunerWin);
 			m_Logger.log(Level.FINE, "analyzeResults(m_DBResultList, m_ExcelFilename) returned: " + analyzerResult);
 			
 			if (analyzerResult == Analyzer.AnalyzerResult.analysisComplete)
@@ -165,6 +157,20 @@ public class ThreadAnalyzer implements Runnable
 	 */
 	public synchronized void setM_ExcelFilename(String m_ExcelFilename) {
 		this.m_ExcelFilename = m_ExcelFilename;
+	}
+
+	/**
+	 * @return the m_AutotunerWin
+	 */
+	public synchronized WinTextWin getM_AutotunerWin() {
+		return m_AutotunerWin;
+	}
+
+	/**
+	 * @param m_AutotunerWin the m_AutotunerWin to set
+	 */
+	public synchronized void setM_AutotunerWin(WinTextWin m_AutotunerWin) {
+		this.m_AutotunerWin = m_AutotunerWin;
 	}
 
 	/**

@@ -1,14 +1,11 @@
 package davidRichardson;
 
 import java.awt.EventQueue;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 //import java.awt.Color;
 //import java.awt.Font;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -20,50 +17,16 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.apache.poi.hssf.record.CFRuleBase.ComparisonOperator;
-import org.apache.poi.hssf.record.cf.BorderFormatting;
-import org.apache.poi.hssf.usermodel.HSSFBorderFormatting;
-
-//import javax.swing.table.DefaultTableModel;
-
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
-import org.apache.poi.hssf.usermodel.HSSFConditionalFormattingRule;
 import org.apache.poi.hssf.usermodel.HSSFFont;
-import org.apache.poi.hssf.usermodel.HSSFFontFormatting;
-import org.apache.poi.hssf.usermodel.HSSFPatriarch;
-import org.apache.poi.hssf.usermodel.HSSFPatternFormatting;
-import org.apache.poi.hssf.usermodel.HSSFPicture;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFSheetConditionalFormatting;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.util.IOUtils;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.ClientAnchor;
-import org.apache.poi.ss.usermodel.ConditionalFormattingRule;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-//import org.apache.poi.ss.usermodel.Workbook;
-//import org.apache.poi.xssf.usermodel.XSSFColor;
-//import org.apache.poi.xssf.usermodel.XSSFFont;
-import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTConditionalFormatting;
-
-//import davidRichardson.DBResult.TimeSlot;
-
+import davidRichardson.ThreadAutotune.AutotuneCompleteHandler;
 import java.util.Date;
-import java.util.List;
-
-import org.jfree.data.category.DefaultCategoryDataset;
-import org.jfree.data.general.DefaultPieDataset;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.ChartUtilities; 
 
 
 public class Analyzer extends DataExportExcel 
@@ -156,6 +119,7 @@ public class Analyzer extends DataExportExcel
 	private String[]                  m_CGM_Results  = {"ID", "Date", "Trend Range", "Trend Profile Type", "Entry Interval ID", "Time", "CGM Value"};
 	private String[]                  m_CGM_EntryIntervals  = {"ID", "Date", "Trend Range", "Trend Profile Type", "Goes Hypo", "Goes Hyper", "Start Profile", "End Profile", "Trend Result Entry ID", "Num CGM Entries"};
 	private String[]                  m_CGM_TrendResultEntry  = {"ID", "Start Hour", "End Hour", "Trend Profile Type", "Goes Hypo", "Goes Hyper", "Start Profile", "End Profile", "Num CGM Intervals"};
+	private String[]                  m_AutoTuneEntry_ColNames  = {"Parameter", "Current", "Autotune"};
 
 	// CGM_Trends2 is dynamically generated :-)
 
@@ -183,7 +147,9 @@ public class Analyzer extends DataExportExcel
 
 	private Analyzer                   m_FullHistoryAnalyzer = null;     
 
-	private CGMChart                   m_Chart = null;
+	private ThreadAutotune             m_Autotune_Thread = null;
+	private RemoteLinuxServer          m_Autotuner       = null;
+	private WinTextWin                 m_AutotunerWin    = null;
 
 	// To Do - future work.  Send analytical results to Excel for more detail
 	Analyzer(ArrayList <DBResult> results, ArrayList<DBResultEntry> resultEntries)
@@ -1036,10 +1002,18 @@ public class Analyzer extends DataExportExcel
 
 	public AnalyzerResult analyzeResults(ArrayList <DBResult> results, String excelFileName)
 	{
+		return analyzeResults(results, excelFileName, null);
+	}
+	
+	public AnalyzerResult analyzeResults(ArrayList <DBResult> results, String excelFileName, WinTextWin autotunerWin)
+	{
 		AnalyzerResult result = AnalyzerResult.analysisComplete;
 
 		//		boolean result = true;
-
+		
+		m_AutotunerWin = autotunerWin;
+		
+		
 		if (m_SummaryOnly == true || m_AnalyzerMode == Analyzer.AnalyzerMode.summaryOnly)
 		{
 			Date lastDate = new Date(0);
@@ -1152,7 +1126,6 @@ public class Analyzer extends DataExportExcel
 		// Nullify all the other lists to ensure clean analysis
 		m_CombinedSingleResults.clear();
 
-
 		// Trends looking at comparative results
 		m_CombinedTrendResults.clear();
 
@@ -1164,6 +1137,8 @@ public class Analyzer extends DataExportExcel
 
 		m_AnalyzerRecurringTrendResultList.clear();
 		m_TotalRecurringTrends = 0;
+
+		analyzeAutotune(startDateLong, endDateLong);
 
 		analyzeResults(startDateLong, endDateLong);
 
@@ -1194,6 +1169,22 @@ public class Analyzer extends DataExportExcel
 		{
 			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + ". Unable to save to file: " + excelFileName);
 			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + ".  Please close file in Excel if already open.");
+
+			// Close the Autotune Window if open
+			if (m_AutotunerWin != null && m_AutotunerWin.isEnabled())
+			{
+				// Swing is not threadsafe, so add a request to update the grid onto the even queue
+				// Found this technique here:
+				// http://www.informit.com/articles/article.aspx?p=26326&seqNum=9
+				EventQueue.invokeLater(new 
+						Runnable()
+				{ 
+					public void run()
+					{ 
+						m_AutotunerWin.setVisible(false);
+					}
+				});
+			}
 		}
 
 		catch (IOException e)
@@ -1364,6 +1355,121 @@ public class Analyzer extends DataExportExcel
 		return result;
 	}
 
+//	private void analyzeAutotune_triedButStillNotHappy(long startDateLong, long endDateLong)
+//	{
+//		// This had better not be summary or full history mode?	
+//		// Is Autotune enabled to run?
+//		// Then some additional basic checks ...
+//		//   Is the server configured?
+//		//   Is the NS URL defined?
+//		if (m_AnalyzerMode != Analyzer.AnalyzerMode.summaryOnly &&
+//				m_AnalyzerMode != Analyzer.AnalyzerMode.fullHistory &&
+//				PrefsNightScoutLoader.getInstance().isM_AutoTuneInvoked() &&
+//				!PrefsNightScoutLoader.getInstance().getM_AutoTuneServer().isEmpty() &&
+//				!PrefsNightScoutLoader.getInstance().getM_AutoTuneNSURL().isEmpty())
+//
+//		{
+//			Date startDate = new Date(startDateLong);
+//			Date endDate   = new Date(endDateLong);
+//			//			m_AutotunerWin = new WinTextWin("Nightscout Loader " + Version.getInstance().getM_Version() + " - Autotune (within Analysis)");
+//			if (m_AutotunerWin != null)
+//			{
+//				/*
+//				 * Below ok if we hold winremotelinuxserver rather than wintextwin
+//				 * 
+//				 * 
+//				// Set dates
+//				// We need to subtract one day from end Date since it's advanced
+//				// to ensure we read treatment dates usually for regular analysis		
+//				m_AutotunerWin.setDatesAndHandlerFromAnalyzer(startDate, 
+//						CommonUtils.addDaysToDate(endDate, -1));	
+//
+//				m_AutotunerWin.runAutotune();
+//				m_Autotune_Thread = m_AutotunerWin.getM_ATThread();
+//				m_Autotuner = m_AutotunerWin.getM_Autotune();
+//				*/
+//				
+//				
+//				// Swing is not threadsafe, so add a request to update the grid onto the even queue
+//				// Found this technique here:
+//				// http://www.informit.com/articles/article.aspx?p=26326&seqNum=9
+//				EventQueue.invokeLater(new 
+//						Runnable()
+//				{ 
+//					public void run()
+//					{ 
+//						m_AutotunerWin.setVisible(true);
+//					}
+//				});
+//			}
+//		}
+//		else
+//		{
+//			m_Autotune_Thread = null;
+//		}
+//	}
+
+	private void analyzeAutotune(long startDateLong, long endDateLong)
+	{
+		// This had better not be summary or full history mode?	
+		// Is Autotune enabled to run?
+		// Then some additional basic checks ...
+		//   Is the server configured?
+		//   Is the NS URL defined?
+		if (m_AnalyzerMode != Analyzer.AnalyzerMode.summaryOnly &&
+				m_AnalyzerMode != Analyzer.AnalyzerMode.fullHistory &&
+				PrefsNightScoutLoader.getInstance().isM_AutoTuneInvoked() &&
+				!PrefsNightScoutLoader.getInstance().getM_AutoTuneServer().isEmpty() &&
+				!PrefsNightScoutLoader.getInstance().getM_AutoTuneNSURL().isEmpty())
+
+		{
+			Date startDate = new Date(startDateLong);
+			Date endDate   = new Date(endDateLong);
+			//			m_AutotunerWin = new WinTextWin("Nightscout Loader " + Version.getInstance().getM_Version() + " - Autotune (within Analysis)");
+			if (m_AutotunerWin != null)
+			{
+				// Swing is not threadsafe, so add a request to update the grid onto the even queue
+				// Found this technique here:
+				// http://www.informit.com/articles/article.aspx?p=26326&seqNum=9
+				EventQueue.invokeLater(new 
+						Runnable()
+				{ 
+					public void run()
+					{ 
+						m_AutotunerWin.setVisible(true);
+					}
+				});
+			}
+
+			// We need to subtract one day from end Date since it's advanced
+			// to ensure we read treatment dates usually for regular analysis		
+			m_Autotuner = new RemoteLinuxServer(startDate, CommonUtils.addDaysToDate(endDate, -1), m_AutotunerWin);
+
+			m_Autotune_Thread = new ThreadAutotuneRun(m_Autotuner);
+			m_Autotune_Thread.runThreadCommand(new AutotuneCompleteHandler(this) 
+			{
+				//		@Override
+				public void exceptionRaised(String message) 
+				{				
+					// Set flag that main thread here will wait on...
+
+				}
+
+				//		@Override
+				public void runAutotuneComplete(Object obj, String message) 
+				{
+					// m_Logger.log(Level.INFO, "Autotune Finished");				
+					// Set flag that main thread here will wait on...
+				}
+			});
+		}
+		else
+		{
+			m_Autotune_Thread = null;
+		}
+	}
+
+	
 	public void analyzeResults(long startDateLong, long endDateLong)
 	{
 		if (settingsAreAllFine())
@@ -1534,6 +1640,15 @@ public class Analyzer extends DataExportExcel
 		// Only proceed if we have some results to look at
 		if (m_DBResults.size() > 0)
 		{
+			if (m_Autotune_Thread != null)
+			{
+				m_Logger.log(Level.FINE, "writeResultsToExcel - Wait for meter thread - start ");
+				m_Autotune_Thread.waitUntilFree();
+				m_Logger.log(Level.FINE, "writeResultsToExcel - Wait for meter thread - done ");
+				
+				m_AutotunerWin = null;
+			}
+
 			HSSFWorkbook wb = new HSSFWorkbook();
 
 			long diffMillies = endDateLong - startDateLong;
@@ -1541,6 +1656,9 @@ public class Analyzer extends DataExportExcel
 
 			// Generate Recommendations report
 			writeGuidanceToExcel(wb);
+
+			// Generate RemoteLinuxServer report
+			writeAutoTuneToExcel(wb);
 
 			// Generate Recurring Trend report based on number of days between start and end		
 			writeRecurringTrendsToExcel(wb, diffDays);
@@ -1552,7 +1670,7 @@ public class Analyzer extends DataExportExcel
 			// date ranges that CGM was active.  Useful if not on CGM 24x7
 			// Include CGM summary in Excel too
 			writeCGMSummary(wb);
-			
+
 			// Generate Trends report
 			writeTrendResultsToExcel(wb);
 
@@ -1570,7 +1688,7 @@ public class Analyzer extends DataExportExcel
 
 			// Generate Raw data too
 			writeRawDataToExcel(wb, startDateLong, endDateLong);
-			
+
 			// Summarise the intermediate CGM structures if enabled and data is there
 			writeCGMTrendResultEntries(wb);
 			writeCGMResultEntryIntervals(wb);
@@ -1593,6 +1711,11 @@ public class Analyzer extends DataExportExcel
 
 			//			reorderExcelTabs(wb);
 
+			
+			// Now wait and generate RemoteLinuxServer report content details
+			writeAutoTuneContentsToExcel(wb);
+	
+			
 			wb.setActiveSheet(0);
 
 			FileOutputStream out = new FileOutputStream(filename);
@@ -1724,6 +1847,14 @@ public class Analyzer extends DataExportExcel
 			rowNum += addParameterValue("Compress Meal Trends", PrefsNightScoutLoader.getInstance().isM_AnalyzerCompressMealTrends() ? "Yes" : "No", "Rises into range and out of range treated same if enabled", sheet, rowNum);
 			rowNum += addParameterValue("Total Recurring Trends Only", PrefsNightScoutLoader.getInstance().isM_AnalyzerTotalRecurringTrendsOnly() ? "Yes" : "No", "As example, if there are only 3 trend results and 2 recur, then if this is true 100% = 2 else 100% = 3", sheet, rowNum);
 			rowNum += addParameterValue("CGM Trend Hour Intervals", PrefsNightScoutLoader.getInstance().getM_EntryAnalyzerIntervalHours(), "Either 1, 2 or 3 hourly intervals set on CGM Heat Map", sheet, rowNum);
+
+			if (m_Autotune_Thread != null)
+			{
+				rowNum += addParameterValue("Autotune - Run Autotune", PrefsNightScoutLoader.getInstance().isM_AutoTuneInvoked() ? "True" : "False", "If True then Autotune output included in the spreadsheet as a separate tab", sheet, rowNum);
+				rowNum += addParameterValue("Autotune - Nightscout URL", PrefsNightScoutLoader.getInstance().getM_AutoTuneNSURL(), "Nightscout URL used only for Autotune", sheet, rowNum);
+				rowNum += addParameterValue("Autotune - Autotune Linux Server", PrefsNightScoutLoader.getInstance().getM_AutoTuneServer(), "Linux Server identified in form of user@host.domain", sheet, rowNum);
+				rowNum += addParameterValue("Autotune - Autotune Key Auth File", PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile(), "Path to Key Authentication file for Linux Server", sheet, rowNum);
+			}
 
 			autoSizeColumns(sheet, m_Parameter_ColNames);
 		}
@@ -1910,6 +2041,45 @@ public class Analyzer extends DataExportExcel
 
 	}
 
+	private void writeAutoTuneToExcel(HSSFWorkbook wb)
+	{
+		// We pause the writing of Excel file to actually run Autotune if configured
+		// This is a quick way of integrating its output in analysis ... for now
+		if (m_Autotune_Thread != null)
+		{			
+			String sheetName = new String("Autotune");
+			if (AnalyzerTabs.getInstance().isTabEnabled(sheetName))
+			{
+				Sheet sheet = wb.createSheet(sheetName);
+				writeColumnHeaderRow(wb, sheet, m_AutoTuneEntry_ColNames);
+			}
+		}
+	}
+	
+	private void writeAutoTuneContentsToExcel(HSSFWorkbook wb)
+	{
+		// We pause the writing of Excel file to actually run Autotune if configured
+		// This is a quick way of integrating its output in analysis ... for now
+		if (m_Autotune_Thread != null)
+		{			
+			m_Logger.log(Level.INFO, "Trend & CGM Analysis complete. Waiting on Aututune thread to finish." );
+			// Should be free already, but just in case
+			m_Autotune_Thread.waitUntilFree();
+			m_Logger.log(Level.INFO, "Autotune finished.  Now finalising Excel sheet." );
+
+			String sheetName = new String("Autotune");
+			if (AnalyzerTabs.getInstance().isTabEnabled(sheetName))
+			{
+				Sheet sheet = wb.getSheet(sheetName);
+				writeColumnHeaderRow(wb, sheet, m_AutoTuneEntry_ColNames);
+				int rowNum = 1;
+
+				rowNum += m_Autotuner.writeAutotuneOutputToExcel(wb, sheet, rowNum);
+				autoSizeColumns(sheet, m_AutoTuneEntry_ColNames);
+			}
+		}
+	}
+
 	private void writeFullHistoryTrendResultsToExcel(HSSFWorkbook wb)
 	{
 		String sheetName = new String("Full History Trends");
@@ -2006,12 +2176,12 @@ public class Analyzer extends DataExportExcel
 
 			m_CGM_Trends[0] = "Profile Type";
 
-//			// Headers are dynamically added based on the interval configured
-//			for (int i = 0; i < 24; i += interval)
-//			{
-//				m_CGM_Trends[i + 2] = new String( (i < 10 ? "0" : "") + i + "->");
-//			}
-			
+			//			// Headers are dynamically added based on the interval configured
+			//			for (int i = 0; i < 24; i += interval)
+			//			{
+			//				m_CGM_Trends[i + 2] = new String( (i < 10 ? "0" : "") + i + "->");
+			//			}
+
 			// Headers are dynamically added based on the interval configured
 			for (int i = 0; i < blocks; i++)
 			{
@@ -2106,132 +2276,6 @@ public class Analyzer extends DataExportExcel
 		}
 
 	}
-
-	/*
-	private void writeCGMGraphs(HSSFWorkbook wb)
-	{
-		// We only do this if the full history is available and there are CGM results
-		if (this.m_DBResultEntries.size() > 0)
-		{
-
-			// Test out creating graphs
-			m_Chart = new CGMChart(m_DBResultEntries,
-					m_StartDate,
-					m_EndDate);
-			//			chart = new CGMChart(m_DBResultEntries);
-
-			if (m_AnalyzerMode == Analyzer.AnalyzerMode.normal)
-			{
-				// We want to do this UI change in the main thread, and not the DB worker thread that's just
-				// notified back
-				EventQueue.invokeLater(new 
-						Runnable()
-				{ 
-					public void run()
-					{ 
-						m_Chart.setVisible(true);
-					}
-				});
-			}
-
-			ByteArrayOutputStream outStream = m_Chart.getByteStream();
-
-			if (outStream != null &&
-					true == false) // DAVID DISABLED THIS FOR NOW
-			{
-				// only create the workbook if there's an outstream
-
-				//			Sheet sheet = wb.createSheet("Comparison to Full History");
-				HSSFSheet sheet = wb.createSheet("CGM Result Graphs");
-				//			sheet.createFreezePane(0,1);
-
-				InputStream feed_chart_to_excel=new ByteArrayInputStream(outStream.toByteArray());
-				int my_picture_id = 0;
-				byte[] bytes;
-				try {
-					bytes = IOUtils.toByteArray(feed_chart_to_excel);
-					 Add picture to workbook 
-					my_picture_id = wb.addPicture(bytes, Workbook.PICTURE_TYPE_JPEG);		
-					feed_chart_to_excel.close();
-					outStream.close();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-
-
-				DefaultPieDataset my_pie_chart_data = new DefaultPieDataset();
-
-				HSSFPatriarch patriarch = sheet.createDrawingPatriarch();
-				ClientAnchor my_anchor = new HSSFClientAnchor();
-				 Define top left corner, and we can resize picture suitable from there 
-				my_anchor.setCol1(4);
-				my_anchor.setRow1(5);
-
-				 Invoke createPicture and pass the anchor point and ID 
-				HSSFPicture  my_picture = patriarch.createPicture(my_anchor, my_picture_id);
-				 Call resize method, which resizes the image 
-				my_picture.resize();
-
-
-				 Invoke createPicture and pass the anchor point and ID 
-				//       HSSFPicture  my_picture = drawing.createPicture(my_anchor, my_picture_id);
-				 Call resize method, which resizes the image 
-				//         my_picture.resize();
-
-				//			JFreeChart lineChartObject = ChartFactory.createLineChart(
-				//					"CGM ","Date",
-				//					"CGM Values",
-				//					createCGMDataset(),
-				//					PlotOrientation.VERTICAL,
-				//					true,true,false);	
-			}
-		}
-	}
-
-	 */
-	/*	private DefaultCategoryDataset createCGMDataset()
-	{
-		DefaultCategoryDataset dataset = null;
-
-		for (DBResultEntry c : this.m_DBResultEntries)
-		{
-			if (dataset == null)
-			{
-				dataset = new DefaultCategoryDataset( );
-			}
-
-			if (c.getM_SGV() != null)
-			{
-				dataset.addValue(c.getM_SGV(), "CGM Value", c.getM_DateString());
-			}
-
-		}
-		return dataset;
-	}
-	 */
-	/*
-	private DefaultCategoryDataset createCGMDataset(String startDate, String endDate ) throws ParseException
-	{
-		DefaultCategoryDataset dataset = null;
-
-		for (DBResultEntry c : this.m_DBResultEntries)
-		{
-			if (CommonUtils.isTimeBetween(startDate, endDate, c.getM_UTCDate()))
-			{
-				if (dataset == null)
-				{
-					new DefaultCategoryDataset( );
-				}
-
-				dataset.addValue(c.getM_SGV(), "CGM Value", c.getM_DateString());
-			}
-		}
-		return dataset;
-	}
-
-	 */
 
 	private void writeDaySummariesToExcel(HSSFWorkbook wb)
 	{
@@ -2815,6 +2859,12 @@ public class Analyzer extends DataExportExcel
 
 		rowNum += addGuidanceParameterValue("Guide to Tabs", "Provides a summary of worksheets generated by NightscoutLoader", "", sheet, rowNum);
 
+
+		if (PrefsNightScoutLoader.getInstance().isM_AutoTuneInvoked())
+		{
+			rowNum += addGuidanceParameterValue("Autotune", "Autotune ran on " + PrefsNightScoutLoader.getInstance().getM_AutoTuneNSURL() , "Use this tab to see specific recommendations from Autotune", sheet, rowNum);
+		}
+
 		if (m_AnalyzerRecurringTrendResultList.size() > 0)
 		{
 			String topTrend    = new String();
@@ -2836,23 +2886,23 @@ public class Analyzer extends DataExportExcel
 
 			int recurrRows = m_AnalyzerRecurringTrendResultList.size();
 			int freq = m_AnalyzerRecurringTrendResultList.get(0).getM_TrendResultList().size();
-	//		int trendRows = this.m_CombinedTrendResults.size();
+			//		int trendRows = this.m_CombinedTrendResults.size();
 
 			// No longer accurate - count them directly instead.
-//			int skippedRows = 0;
-//			for (AnalyzerTrendResult res : m_CombinedTrendResults)
-//			{
-//				skippedRows += (res.isNoCarbsTrend() == true ? 1 : 0);
-//			}
-//			int outsideRangeRows = 0;
-//			int daySummaryRows = this.m_AnalyzerDaySummaries.size();
-//			int singleRows = this.m_CombinedSingleResults.size();
-//			int totalDataSet = this.m_DBResults.size();
+			//			int skippedRows = 0;
+			//			for (AnalyzerTrendResult res : m_CombinedTrendResults)
+			//			{
+			//				skippedRows += (res.isNoCarbsTrend() == true ? 1 : 0);
+			//			}
+			//			int outsideRangeRows = 0;
+			//			int daySummaryRows = this.m_AnalyzerDaySummaries.size();
+			//			int singleRows = this.m_CombinedSingleResults.size();
+			//			int totalDataSet = this.m_DBResults.size();
 
-//			for (AnalyzerSingleResult res : m_CombinedSingleResults)
-//			{
-//				outsideRangeRows += (res.getM_AnalyzerSingleResultEnum() != L0AnalyzerSingleResultEnum.inRange ? 1 : 0);
-//			}
+			//			for (AnalyzerSingleResult res : m_CombinedSingleResults)
+			//			{
+			//				outsideRangeRows += (res.getM_AnalyzerSingleResultEnum() != L0AnalyzerSingleResultEnum.inRange ? 1 : 0);
+			//			}
 
 			rowNum += addGuidanceParameterValue("Recurring Trends", "There are " + recurrRows + " separate recurring trends, and " + freq + " highest frequency" + (topTrend.equals("") ? "" : " (" + topTrend + " at " + topTimeSlot + ")"),
 					"Use this tab to analyze recurring trends.  Top row" + (topTimeSlot.equals("") ? "" : " at " + topTimeSlot) + " needs most attention.", sheet, rowNum);
@@ -2870,13 +2920,13 @@ public class Analyzer extends DataExportExcel
 
 		if (m_AnalyzerRecurringTrendResultList.size() > 0)
 		{
-//			String topTrend    = new String();
-//			String topTimeSlot = new String();
+			//			String topTrend    = new String();
+			//			String topTimeSlot = new String();
 			//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
-//			AnalyzerRecurringTrendResult topRecurringTrend = this.m_AnalyzerRecurringTrendResultList.get(0);
+			//			AnalyzerRecurringTrendResult topRecurringTrend = this.m_AnalyzerRecurringTrendResultList.get(0);
 
-//			topTimeSlot = DBResult.getTimeSlotString(topRecurringTrend.getM_TimeSlot());
-//			topTrend = getL2TrendResultString(topRecurringTrend.getM_L2TrendResultEnum());
+			//			topTimeSlot = DBResult.getTimeSlotString(topRecurringTrend.getM_TimeSlot());
+			//			topTrend = getL2TrendResultString(topRecurringTrend.getM_L2TrendResultEnum());
 
 			// Cell Colouring / Font for most important recommendations 
 			HSSFCellStyle highPriorityStyle = wb.createCellStyle();
@@ -2887,8 +2937,8 @@ public class Analyzer extends DataExportExcel
 			highPriorityFont.setColor(HSSFColor.WHITE.index);
 			highPriorityStyle.setFont(highPriorityFont);
 
-//			int recurrRows = m_AnalyzerRecurringTrendResultList.size();
-//			int freq = m_AnalyzerRecurringTrendResultList.get(0).getM_TrendResultList().size();
+			//			int recurrRows = m_AnalyzerRecurringTrendResultList.size();
+			//			int freq = m_AnalyzerRecurringTrendResultList.get(0).getM_TrendResultList().size();
 			int trendRows = this.m_CombinedTrendResults.size();
 
 			// No longer accurate - count them directly instead.
@@ -2938,102 +2988,12 @@ public class Analyzer extends DataExportExcel
 		return result;
 	}
 
-	private int addGuidance_orig(HSSFWorkbook wb, Sheet sheet, int rowNum)
-	{
-		int	result = 0;
-
-		if (m_AnalyzerRecurringTrendResultList.size() > 0)
-		{
-
-			String topTrend    = new String();
-			String topTimeSlot = new String();
-
-			//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
-
-			AnalyzerRecurringTrendResult topRecurringTrend = this.m_AnalyzerRecurringTrendResultList.get(0);
-
-			topTimeSlot = DBResult.getTimeSlotString(topRecurringTrend.getM_TimeSlot());
-			topTrend = getL2TrendResultString(topRecurringTrend.getM_L2TrendResultEnum());
-
-			// Cell Colouring / Font for most important recommendations 
-			HSSFCellStyle highPriorityStyle = wb.createCellStyle();
-			highPriorityStyle.setFillForegroundColor(HSSFColor.RED.index);
-			highPriorityStyle.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
-
-			HSSFFont highPriorityFont = wb.createFont();
-			highPriorityFont.setColor(HSSFColor.WHITE.index);
-			highPriorityStyle.setFont(highPriorityFont);
-
-			int recurrRows = m_AnalyzerRecurringTrendResultList.size();
-			int freq = m_AnalyzerRecurringTrendResultList.get(0).getM_TrendResultList().size();
-			int trendRows = this.m_CombinedTrendResults.size();
-
-			// No longer accurate - count them directly instead.
-			int skippedRows = 0;
-			for (AnalyzerTrendResult res : m_CombinedTrendResults)
-			{
-				skippedRows += (res.isNoCarbsTrend() == true ? 1 : 0);
-			}
-			int outsideRangeRows = 0;
-			int daySummaryRows = this.m_AnalyzerDaySummaries.size();
-			int singleRows = this.m_CombinedSingleResults.size();
-			int totalDataSet = this.m_DBResults.size();
-			int cgmBlocks = this.m_AnalyzerEntries.getM_CGMRanges().size();
-			int cgmWeeksLoaded = PrefsNightScoutLoader.getInstance().getM_WeeksBackToLoadEntries();
-
-			for (AnalyzerSingleResult res : m_CombinedSingleResults)
-			{
-				outsideRangeRows += (res.getM_AnalyzerSingleResultEnum() != L0AnalyzerSingleResultEnum.inRange ? 1 : 0);
-			}
-
-			rowNum += addGuidanceParameterValue("Guide to Tabs", "Provides a summary of worksheets generated by NightscoutLoader", "", sheet, rowNum);
-			rowNum += addGuidanceParameterValue("Recurring Trends", "There are " + recurrRows + " separate recurring trends, and " + freq + " highest frequency" + (topTrend.equals("") ? "" : " (" + topTrend + " at " + topTimeSlot + ")"),
-					"Use this tab to analyze recurring trends.  Top row" + (topTimeSlot.equals("") ? "" : " at " + topTimeSlot) + " needs most attention.", sheet, rowNum);			
-			if (this.m_AnalyzerEntries.getM_InRangeDBResultEntries().size() > 0)
-			{
-				rowNum += addGuidanceParameterValue("CGM Heat Map", "CGM Results within selected analysis date range are analyzed over time blocks, categorized and trends counted." , "Use this tab to see a colour coded heatmap of where comparative trend counts and types of change by time.", sheet, rowNum);
-			}
-			if (this.m_AnalyzerEntries.getM_DBResultEntries().size() > 0)
-			{
-				rowNum += addGuidanceParameterValue("CGM Summary", "There are " + cgmBlocks + " separate date ranges where CGM was active going back " + cgmWeeksLoaded + " weeks." , "Use this tab to determine when CGM was used and so narrow down analysis to where CGM data is also available.", sheet, rowNum);
-			}			
-			rowNum += addGuidanceParameterValue("Trends", "There are " + trendRows + " separate trends identified", "Use this tab to analyze the " + trendRows + " individual trends.  Sorted in date order. Filter as necessary to see actual dates.", sheet, rowNum);
-			rowNum += addGuidanceParameterValue("Skipped Meal Trends", "There are " + skippedRows + " separate instances of skipped meals", "Use this tab to analyze the " + skippedRows + " trends across meal times when nothing was eaten.  Provides a useful way to see fasting results.", sheet, rowNum);
-			rowNum += addGuidanceParameterValue("BGs Outside Range", "There are " + outsideRangeRows + " separate high or low events found", "Use this tab to specifically focus on the " + outsideRangeRows + " highs & lows.", sheet, rowNum);
-			rowNum += addGuidanceParameterValue("Day Summaries", "There are " + daySummaryRows + " separate day summaries", "Use this tab to review the " + daySummaryRows + " days with exceptional events.", sheet, rowNum);
-			rowNum += addGuidanceParameterValue("Single Results", "There are " + singleRows + " separate treatment rows analyzed out of a total of " + totalDataSet + " total results in MongoDB.", "Use this tab to see the " + singleRows + " rows of raw treatment data included in the analysis.", sheet, rowNum);
-			rowNum += addGuidanceParameterValue("Treatment Data Analyzed", "There are " + singleRows + " identified treatment rows that qualify as potential trends.", "Use this tab to see the " + singleRows + " rows of single data that may or may not have been included in the analysis and why if not.", sheet, rowNum);
-			if (this.m_AnalyzerEntries.getM_InRangeDBResultEntries().size() > 0)
-			{
-				rowNum += addGuidanceParameterValue("In Range CGM Trend Result Entries", "This is the tabular data used to generate the 'CGM Heat Map' heatmap ", "Can be used to verify the heatmap contents, else heatmap provides a more convenient view", sheet, rowNum);
-				rowNum += addGuidanceParameterValue("In Range CGM Entry Intervals", "This groups the CGM data within analysis date range into time blocks and then categorizes them for trend visualization.", "Can be used to verify the heatmap contents, else heatmap provides a more convenient view", sheet, rowNum);
-				rowNum += addGuidanceParameterValue("In Range CGM Results", "This is the raw CGM data within analysis date range in tabular format.", "Graphs can be generated from with Excel.  Unfortunately, the JAVA libraries used have not allowed the developer to do this automatically.", sheet, rowNum);
-			}
-			if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
-			{
-				int fullHistoryTrendRows = this.m_FullHistoryAnalyzer.m_CombinedTrendResults.size();
-
-				rowNum += addGuidanceParameterValue("", "", "", sheet, rowNum);
-				rowNum += addGuidanceParameterValue("Full History Trends", "There are " + fullHistoryTrendRows + " separate full history trends identified", "Use this tab to see the full list of trend categories analyzed for comparison across the entire history of results.", sheet, rowNum);
-				rowNum += addGuidanceParameterValue("Comparison to Full History", "", "Use this tab to see a comparison between the requested analysis and the full list of trend categories analyzed separately across the entire history of results.", sheet, rowNum);
-				rowNum += addGuidanceParameterValue("", "", "", sheet, rowNum);
-
-			}
-			rowNum += addGuidanceParameterValue("Parameters", "", "Use this tab to see all parameter values used for analysis.", sheet, rowNum);
-			rowNum += addGuidanceParameterValue("Settings", "", "Use this tab to see option values set at time of analysis.", sheet, rowNum);
-			rowNum += addGuidanceParameterValue("Trend Explanations", "", "Use this tab to see the full list of trend categories.", sheet, rowNum);
-		}
-
-		return result;
-	}
-	
-
 	// Used by Analyzer
 	protected int addGuidanceParameterValue(String sheetName, String parValue, String notes, Sheet sheet, int rowNum)
 	{
 		int result = sheetName.equals("") || AnalyzerTabs.getInstance().isTabEnabled(sheetName) ? 
 				addParameterValue(sheetName, parValue, notes, sheet, rowNum) : 0;
-		return result;
+				return result;
 	}
 
 
@@ -3082,7 +3042,6 @@ public class Analyzer extends DataExportExcel
 			int j = 0;
 
 			style = regularStyle;
-
 
 			// 	 m_Highs_Lows_ColNames = {"Date", "Day Name", "TimeSlot", "Type", "Relevance", "BG", "Time"};
 
@@ -3142,8 +3101,6 @@ public class Analyzer extends DataExportExcel
 	private int addCGMSummary(AnalyzerEntries analyzer,	HSSFWorkbook wb, Sheet sheet, int rowNum)
 	{
 		int result = 0;
-
-		int i = 0;
 
 		//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
 
@@ -3209,92 +3166,10 @@ public class Analyzer extends DataExportExcel
 		return result; // How many actually added
 
 	}
-	/*
-	private int addCGMTrends(AnalyzerEntries analyzer,	HSSFWorkbook wb, Sheet sheet, int rowNum)
-	{
-		int result = 0;
-
-		int i = 0;
-
-		//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
-
-		Row row = null;
-		Cell cell = null;
-
-		// No particular format
-		HSSFCellStyle regularStyle = wb.createCellStyle();
-
-		ArrayList<AnalyzerTrendResultEntry> trendResultList = this.m_AnalyzerEntries.getM_TrendResultEntries();
-
-		// Now sort the list
-		Collections.sort(trendResultList, new AnalyzerTrendResultEntryComparator(true));
-
-		// Add results from each list
-		for (AnalyzerTrendResultEntry c : trendResultList) 
-		{
-			// Row always one more since we add the title
-			row = sheet.createRow(result + rowNum);
-
-			HSSFCellStyle style = null;
-
-			int j = 0;
-
-			style = regularStyle;
-
-			// 	private String[]                  m_CGM_Trends      = {"Start Hour", "End Hour", "Profile", "Offset", "Count"};
-			// 	private String[]                  m_CGM_Trends      = {"Start Hour", "End Hour", "Goes Hypo", "Goes Hyper", "Start Profile", "End Profile", "Profile Direction", "Offset", "Count"};
-
-
-			cell = row.createCell(j++);
-			cell.setCellValue(c.getM_StartHour());
-			cell.setCellStyle(style);
-
-			cell = row.createCell(j++);
-			cell.setCellValue(c.getM_EndHour());
-			cell.setCellStyle(style);
-
-			cell = row.createCell(j++);
-			cell.setCellValue(c.getM_GoesHypo() ? "Yes" : "No");
-			cell.setCellStyle(style);
-
-			cell = row.createCell(j++);
-			cell.setCellValue(c.getM_GoesHyper() ? "Yes" : "No");
-			cell.setCellStyle(style);
-
-			cell = row.createCell(j++);
-			cell.setCellValue(c.getM_StartProfile().toString());
-			cell.setCellStyle(style);
-
-			cell = row.createCell(j++);
-			cell.setCellValue(c.getM_EndProfile().toString());
-			cell.setCellStyle(style);
-
-			cell = row.createCell(j++);
-			cell.setCellValue(c.getM_ProfileDirection().toString());
-			cell.setCellStyle(style);
-
-			cell = row.createCell(j++);
-			cell.setCellValue(c.getM_Offset());
-			cell.setCellStyle(style);
-
-			cell = row.createCell(j++);
-			cell.setCellValue(c.getM_ResultEntryIntervals().size());
-			cell.setCellStyle(style);
-
-			result++;
-		}
-
-		return result; // How many actually added
-
-	}
-
-	 */
 
 	private int addCGMResults(HSSFWorkbook wb, Sheet sheet, int rowNum)
 	{
 		int result = 0;
-
-		int i = 0;
 
 		//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
 
@@ -3344,15 +3219,17 @@ public class Analyzer extends DataExportExcel
 
 
 
-			try {
+			try 
+			{
 				dateStr = CommonUtils.convertDateString(c.getM_UTCDate(), dtf);
 
 				trendRange = new String(CommonUtils.convertDateString(trendStartDate, hrf) +
 						"H to " + CommonUtils.convertDateString(trendEndDate, hrf) + "H");
 
-			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} 
+			catch (ParseException e) 
+			{
+				m_Logger.log(Level.SEVERE, "addCGMResults : " + e.getMessage());
 			}
 
 			if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
@@ -3398,8 +3275,6 @@ public class Analyzer extends DataExportExcel
 	{
 		int result = 0;
 
-		int i = 0;
-
 		//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
 
 		Row row = null;
@@ -3442,15 +3317,17 @@ public class Analyzer extends DataExportExcel
 
 
 
-			try {
+			try 
+			{
 				dateStr = CommonUtils.convertDateString(c.getM_PeriodStart(), dtf);
 
 				trendRange = new String(CommonUtils.convertDateString(trendStartDate, hrf) +
 						"H to " + CommonUtils.convertDateString(trendEndDate, hrf) + "H");
 
-			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} 
+			catch (ParseException e) 
+			{
+				m_Logger.log(Level.SEVERE, "addCGMEntryIntervals : " + e.getMessage());
 			}
 
 			if (PrefsNightScoutLoader.getInstance().isM_AdvancedSettings())
@@ -3512,8 +3389,6 @@ public class Analyzer extends DataExportExcel
 	{
 		int result = 0;
 
-		int i = 0;
-
 		//AnalyzerTrendCounts analyzerTrendCounts = AnalyzerTrendCounts.getInstance();
 
 		Row row = null;
@@ -3527,9 +3402,6 @@ public class Analyzer extends DataExportExcel
 
 		ArrayList<AnalyzerTrendResultEntry> trendResultList = m_AnalyzerEntries.getM_TrendResultEntries();
 
-		final String dtf = new String("dd/MM/yyyy");
-		final String hrf = new String("HH");
-
 		// Is preference for BG in mg/dL or mmol/L?
 
 		boolean mmol = PrefsNightScoutLoader.getInstance().getM_BGUnits() == 0 ? true : false;
@@ -3541,8 +3413,6 @@ public class Analyzer extends DataExportExcel
 			row = sheet.createRow(result + rowNum);
 
 			HSSFCellStyle style = null;
-			String dateStr = null;
-			String trendRange = null;
 			int   trendStartHour = c.getM_StartHour();
 			int   trendEndHour   = c.getM_EndHour();
 
@@ -3762,9 +3632,7 @@ public class Analyzer extends DataExportExcel
 			HSSFWorkbook wb, Sheet sheet, int rowNum)
 	{
 		int result = 0;
-
-		int  interval = PrefsNightScoutLoader.getInstance().getM_EntryAnalyzerIntervalHours();
-		int  blocks   = 24 / interval;
+		int interval = PrefsNightScoutLoader.getInstance().getM_EntryAnalyzerIntervalHours();
 
 		Row row = null;
 		Cell cell = null;
@@ -3778,10 +3646,8 @@ public class Analyzer extends DataExportExcel
 		HSSFCellStyle secondThirdStyle = wb.createCellStyle();
 		HSSFCellStyle lastThirdStyle = wb.createCellStyle();
 
-		HSSFFont regularFont = wb.createFont();
 		HSSFFont styleFont = wb.createFont();
 		HSSFFont lastStyleFont = wb.createFont();
-
 
 		styleFont.setColor(HSSFColor.BLACK.index);
 		styleFont.setBold(false);

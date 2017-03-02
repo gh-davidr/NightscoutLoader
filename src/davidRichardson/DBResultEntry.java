@@ -1,11 +1,7 @@
 package davidRichardson;
 
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.mongodb.DBObject;
@@ -76,11 +72,11 @@ public class DBResultEntry implements DBResultInterface
 
 	public  DBResultEntry(DBObject rs)
 	{
-		final DateFormat format     = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S", Locale.ENGLISH);
-		//		final DateFormat nsformat   = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
-		final DateFormat dayformat  = new SimpleDateFormat("EEEE", Locale.ENGLISH);
-		final DateFormat dateformat = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
-		final DateFormat timeformat = new SimpleDateFormat("HH:mm:ss", Locale.ENGLISH);
+//		final DateFormat format     = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S", Locale.ENGLISH);
+//		//		final DateFormat nsformat   = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
+//		final DateFormat dayformat  = new SimpleDateFormat("EEEE", Locale.ENGLISH);
+//		final DateFormat dateformat = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
+//		final DateFormat timeformat = new SimpleDateFormat("HH:mm:ss", Locale.ENGLISH);
 
 		m_ID            = CommonUtils.getIDStr(rs, "_id");
 		m_Unfiltered    = CommonUtils.getFieldDouble(rs, "unfiltered");

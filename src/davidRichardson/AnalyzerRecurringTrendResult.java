@@ -140,6 +140,21 @@ class AnalyzerRecurringTrendResult
 		case overnight_in_range_to_in_range_no_intervention:     result = false; break;
 		case overnight_in_range_to_in_range_but_hypo_first:      result = true; break;
 		case overnight_in_range_to_in_range_but_corrected_first: result = true; break;
+		
+		case fall_into_hypo_no_carbs: result = false;
+			break;
+		case fall_into_range_no_carbs: result = false;
+			break;
+		case fall_out_of_range_no_carbs: result = false;
+			break;
+		case rise_in_to_out_of_range_no_carbs: result = false;
+			break;
+		case rise_into_range_no_carbs: result = false;
+			break;
+		case rise_out_of_range_no_carbs: result = false;
+			break;
+		default:
+			break;
 
 		}
 

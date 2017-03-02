@@ -1,7 +1,6 @@
 package davidRichardson;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -72,16 +71,17 @@ public class AnalyzerTrendResultEntry
 	{
 		boolean result = false;
 		
-		boolean goesHypo         = e.getM_GoesHypo() == m_GoesHypo ? true : false;
+		boolean profileDirection = e.getM_ProfileDirection() == m_ProfileDirection ? true : false;
+/*		boolean goesHypo         = e.getM_GoesHypo() == m_GoesHypo ? true : false;
 		boolean goesHyper        = e.getM_GoesHyper() == m_GoesHyper ? true : false;
 		boolean startProfile     = e.getM_StartProfile() == m_StartProfile ? true : false;
 		boolean endProfile       = e.getM_EndProfile() == m_EndProfile ? true : false;
-		boolean profileDirection = e.getM_ProfileDirection() == m_ProfileDirection ? true : false;
+		
 		
 		// We group results with different end profiles together
 		boolean exactlySameProfile  = 
 				(goesHypo == true && goesHyper == true && startProfile == true && 
-				endProfile == true && profileDirection == true) ? true : false;
+				endProfile == true && profileDirection == true) ? true : false;*/
 		
 		boolean sameProfile  = (profileDirection == true) ? true : false;
 		

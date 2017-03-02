@@ -4,7 +4,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 //import java.util.logging.Logger;
-import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,7 +12,6 @@ public class DBResultRoche extends DBResult
 	//	private static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());	
 	protected static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());
 
-	private String[] m_RecordSet;
 	private boolean  m_Valid = true;
 
 	static private String[] m_FieldNames =
@@ -126,8 +124,6 @@ public class DBResultRoche extends DBResult
 
 	private void initialize()
 	{
-		m_RecordSet = new String[m_FieldNames.length];
-
 		// Set values in underdlying ResultFromDB from record set
 		if (m_indexesInitialized == false)
 		{

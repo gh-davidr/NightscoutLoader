@@ -56,13 +56,13 @@ public class ThreadDataLoad implements Runnable
 		}
 	}
 	// Handler to notify when load completes
-	DataLoadCompleteHander           m_CompleteHandler;
+	DataLoadCompleteHandler           m_CompleteHandler;
 	
 	// Thread Handler for resynchronization
-	public static abstract class DataLoadCompleteHander 
+	public static abstract class DataLoadCompleteHandler 
 	{
 		private Object m_Object;
-		public DataLoadCompleteHander(Object obj)
+		public DataLoadCompleteHandler(Object obj)
 		{
 			m_Object = obj;
 		}
@@ -86,7 +86,7 @@ public class ThreadDataLoad implements Runnable
 		m_Lock            = new Object();
 	}
 	
-	public void loadDBResults(DataLoadCompleteHander completeHandler)
+	public void loadDBResults(DataLoadCompleteHandler completeHandler)
 	{
 		m_CompleteHandler = completeHandler;
 		m_LoadThread.start();

@@ -2,7 +2,6 @@ package davidRichardson;
 
 import javax.swing.JButton;
 //import javax.swing.AbstractButton;
-import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -22,6 +21,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.JRadioButton;
 
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import davidRichardson.ThreadAnalyzer.AnalyzerCompleteHander;
@@ -55,12 +55,13 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
 import java.awt.Color;
 import java.awt.Font;
-import javax.swing.JSlider;
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
 
 
-public class WinAnalyzer extends JDialog {
+//public class WinAnalyzer  extends JDialog implements WinSetDatesInterface
+public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
+{
 
 	/**
 	 * 
@@ -70,6 +71,7 @@ public class WinAnalyzer extends JDialog {
 	private static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());
 
 	private WinNightScoutLoader     m_MainWin;
+
 	private JTextField tf_ExcelFile;
 	private JTextField tf_LowThreshold;
 	private JTextField tf_LunchTrendRatio;
@@ -115,7 +117,15 @@ public class WinAnalyzer extends JDialog {
 	private JRadioButton rdbtnIncludeDinner;
 	private JRadioButton rdbtnIncludeOvernight;
 
-
+	private JRadioButton rdbtnAutoTuneInvoked;
+	private JLabel lblAutoTuneServer;
+	private JTextField tf_AutoTuneServer;
+	private JLabel lblAutoTuneNSURL;
+	private JTextField tf_AutoTuneNSURL;
+	private JRadioButton rdbtnAutoTuneSSH2KeyLogin;
+	private JLabel lblAutoTuneKeyFile;
+	private JTextField tf_AutoTuneKeyFile;
+	
 	private JButton m_AnaylzeButton;
 	private JTextField tf_BGUnits;
 	private JSpinner sp_breakfastStart;
@@ -182,7 +192,7 @@ public class WinAnalyzer extends JDialog {
 		//		m_MongoDBLoader   = new DataLoadNightScoutTreatments();
 
 		super.setTitle(title);
-		setBounds(100, 100, 770, 550);
+		setBounds(100, 100, 780, 650);
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] {300, 0};
 		gridBagLayout.rowHeights = new int[] {300, 25};
@@ -984,6 +994,117 @@ public class WinAnalyzer extends JDialog {
 		panel_1.add(rdbtnTotalRecurringTrendsOnly, gbc_rdbtnTotalRecurringTrendsOnly);
 		setBGUnitsText();
 
+		
+		rdbtnAutoTuneInvoked = new JRadioButton("Run Autotune");
+		rdbtnAutoTuneInvoked.setToolTipText("<html>Control that determines whether Autotune is run as part of analysis</html>");
+		rdbtnAutoTuneInvoked.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				checkAutoTuneInvokedOptions(rdbtnAutoTuneInvoked);
+			}
+		});
+		rdbtnAutoTuneInvoked.setSelected(PrefsNightScoutLoader.getInstance().isM_AutoTuneInvoked());
+		GridBagConstraints gbc_rdbtnAutoTuneInvoked = new GridBagConstraints();
+		gbc_rdbtnAutoTuneInvoked.insets = new Insets(0, 0, 5, 5);
+		gbc_rdbtnAutoTuneInvoked.gridx = 9;
+		gbc_rdbtnAutoTuneInvoked.gridy = 17;
+		panel_1.add(rdbtnAutoTuneInvoked, gbc_rdbtnAutoTuneInvoked);
+
+		
+		lblAutoTuneNSURL = new JLabel("Nightscout URL");
+		lblAutoTuneNSURL.setFont(new Font("Tahoma", Font.BOLD, 11));
+		GridBagConstraints gbc_lblAutoTuneNSURL = new GridBagConstraints();
+		gbc_lblAutoTuneNSURL.anchor = GridBagConstraints.EAST;
+		gbc_lblAutoTuneNSURL.insets = new Insets(0, 0, 0, 5);
+		gbc_lblAutoTuneNSURL.gridx = 1;
+		gbc_lblAutoTuneNSURL.gridy = 17;
+		panel_1.add(lblAutoTuneNSURL, gbc_lblAutoTuneNSURL);
+
+		tf_AutoTuneNSURL = new JTextField(PrefsNightScoutLoader.getInstance().getM_AutoTuneNSURL());
+		tf_AutoTuneNSURL.setToolTipText("Nightscout URL used by Autotune");
+		GridBagConstraints gbc_tf_AutoTuneNSURL = new GridBagConstraints();
+		gbc_tf_AutoTuneNSURL.insets = new Insets(0, 0, 5, 0);
+		gbc_tf_AutoTuneNSURL.fill = GridBagConstraints.HORIZONTAL;
+		gbc_tf_AutoTuneNSURL.anchor = GridBagConstraints.NORTHWEST;
+		gbc_tf_AutoTuneNSURL.gridwidth = 6;
+		gbc_tf_AutoTuneNSURL.gridx = 3;
+		gbc_tf_AutoTuneNSURL.gridy = 17;
+		panel_1.add(tf_AutoTuneNSURL, gbc_tf_AutoTuneNSURL);
+		tf_AutoTuneNSURL.setPreferredSize(new Dimension(7, 20));
+		tf_AutoTuneNSURL.setColumns(25);
+
+		
+		lblAutoTuneServer = new JLabel("Autotune Linux Server");
+		lblAutoTuneServer.setFont(new Font("Tahoma", Font.BOLD, 11));
+		GridBagConstraints gbc_lblAutoTuneServer = new GridBagConstraints();
+		gbc_lblAutoTuneServer.anchor = GridBagConstraints.EAST;
+		gbc_lblAutoTuneServer.insets = new Insets(0, 0, 0, 5);
+		gbc_lblAutoTuneServer.gridx = 1;
+		gbc_lblAutoTuneServer.gridy = 18;
+		panel_1.add(lblAutoTuneServer, gbc_lblAutoTuneServer);
+
+		tf_AutoTuneServer = new JTextField(PrefsNightScoutLoader.getInstance().getM_AutoTuneServer());
+		tf_AutoTuneServer.setToolTipText("Linux Server that can run Autotune");
+		GridBagConstraints gbc_tf_AutoTuneServer = new GridBagConstraints();
+		gbc_tf_AutoTuneServer.insets = new Insets(0, 0, 5, 0);
+		gbc_tf_AutoTuneServer.fill = GridBagConstraints.HORIZONTAL;
+		gbc_tf_AutoTuneServer.anchor = GridBagConstraints.NORTHWEST;
+		gbc_tf_AutoTuneServer.gridwidth = 6;
+		gbc_tf_AutoTuneServer.gridx = 3;
+		gbc_tf_AutoTuneServer.gridy = 18;
+		panel_1.add(tf_AutoTuneServer, gbc_tf_AutoTuneServer);
+		tf_AutoTuneServer.setPreferredSize(new Dimension(7, 20));
+		tf_AutoTuneServer.setColumns(25);
+
+		lblAutoTuneKeyFile = new JLabel("Autotune SSH Key File");
+		lblAutoTuneKeyFile.setFont(new Font("Tahoma", Font.BOLD, 11));
+		GridBagConstraints gbc_lblAutoTuneKeyFile = new GridBagConstraints();
+		gbc_lblAutoTuneKeyFile.anchor = GridBagConstraints.EAST;
+		gbc_lblAutoTuneKeyFile.insets = new Insets(0, 0, 0, 5);
+		gbc_lblAutoTuneKeyFile.gridx = 1;
+		gbc_lblAutoTuneKeyFile.gridy = 19;
+		panel_1.add(lblAutoTuneKeyFile, gbc_lblAutoTuneKeyFile);
+
+		tf_AutoTuneKeyFile = new JTextField(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
+		tf_AutoTuneKeyFile.setToolTipText("SSH Key file for authentication on Aututune server");
+		GridBagConstraints gbc_tf_AutoTuneKeyFile = new GridBagConstraints();
+		gbc_tf_AutoTuneKeyFile.insets = new Insets(0, 0, 5, 0);
+		gbc_tf_AutoTuneKeyFile.fill = GridBagConstraints.HORIZONTAL;
+		gbc_tf_AutoTuneKeyFile.anchor = GridBagConstraints.NORTHWEST;
+		gbc_tf_AutoTuneKeyFile.gridwidth = 6;
+		gbc_tf_AutoTuneKeyFile.gridx = 3;
+		gbc_tf_AutoTuneKeyFile.gridy = 19;
+		panel_1.add(tf_AutoTuneKeyFile, gbc_tf_AutoTuneKeyFile);
+		tf_AutoTuneKeyFile.setPreferredSize(new Dimension(7, 20));
+		tf_AutoTuneKeyFile.setColumns(25);
+		
+		rdbtnAutoTuneSSH2KeyLogin = new JRadioButton("Autotune Key Auth");
+		rdbtnAutoTuneSSH2KeyLogin.setToolTipText("<html>Future Control.  At present not used, since authorization performed by encrypted key file.</html>");
+		rdbtnAutoTuneSSH2KeyLogin.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				checkAutoTuneKeyOptions(rdbtnAutoTuneSSH2KeyLogin);
+			}
+		});
+		rdbtnAutoTuneSSH2KeyLogin.setSelected(PrefsNightScoutLoader.getInstance().isM_AutoTuneSSH2KeyLogin());
+		GridBagConstraints gbc_rdbtnAutoTuneSSH2KeyLogin = new GridBagConstraints();
+		gbc_rdbtnAutoTuneSSH2KeyLogin.insets = new Insets(0, 0, 5, 5);
+		gbc_rdbtnAutoTuneSSH2KeyLogin.gridx = 9;
+		gbc_rdbtnAutoTuneSSH2KeyLogin.gridy = 19;
+		panel_1.add(rdbtnAutoTuneSSH2KeyLogin, gbc_rdbtnAutoTuneSSH2KeyLogin);
+
+		
+	/*
+	 * 
+	 
+	 	private JLabel lblAutoTuneNSURL;
+	private JTextField tf_AutoTuneNSURL;
+	private JRadioButton rdbtnAutoTuneSSH2KeyLogin;
+	private JLabel lblAutoTuneKeyFile;
+	private JTextField tf_AutoTuneKeyFile;
+
+	 */
+		
 
 		//		private JTextField tf_LogLevel;
 		//		private JTextField tf_LogFile;
@@ -1047,7 +1168,7 @@ public class WinAnalyzer extends JDialog {
 				}
 			}
 		});
-		panel.add(btnResetToDefaults);
+		panel.add(btnResetToDefaults);	
 
 		toggleAdvancedOptions(PrefsNightScoutLoader.getInstance().isM_AdvancedSettings());
 
@@ -1133,6 +1254,27 @@ public class WinAnalyzer extends JDialog {
 					"Therefore the option to '" + rbJustSet.getText() + "' cannot be disabled\n"+
 					"unless the option to include one of the other meals is enabled.");
 		}
+	}
+
+	void checkAutoTuneInvokedOptions(JRadioButton rbJustSet)
+	{
+		boolean selected = rbJustSet.isSelected();
+
+		lblAutoTuneServer.setEnabled(selected);
+		tf_AutoTuneServer.setEnabled(selected);
+		lblAutoTuneNSURL.setEnabled(selected);
+		tf_AutoTuneNSURL.setEnabled(selected);
+		rdbtnAutoTuneSSH2KeyLogin.setEnabled(selected);
+		lblAutoTuneKeyFile.setEnabled(selected);
+		tf_AutoTuneKeyFile.setEnabled(selected);
+	}
+
+	
+	void checkAutoTuneKeyOptions(JRadioButton rbJustSet)
+	{
+		boolean selected = rbJustSet.isSelected() ;
+		lblAutoTuneKeyFile.setEnabled(selected);
+		tf_AutoTuneKeyFile.setEnabled(selected);
 	}
 
 
@@ -1231,6 +1373,7 @@ public class WinAnalyzer extends JDialog {
 		}
 	}
 
+	@Override
 	public void setDates(Date startDate, Date endDate)
 	{
 		final DateFormat format = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
@@ -1340,6 +1483,13 @@ public class WinAnalyzer extends JDialog {
 
 		cb_ExcelOutputLevel.setSelectedIndex(PrefsNightScoutLoader.getInstance().getM_AnalyzerExcelOutputLevel());
 
+		rdbtnAutoTuneInvoked.setSelected(PrefsNightScoutLoader.getInstance().isM_AutoTuneInvoked());
+		tf_AutoTuneServer.setText(PrefsNightScoutLoader.getInstance().getM_AutoTuneServer());
+		tf_AutoTuneNSURL.setText(PrefsNightScoutLoader.getInstance().getM_AutoTuneNSURL());
+		rdbtnAutoTuneSSH2KeyLogin.setSelected(PrefsNightScoutLoader.getInstance().isM_AutoTuneSSH2KeyLogin());
+		tf_AutoTuneKeyFile.setText(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
+
+		
 		setBGUnitsText();
 	}
 
@@ -1411,6 +1561,12 @@ public class WinAnalyzer extends JDialog {
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerIncludeOvernight(rdbtnIncludeOvernight.isSelected());
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerExcelOutputLevel(cb_ExcelOutputLevel.getSelectedIndex());
 
+		PrefsNightScoutLoader.getInstance().setM_AutoTuneInvoked(rdbtnAutoTuneInvoked.isSelected());
+		PrefsNightScoutLoader.getInstance().setM_AutoTuneServer(tf_AutoTuneServer.getText());
+		PrefsNightScoutLoader.getInstance().setM_AutoTuneNSURL(tf_AutoTuneNSURL.getText());
+		PrefsNightScoutLoader.getInstance().setM_AutoTuneSSH2KeyLogin(rdbtnAutoTuneSSH2KeyLogin.isSelected());
+		PrefsNightScoutLoader.getInstance().setM_AutoTuneKeyFile(tf_AutoTuneKeyFile.getText());
+		
 		PrefsNightScoutLoader.getInstance().setPreferences();
 	}
 

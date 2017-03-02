@@ -29,7 +29,7 @@ public class Version
 		m_ContactUs  = new String();
 		m_GoogleDriveHelpURI = new String();
 
-		m_Version    = "V2.6";
+		m_Version    = "V2.7";
 		m_Author     = "David Richardson";
 		m_ContactUs  = "NightscoutLoader@gmail.com";
 		//		m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_cEZMbmk4TTlZRUk";
@@ -100,8 +100,17 @@ public class Version
 		m_AboutText += " 2.6     - Release introducing the following\r\n";
 		m_AboutText += "           Support for T:Slim exports\r\n";
 		m_AboutText += "           Fixes to MongoDB Reads as reported by Mátyási Péter\r\n";
+		m_AboutText += " 2.7     - Release introducing the following\r\n";
+		m_AboutText += "           Fix to Find / Details screen down nav at bottom of list\r\n";
+		m_AboutText += "           Slightly different new Medtronic file format seen in the field now supported \r\n";
+		m_AboutText += "           Proper support for Medtronic Set Change\r\n";
+		m_AboutText += "           Support for running Autotune\r\n";
+		m_AboutText += "              Inclusion of Autotune output in Excel Analysis results file\r\n";
+		m_AboutText += "              Quick Run autotune with text output based on most recent CGM\r\n";
+		m_AboutText += "              Autotune Profile Editor with automatic backup remotely to Nightscout Loader Backup directory\r\n";
+		m_AboutText += "              Autotune Profile Editor can read settings directly from Diasend\r\n";
 		m_AboutText += "\r\n\r\n";
-		m_AboutText += "Written by " + m_Author + " - January 2016 through February 2017\r\n";
+		m_AboutText += "Written by " + m_Author + " - January 2016 through March 2017\r\n";
 	}
 
 	/**

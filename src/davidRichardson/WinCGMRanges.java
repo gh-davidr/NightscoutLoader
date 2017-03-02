@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,9 +20,6 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -33,6 +31,10 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
+import net.sourceforge.jdatepicker.impl.JDatePanelImpl;
+import net.sourceforge.jdatepicker.impl.JDatePickerImpl;
+import net.sourceforge.jdatepicker.impl.UtilDateModel;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -40,6 +42,8 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 public class WinCGMRanges extends JFrame 
 {
@@ -51,27 +55,25 @@ public class WinCGMRanges extends JFrame
 	private static final Logger m_Logger = Logger.getLogger( MyLogger.class.getName() );
 
 	private JPanel          m_ContentPane;
+	private JPanel          m_DatePane;
 	private JTable          m_CGMRangesTable;
 	private JScrollPane     m_CGMRangesScrollPane;
 
-	private JMenuItem       m_mntmExportResults; 
-	private JMenuItem       m_mntmClose; 
+	private JDatePickerImpl jp_StartDate;
+	private JDatePickerImpl jp_EndDate;
 
-	private int             m_RowSelected = -1;
-	private Date            m_MostRecentDate  = new Date(0);
-
-	private WinAnalyzer     m_WinAnalyzer = null;
+	private WinSetDatesInterface     m_WinSetDatesInterface = null;
 
 	private AnalyzerEntries                            m_AnalyzerEntries = null;
 	private ArrayList<AnalyzerEntriesCGMRange>         m_CGMRanges = null;
 
 	private Date            m_JTableDoubleClickTime = new Date(0);
 
-	public WinCGMRanges(WinAnalyzer mainWin, String title) 
+	public WinCGMRanges(WinSetDatesInterface mainWin, String title) 
 	{
 		super(title);
 
-		m_WinAnalyzer = mainWin;
+		m_WinSetDatesInterface = mainWin;
 
 		//ImageIcon img = new ImageIcon("Images\\Nightscout.jpg");
 		URL url = MainNightScoutLoader.class.getResource("/Nightscout.jpg");
@@ -100,9 +102,6 @@ public class WinCGMRanges extends JFrame
 	@Override
 	public void setVisible(boolean visible)
 	{
-		// Also, reset the updated record too.
-		m_RowSelected = -1;
-
 		// Only set visible if we have records to display
 		if (this.m_CGMRanges.size() > 0)
 		{
@@ -134,9 +133,29 @@ public class WinCGMRanges extends JFrame
 
 		m_ContentPane.setLayout(new BorderLayout(0, 0));
 
+		m_DatePane = new JPanel();
+		m_DatePane.setLayout(new BorderLayout(0, 0));
+		m_ContentPane.add(m_DatePane, BorderLayout.NORTH);
+
+		jp_StartDate = new JDatePickerImpl(new JDatePanelImpl(new UtilDateModel()), new DateLabelFormatter());
+		jp_StartDate.setToolTipText("<html>Start date for analysis.  <br>Results on this date and after and before the End Date are considered in the analysis.</html>");
+
+		jp_EndDate = new JDatePickerImpl(new JDatePanelImpl(new UtilDateModel()), new DateLabelFormatter());
+		jp_EndDate.setToolTipText("<html>End date for analysis.  <br>Results on the Start date and after and before this Date are considered in the analysis.</html>");
+
+		jp_StartDate.setMinimumSize(new Dimension(115,30));
+		jp_EndDate.setMinimumSize(new Dimension(115,30));
+
+		// Initialise start & end dates to what was used last
+		// End date will be changed to the most recent date in result set once known.
+		((UtilDateModel)jp_StartDate.getModel()).setValue(new Date(PrefsNightScoutLoader.getInstance().getM_AnalyzerStartDateLong()));
+		((UtilDateModel)jp_EndDate.getModel()).setValue(new Date(PrefsNightScoutLoader.getInstance().getM_AnalyzerEndDateLong()));
+
+		m_DatePane.add(jp_StartDate,  BorderLayout.WEST);
+		m_DatePane.add(jp_EndDate,  BorderLayout.EAST);
 
 		JPanel panel_3 = new JPanel();
-		m_ContentPane.add(panel_3, BorderLayout.NORTH);
+		m_ContentPane.add(panel_3, BorderLayout.CENTER);
 		panel_3.setLayout(new BorderLayout(0, 0));
 
 
@@ -155,6 +174,10 @@ public class WinCGMRanges extends JFrame
 				}
 				else
 				{
+					// Update the JPicker Dates
+					setJPickerDates();
+					
+					// Keep track in case we get a double click
 					m_JTableDoubleClickTime = now;
 				}
 
@@ -210,7 +233,6 @@ public class WinCGMRanges extends JFrame
 				final Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 				Color col = Color.WHITE;
 
-				final Date epochDate = new Date(0); 
 				AnalyzerEntriesCGMRange cgmRange = getSelectedAnalyzerEntriesCGMRange(row);
 				int rowNum = m_CGMRangesTable.getSelectedRow();
 				AnalyzerEntriesCGMRange.DateOverlap dateOverlap = cgmRange.getM_DateOverlap();
@@ -264,11 +286,6 @@ public class WinCGMRanges extends JFrame
 
 		panel_3.add(m_CGMRangesScrollPane);
 
-
-
-		JPanel panel_1 = new JPanel();
-		m_ContentPane.add(panel_1, BorderLayout.CENTER);
-		panel_1.setLayout(new BorderLayout(0, 0));
 
 		JPanel panel_2 = new JPanel();
 		m_ContentPane.add(panel_2, BorderLayout.SOUTH);
@@ -358,19 +375,7 @@ public class WinCGMRanges extends JFrame
 		}
 	}
 
-	private void doExportResults()
-	{
-		JOptionPane.showMessageDialog(null, 
-				"Not yet implemented...");
-
-	}
-
-	private void doClose()
-	{
-		this.dispose();
-	}
-
-	private void okButtonClick()
+	private void setJPickerDates()
 	{
 		AnalyzerEntriesCGMRange selectedCGM = getSelectedAnalyzerEntriesCGMRange(m_CGMRangesTable.getSelectedRow());
 
@@ -381,10 +386,45 @@ public class WinCGMRanges extends JFrame
 			Date startDate = selectedCGM.getM_StartDate();
 			Date endDate   = selectedCGM.getM_EndDate();
 
-			m_WinAnalyzer.setDates(startDate, endDate);
-		}
+			final DateFormat format = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
 
+			((UtilDateModel)jp_StartDate.getModel()).setValue(startDate);
+			((UtilDateModel)jp_EndDate.getModel()).setValue(endDate);
+
+			String startDateTxt = new String(format.format(startDate.getTime()));
+			String endDateTxt   = new String(format.format(endDate.getTime()));
+
+			jp_StartDate.getJFormattedTextField().setText(startDateTxt);
+			jp_EndDate.getJFormattedTextField().setText(endDateTxt);
+		}
+	}
+
+	private void setSelectedDates()
+	{
+		Date startDate = (Date)jp_StartDate.getModel().getValue();
+		Date endDate   = (Date)jp_EndDate.getModel().getValue();
+
+		m_WinSetDatesInterface.setDates(startDate, endDate);
+	}
+
+	
+	private void okButtonClick()
+	{
+		setSelectedDates();
 		dispose();
+
+//		AnalyzerEntriesCGMRange selectedCGM = getSelectedAnalyzerEntriesCGMRange(m_CGMRangesTable.getSelectedRow());
+//
+//		if (selectedCGM != null)
+//		{
+//			// Get date ranges
+//			// Set them in the analyzer window
+//			Date startDate = selectedCGM.getM_StartDate();
+//			Date endDate   = selectedCGM.getM_EndDate();
+//
+//			m_WinSetDatesInterface.setDates(startDate, endDate);
+//		}
+
 	}
 
 	private void cancelButtonClick()

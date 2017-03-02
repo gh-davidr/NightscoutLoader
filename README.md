@@ -12,6 +12,7 @@ A desktop application with the following purposes in mind:
 * Quick way of locating and allowing edits to the Notes field in treatment data.
 * Analysis of BG Trends
 * Analysis of CGM Data
+* Easier access to Autotune
 
 ### Synchronize data from meter/pump as treatments in Nightscout Care Portal.
 
@@ -45,11 +46,30 @@ Analysis also runs in background on start up and provides a condensed summary of
 
 Any CGM data available within selected analysis date range is also analyzed.  A heat map shows areas of high frequency profiles.
 
-### Inference of CGM Date Ranges
+#### Inference of CGM Date Ranges
 
 ![picture](resources/images/AnalysisCGMDates.JPG)
 
 For those without continual sensor use, identifies date ranges when sensor was worn - useful for reviewing past events & data.
+
+
+### Easier access to Autotune
+
+Nightscout Loader can now help with running and maintaining profiles for Autotune
+
+![picture](resources/images/AutotuneManagementRun.JPG)
+
+As well as integrating Autotune output in the Excel analysis results file, an "Autotune Management" window allows easy access to run Autotune once configured.
+
+
+![picture](resources/images/AutotuneManagementProfileEditor.JPG)
+
+A Profile editor is provided that can edit the remote profile, open profile files on the local machine and also read profile data from a Diasend export.
+
+
+![picture](resources/images/AutotuneManagementListBackups.JPG)
+
+Each time the Profile Editor updates the profile on the remote Autotune server, it takes a backup into a separate directory.  The files in the backup directory can be listed (as above) and also downloaded onto the local machine for greater safe keeping.
 
 ## Analytic approach used by NightscoutLoader
 
@@ -62,6 +82,7 @@ Nightscout Loader helps get real **Insights** from reams of *Data*.
 - [x] Do you use Nightscout and want to upload Treatment data to Nightscout from a supported Meter and or Pump?
 - [x] Do you want an extra tool to help analyze BGs, Carbs & Insulin?  (Nightscout use is optional)
 - [x] Do you use Nightscout and want an extra tool to visualize repeated patterns of CGM data?
+- [x] Do you have Autotune configured on a separate Linux machine and want assistance with using it - particularly if you also use Diasend?
 
 If any of the above are true, then it could help you.
 
