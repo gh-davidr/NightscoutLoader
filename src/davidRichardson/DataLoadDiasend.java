@@ -4,10 +4,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
+import java.text.DateFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,10 +26,12 @@ public class DataLoadDiasend extends DataLoadBase
 	private static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());
 
 	private String   m_initFilename;  // File with Diasend results in it.
+	private String   m_dateFormatFound; 
 
 	final static String m_GlucoseTabName  = new String("Name and glucose");
 	final static String m_InsulinTabName  = new String("Insulin use and carbs");
 	final static String m_SettingsTabName = new String("Insulin pump settings");
+	final static String m_CGMTabName      = new String("CGM");
 
 	/*	final static int m_GlucoseTab  = 0; // Excel tab position with glucose data
 	final static int m_InsulinTab  = 0; // Excel tab position with insulin & use data
@@ -38,12 +43,16 @@ public class DataLoadDiasend extends DataLoadBase
 
 	final static int m_InsulinRowDataHeaders = 1;
 	final static int m_InsulinRowDataStart   = 2;
-
-	final static String m_SettingsBasalStartString     = "Basal profiles";
-	final static String m_SettingsIntervalString       = "Interval";
-	final static String m_SettingsActiveBasalString    = "Active basal program";
-	final static String m_SettingsISFStartString       = "ISF programs";
-	final static String m_SettingsCarbRatioStartString = "I:C ratio settings";
+	
+	final static int m_CGMRowDataHeaders = 2;
+	final static int m_CGMRowDataStart   = 3;
+		
+	final static String m_SettingsBasalStartString      = "Basal profiles";
+	final static String m_SettingsIntervalString        = "Interval";
+	final static String m_SettingsActiveBasalString     = "Active basal program";
+	final static String m_SettingsBGUnitString          = "BG unit";
+	final static String m_SettingsISFStartString        = "ISF programs";
+	final static String m_SettingsCarbRatioStartString  = "I:C ratio settings";
 
 	
 	
@@ -62,6 +71,9 @@ public class DataLoadDiasend extends DataLoadBase
 	protected String                                      m_ActiveBasal;
 	protected ArrayList <DBResultDiasendISFSetting>       m_ISFSettings;
 	protected ArrayList <DBResultDiasendCarbRatioSetting> m_CarbRatioSettings;
+	
+	protected Date                                        m_StartDate = new Date(0);
+	protected Date                                        m_EndDate   = new Date(0);
 	
 	@Override
 	protected String getDevice() 
@@ -120,16 +132,19 @@ public class DataLoadDiasend extends DataLoadBase
 		loadInsulinPumpSettings();     // Load Settings first
 		loadDBResultsFromGlucoseTab();
 		loadDBResultsFromInsulinTab();
-
+		loadDBResultEntriesFromCGMTab();  // Always load this even if not being sync'd
+		
+		sortDBResults();
+		sortDBResultEntries();
+		
+		inferTrendsFromCGMResultEntries();
+		
 		// For debug, drop a list of all results so far
 		m_Logger.log(Level.FINE, "<"+this.getClass().getName()+">" + "Summary of Diasend Results BEFORE load & Sort");
 		for (DBResult res : rawResultsFromDB)
 		{
 			m_Logger.log(Level.FINE, "<"+this.getClass().getName()+">" + "  " + res.rawToString());
 		}
-
-
-		sortDBResults();
 
 		// For debug, drop a list of all results so far
 		m_Logger.log(Level.FINE, "<"+this.getClass().getName()+">" + "Summary of Diasend Results AFTER load & Sort");
@@ -166,6 +181,15 @@ public class DataLoadDiasend extends DataLoadBase
 	public void initialize(String filename)
 	{
 		m_initFilename = filename;
+		
+		m_dateFormatFound = scanFileAndInferDateFormat(filename);
+		String currentDateFormat = PrefsNightScoutLoader.getInstance().getM_DiasendDateFormat();
+		if (!currentDateFormat.equals(m_dateFormatFound))
+		{
+			m_Logger.log(Level.INFO, "Found a different date format to last Diasend file");
+			PrefsNightScoutLoader.getInstance().setM_DiasendDateFormat(m_dateFormatFound);
+		}
+	
 		try 
 		{
 			m_ExcelFileSystem = new POIFSFileSystem(new FileInputStream(m_initFilename));
@@ -225,7 +249,8 @@ public class DataLoadDiasend extends DataLoadBase
 				HSSFRow row;
 
 				int rows; // No of rows
-				rows = sheet.getPhysicalNumberOfRows();
+				//rows = sheet.getPhysicalNumberOfRows();
+				rows = sheet.getLastRowNum();
 
 				int cols = 0; // No of columns
 				int tmp = 0;
@@ -301,7 +326,8 @@ public class DataLoadDiasend extends DataLoadBase
 				HSSFRow row;
 
 				int rows; // No of rows
-				rows = sheet.getPhysicalNumberOfRows();
+				// rows = sheet.getPhysicalNumberOfRows();
+				rows = sheet.getLastRowNum();
 
 				int cols = 0; // No of columns
 				int tmp = 0;
@@ -324,6 +350,8 @@ public class DataLoadDiasend extends DataLoadBase
 				boolean foundISFSection         = false;
 				boolean inProfileSection        = false;
 				boolean completedProfileSection = false;
+				
+				String  bgUnits = new String("mmol/L");
 
 				for(int r = 0; r <= rows && !completedProfileSection; r++) 
 				{
@@ -337,7 +365,11 @@ public class DataLoadDiasend extends DataLoadBase
 					{
 						String cell1 = DBResultDiasendISFSetting.getCellAsString(row, 0);
 
-						if (cell1.equals(m_SettingsISFStartString))
+						if (cell1.equals(m_SettingsBGUnitString))
+						{
+							bgUnits = row.getCell(1).getStringCellValue();
+						}
+						else if (cell1.equals(m_SettingsISFStartString))
 						{
 							foundISFSection = true;
 							result = new ArrayList <DBResultDiasendISFSetting>();
@@ -348,7 +380,7 @@ public class DataLoadDiasend extends DataLoadBase
 						}
 						else if (foundISFSection && inProfileSection)
 						{
-							DBResultDiasendISFSetting basal = new DBResultDiasendISFSetting(row);
+							DBResultDiasendISFSetting basal = new DBResultDiasendISFSetting(row, bgUnits);
 							result.add(basal);
 						}
 					}
@@ -374,7 +406,8 @@ public class DataLoadDiasend extends DataLoadBase
 				HSSFRow row;
 
 				int rows; // No of rows
-				rows = sheet.getPhysicalNumberOfRows();
+				//rows = sheet.getPhysicalNumberOfRows();
+				rows = sheet.getLastRowNum();
 
 				int cols = 0; // No of columns
 				int tmp = 0;
@@ -449,7 +482,8 @@ public class DataLoadDiasend extends DataLoadBase
 				HSSFRow row;
 
 				int rows; // No of rows
-				rows = sheet.getPhysicalNumberOfRows();
+				//rows = sheet.getPhysicalNumberOfRows();
+				rows = sheet.getLastRowNum();
 
 				int cols = 0; // No of columns
 				int tmp = 0;
@@ -492,6 +526,137 @@ public class DataLoadDiasend extends DataLoadBase
 		return result;
 	}
 
+	private void loadDBResultEntriesFromCGMTab()
+	{
+		try 
+		{
+			HSSFSheet sheet = getNamedWorksheet(m_CGMTabName); // m_ExcelWorkBook.getSheet(m_InsulinTabName);
+			HSSFRow row;
+
+			//int rows = sheet.getPhysicalNumberOfRows(); // No of rows
+			int rows = sheet.getLastRowNum();
+
+			int cols = 0; // No of columns
+			int tmp = 0;
+
+			// This trick ensures that we get the data properly even if it doesn't start from first few rows
+			for(int i = 0; i < 10 || i < rows; i++) 
+			{
+				row = sheet.getRow(i);
+				if(row != null) 
+				{
+					tmp = sheet.getRow(i).getPhysicalNumberOfCells();
+					if(tmp > cols) cols = tmp;
+				}
+			}
+
+			for(int r = 0; r < rows; r++) 
+			{
+				row = sheet.getRow(r);
+
+				if (r+1 == m_CGMRowDataHeaders)
+				{
+					DBResultEntryDiasend.initializeCGMHeaders(row);
+				}
+				else if (r+1 >= m_CGMRowDataStart)
+				{
+					DBResultEntryDiasend res = new DBResultEntryDiasend(row);
+						rawEntryResultsFromDB.add(res);
+//						m_Logger.log(Level.FINEST, "<"+this.getClass().getName()+">" + "Result added for " + res.toString());
+						m_Logger.log(Level.FINEST, "<DataLoadDiasend>" + "Result added for " + res.toString());
+				}
+			}
+		} 
+		catch(Exception ioe) 
+		{
+			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " Exception loading Insulin tab " + ioe.getMessage());
+		}
+		
+		// Having loaded all the raw values from file, now need to traverse the collection
+		// and determine other attributes like direction, etc..
+
+	}
+	
+	private void inferTrendsFromCGMResultEntries()
+	{
+		
+		DBResultEntry prev = null;
+		for (DBResultEntry res : rawEntryResultsFromDB)
+		{
+			String direction = getDirection(
+					(prev != null ? prev.getM_EpochMillies() : res.getM_EpochMillies()), res.getM_EpochMillies(),
+					(prev != null ? prev.getM_SGV() : res.getM_SGV()), res.getM_SGV());
+			
+			res.setM_Direction(direction);
+			res.setM_Unfiltered(0.0);
+			
+			prev = res;
+		}
+		
+	}
+
+
+	private String getDirection(long startMillies, long endMillies, double startMgDL, double endMgDL)
+	{
+		String result = new String("NOT COMPUTABLE");
+		double d_DoubleDown    = -3.5;
+		double d_SingleDown    = -2.0;
+		double d_FortyFiveDown = -1.0;
+		double d_Flat          =  1.0;
+		double d_FortyFiveUp   =  2.0;
+		double d_SingleUp      =  3.5;
+		double d_DoubleUp      = 40.0;
+
+		// Distinct direction values ...
+
+		/*
+		 * FortyFiveDown
+		 * Flat
+		 * FortyFiveUp
+		 * SingleDown
+		 * SingleUp
+		 * DoubleUp
+		 * DoubleDown
+		 * NOT COMPUTABLE
+		 */
+
+		if (endMillies - startMillies > 0)
+		{
+			// Scale this up to change per minute
+			double slope = (endMgDL - startMgDL) / (endMillies - startMillies) * 1000 * 60;
+
+			if (slope <= (d_DoubleDown))
+			{
+				result = "DoubleDown";
+			} 
+			else if (slope <= (d_SingleDown))
+			{
+				result = "SingleDown";
+			} 
+			else if (slope <= (d_FortyFiveDown)) 
+			{
+				result = "FortyFiveDown";
+			} 
+			else if (slope <= (d_Flat)) 
+			{
+				result = "Flat";
+			} 
+			else if (slope <= (d_FortyFiveUp))
+			{
+				result = "FortyFiveUp";
+			} 
+			else if (slope <= (d_SingleUp)) 
+			{
+				result = "SingleUp";
+			} 
+			else if (slope <= (d_DoubleUp))
+			{
+				result = "DoubleUp";
+			}
+
+		}
+		return result;
+	}
 
 	private void loadInsulinPumpSettings()
 	{
@@ -534,7 +699,8 @@ public class DataLoadDiasend extends DataLoadBase
 			HSSFRow row;
 
 			int rows; // No of rows
-			rows = sheet.getPhysicalNumberOfRows();
+			//rows = sheet.getPhysicalNumberOfRows();
+			rows = sheet.getLastRowNum();
 
 			int cols = 0; // No of columns
 			int tmp = 0;
@@ -553,6 +719,7 @@ public class DataLoadDiasend extends DataLoadBase
 			for(int r = 0; r <= rows; r++) 
 			{
 				row = sheet.getRow(r);
+								
 				if (r+1 == m_GlucoseRowDateRange)
 				{
 					DBResultDiasend.initializeGlucoseDateRange(row);
@@ -587,7 +754,8 @@ public class DataLoadDiasend extends DataLoadBase
 			HSSFSheet sheet = getNamedWorksheet(m_InsulinTabName); // m_ExcelWorkBook.getSheet(m_InsulinTabName);
 			HSSFRow row;
 
-			int rows = sheet.getPhysicalNumberOfRows(); // No of rows
+			//int rows = sheet.getPhysicalNumberOfRows(); // No of rows
+			int rows = sheet.getLastRowNum();
 
 			int cols = 0; // No of columns
 			int tmp = 0;
@@ -768,8 +936,11 @@ public class DataLoadDiasend extends DataLoadBase
 			HSSFSheet glucoseSheet = wb.getSheet(m_GlucoseTabName);
 			HSSFSheet insulinSheet = wb.getSheet(m_InsulinTabName);
 
-			if ( (glucoseSheet != null && glucoseSheet.getPhysicalNumberOfRows() > 0) // Glucose tab is there with rows
-					&&   (insulinSheet != null && insulinSheet.getPhysicalNumberOfRows() > 0))// Insulin tab is also there with rows
+			//			if ( (glucoseSheet != null && glucoseSheet.getPhysicalNumberOfRows() > 0) // Glucose tab is there with rows
+			//					&&   (insulinSheet != null && insulinSheet.getPhysicalNumberOfRows() > 0))// Insulin tab is also there with rows
+			if ( (glucoseSheet != null && glucoseSheet.getLastRowNum() > 0) // Glucose tab is there with rows
+					&&   (insulinSheet != null && insulinSheet.getLastRowNum() > 0))// Insulin tab is also there with rows
+
 			{
 				result = true;
 			}
@@ -786,6 +957,201 @@ public class DataLoadDiasend extends DataLoadBase
 		return result;
 	}
 
+	
+	static public Date parseFileDateTime(String date)
+	{
+		Date result = new Date(0);
+		// Combined Date Time
+
+//		final String defSlashFormat = new String("dd/MM/yy HH:mm");  -- Changed with Glooko?
+		// In fact, now find that it changes between dd/MM/yyyy and MM/dd/yyyy, so we hold a preference
+		// and set the preference during an initial file scan
+		
+		final String defSlashFormat = new String(
+				PrefsNightScoutLoader.getInstance().getM_DiasendDateFormat() + " HH:mm");
+		
+		// 06 Jan 2018
+		// David - don;t really want to do this.
+		// Instead, allow the infer function to determine what date format probably really is
+		// and instead use that rather than this override
+		String prefDateFormat       = PrefsNightScoutLoader.getInstance().getM_InputDateFormat();
+		DateFormat slashformat      = new SimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat), Locale.ENGLISH);
+		//		DateFormat slashformat      = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ENGLISH);
+		try
+		{
+			result = slashformat.parse(date);
+		}
+		catch (ParseException e) 
+		{
+			m_Logger.log(Level.SEVERE, "<DataLoadDiasend> " + "parseFileDate - Unexpected error parsing date: " + date);
+		}
+
+		return result;
+	}
+	
+	static public Date parseFileDate(String date)
+	{
+		Date result = new Date(0);
+		// Combined Date Time
+		DateFormat slashformat = new SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH);
+
+//		final String defSlashFormat = new String("dd/MM/yy HH:mm");  -- Changed with Glooko?
+		// In fact, now find that it changes between dd/MM/yyyy and MM/dd/yyyy, so we hold a preference
+		// and set the preference during an initial file scan
+		
+		final String defSlashFormat = new String(
+				PrefsNightScoutLoader.getInstance().getM_DiasendDateFormat());
+
+		
+		try
+		{
+			result = slashformat.parse(date);
+		}
+		catch (ParseException e) 
+		{
+			m_Logger.log(Level.SEVERE, "<DBResultDiasend>" + "parseDate - Unexpected error parsing date: " + date);
+		}
+
+		return result;
+	}
+
+	private static boolean isDateValidAndBeforeNow(String dateString, Date now, String dateFormat)
+	{
+		boolean result = true;
+				
+		try 
+        {
+			Date d = new Date(0);
+            DateFormat df = new SimpleDateFormat(dateFormat);
+            df.setLenient(false);
+            d = df.parse(dateString);
+            
+            // set result based on if before now or after now
+            result = d.before(now) ? true : false;
+        } 
+        catch (ParseException e) 
+        {
+            result = false;
+        }
+		
+		return result;
+	}
+
+	
+	public static String scanFileAndInferDateFormat(String fileName)
+	{
+		// Start off with what was last used
+		String result = new String(PrefsNightScoutLoader.getInstance().getM_DiasendDateFormat());
+		
+		boolean switched = false;
+		
+		// Traverse the entire file and check that this date format will work.
+		int glucoseTimeIndex = DBResultDiasend.getM_GlucoseTimeIndex();
+		int insulinTimeIndex = DBResultDiasend.getM_InsulinTimeIndex();
+		int cgmTimeIndex     = DBResultEntryDiasend.getM_CGMTimeIndex();
+
+		try 
+		{
+			POIFSFileSystem fs = new POIFSFileSystem(new FileInputStream(fileName));
+			HSSFWorkbook wb = new HSSFWorkbook(fs);
+
+			HSSFSheet glucoseSheet = wb.getSheet(m_GlucoseTabName);
+			HSSFSheet insulinSheet = wb.getSheet(m_InsulinTabName);
+			HSSFSheet cgmSheet     = wb.getSheet(m_CGMTabName);
+			
+			String glucoseSheetFormat = scanSheetAndInferDateFormat(glucoseSheet, glucoseTimeIndex);
+			String insulinSheetFormat = scanSheetAndInferDateFormat(insulinSheet, insulinTimeIndex);
+			String cgmSheetFormat     = scanSheetAndInferDateFormat(cgmSheet, cgmTimeIndex);
+			
+			// If any of the sheets come back with serious format issues, propagate up
+			if (glucoseSheetFormat.isEmpty() || insulinSheetFormat.isEmpty() || cgmSheetFormat.isEmpty())
+			{
+				result = "";
+			}
+			else if (!glucoseSheetFormat.equals(result))
+			{
+				result = glucoseSheetFormat;
+			}
+			else if (!insulinSheetFormat.equals(result))
+			{
+				result = insulinSheetFormat;
+			}
+			else if (!cgmSheetFormat.equals(result))
+			{
+				result = cgmSheetFormat;
+			}
+			
+			wb.close();
+		} 
+		catch(Exception ioe) 
+		{
+			m_Logger.log(Level.SEVERE, "isDiasend: IOException closing file. File " + fileName + " Error " + ioe.getMessage());
+
+			ioe.printStackTrace();
+		}
+
+		return result;
+	}
+
+	public static String scanSheetAndInferDateFormat(HSSFSheet sheet, int timeIndex)
+	{
+		// Start off with what was last used
+		String result = new String(PrefsNightScoutLoader.getInstance().getM_DiasendDateFormat());
+		boolean switched = false;
+
+		// Iterate the Glucose Sheet
+		HSSFRow row;
+		int rows; // No of rows
+		rows = sheet.getLastRowNum();
+
+		boolean valid = true;
+		
+		// Generate a date for now and use it to as another check
+		// since file dates should not be later than now
+		Date now = new Date();
+
+		// This trick ensures that we get the data properly even if it doesn't start from first few rows
+		for(int i = 0; (valid == true) && (i < rows); i++) 
+		{
+			row = sheet.getRow(i);
+			if(row != null) 
+			{
+				String timeStr  = CommonUtils.getStringCellValue(row, timeIndex);
+				
+				// Only proceed if this looks like a date time
+				if (!timeStr.isEmpty() && timeStr.contains("/"))
+				{
+					valid = isDateValidAndBeforeNow(timeStr, now, result);
+					if (switched == false && valid == false)
+					{
+						switched = true;
+						if (result.equals("dd/MM/yyyy") || (result.equals("dd/MM/yy")))
+						{
+							result = "MM/dd/yyyy";
+						}
+						else
+						{
+							result = "dd/MM/yyyy";
+						}
+
+						// Try again
+						valid   = isDateValidAndBeforeNow(timeStr, now, result);
+					}
+				}
+			}
+		}
+
+		if (valid == false)
+		{
+			// We really have no idea if neither formats work at this stage.
+			// Return an empty string to say that file is really invalid
+			result = "";
+		}
+		
+		return result;
+	} 
+	
+	
 	/**
 	 * @return the m_BasalSettings
 	 */
@@ -805,5 +1171,19 @@ public class DataLoadDiasend extends DataLoadBase
 	 */
 	public synchronized ArrayList<DBResultDiasendCarbRatioSetting> getM_CarbRatioSettings() {
 		return m_CarbRatioSettings;
+	}
+
+	/**
+	 * @return the m_StartDate
+	 */
+	public synchronized Date getM_StartDate() {
+		return m_StartDate;
+	}
+
+	/**
+	 * @return the m_EndDate
+	 */
+	public synchronized Date getM_EndDate() {
+		return m_EndDate;
 	}
 }

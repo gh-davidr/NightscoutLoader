@@ -45,6 +45,7 @@ class AnalyzerTrendResult
 
 	// More granular aspects of the trend result
 	private DBResult.TimeSlot                  m_StartTimeSlot;
+	private DBResult.TimeSlot                  m_EndTimeSlot;
 	private String                             m_StartDayName;  // Might be useful for some analysis
 	private L0AnalyzerSingleResultEnum         m_StartSingleResultEnum;
 	private L0AnalyzerSingleResultEnum         m_EndSingleResultEnum;
@@ -422,7 +423,8 @@ class AnalyzerTrendResult
 			//				((m_AnalyzerTrendResultTypeEnum == AnalyzerTrendResultTypeEnum.overnightTrendType) || endBedTime) )
 		{				
 			setM_AnalyzerSingleResult2(analyzerSingleResult2);
-			m_EndSingleResultEnum   = getM_AnalyzerSingleResult2().getM_AnalyzerSingleResultEnum();
+			m_EndSingleResultEnum  = getM_AnalyzerSingleResult2().getM_AnalyzerSingleResultEnum();
+			m_EndTimeSlot          = getM_AnalyzerSingleResult2().getM_TimeSlot();
 			result = true;  // We have acquired second result
 
 			Double bg2  = getM_AnalyzerSingleResult2().getM_DBResult().getM_CP_Glucose();
@@ -1380,6 +1382,20 @@ class AnalyzerTrendResult
 	 */
 	public synchronized void setM_StartTimeSlot(DBResult.TimeSlot m_StartTimeSlot) {
 		this.m_StartTimeSlot = m_StartTimeSlot;
+	}
+
+	/**
+	 * @return the m_EndTimeSlot
+	 */
+	public synchronized DBResult.TimeSlot getM_EndTimeSlot() {
+		return m_EndTimeSlot;
+	}
+
+	/**
+	 * @param m_EndTimeSlot the m_EndTimeSlot to set
+	 */
+	public synchronized void setM_EndTimeSlot(DBResult.TimeSlot m_EndTimeSlot) {
+		this.m_EndTimeSlot = m_EndTimeSlot;
 	}
 
 	/**

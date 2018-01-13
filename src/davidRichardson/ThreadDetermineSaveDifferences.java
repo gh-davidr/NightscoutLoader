@@ -31,6 +31,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 	private String                   m_DeviceUsed;
 	private String                   m_FileName;
 	private String                   m_DateRange;
+	private boolean                  m_CGMSyncPossible;
 
 	Boolean                          m_LoadRunning;
 
@@ -41,28 +42,53 @@ public class ThreadDetermineSaveDifferences implements Runnable
 	private DataLoadNightScoutTreatments   m_DataLoadNightScout;
 
 	// Hold the list of objects back from SQL Server
-	private ArrayList <DBResult> m_MeterArrayListDBResults;
-	private ArrayList <DBResult> m_NightScoutArrayListDBResults;
-	private Set<DBResult>        m_MeterArrayListDBResultsSet;
-	private Set<DBResult>        m_MeterArrayListProximityDBResultsSet;
-	private Set<DBResult>        m_ExistingNightScoutProximityDBResultsSet;
-	private Set<DBResult>        m_NightScoutArrayListDBResultsSet;
+	private ArrayList <DBResult>      m_MeterArrayListDBResults;
+	private ArrayList <DBResult>      m_NightScoutArrayListDBResults;
+	private ArrayList <DBResultEntry> m_MeterArrayListDBResultEntries;
+	private ArrayList <DBResultEntry> m_NightScoutArrayListDBResultEntries;
+	
+	private Set<DBResult>             m_MeterArrayListDBResultsSet;
+	private Set<DBResult>             m_MeterArrayListProximityDBResultsSet;
+	private Set<DBResult>             m_ExistingNightScoutProximityDBResultsSet;
+	private Set<DBResult>             m_NightScoutArrayListDBResultsSet;
+	
+	private Set<DBResultEntry>        m_MeterArrayListDBResultEntriesSet;
+	private Set<DBResultEntry>        m_MeterArrayListProximityDBResultEntriesSet;
+	private Set<DBResultEntry>        m_ExistingNightScoutProximityDBResultEntriesSet;
+	private Set<DBResultEntry>        m_NightScoutArrayListDBResultEntriesSet;
+	
+	
 
 //	private MyLogger               m_LoggerClass;
 
 	// Collect some metrics for the message at the end
-	private int                    m_CountMeterEntriesLoaded         = 0;
-	private int                    m_CountMeterEntriesDuplicated     = 0;
-	private int                    m_CountMeterEntriesAdded          = 0;
-	private int                    m_CountNightScoutEntriesBefore    = 0;
-	private int                    m_CountNightScoutEntriesAfter     = 0;
-	private int                    m_CountNightScoutLoaderEntries    = 0;
-	private int                    m_CountProximityMeterEntries      = 0;
-	private int                    m_CountProximityNightScoutEntries = 0;
+	private int                       m_CountMeterEntriesLoaded         = 0;
+	private int                       m_CountMeterEntriesDuplicated     = 0;
+	private int                       m_CountMeterEntriesAdded          = 0;
+	private int                       m_CountNightScoutEntriesBefore    = 0;
+	private int                       m_CountNightScoutEntriesAfter     = 0;
+	private int                       m_CountNightScoutLoaderEntries    = 0;
+	private int                       m_CountProximityMeterEntries      = 0;
+	private int                       m_CountProximityNightScoutEntries = 0;
 	
 	// Proximity Checking
-	private Set<DBResult>          m_FirstPassIntersection           = null;
-	private Set<DBResult>          m_SecondPassIntersection          = null;
+	private Set<DBResult>             m_FirstPassIntersection           = null;
+	private Set<DBResult>             m_SecondPassIntersection          = null;
+
+	private Set<DBResultEntry>        m_FirstPassEntryIntersection      = null;
+	private Set<DBResultEntry>        m_SecondPassEntryIntersection     = null;
+
+	
+	// Collect some metrics for the message at the end
+	private int                       m_CountMeterCGMEntriesLoaded         = 0;
+	private int                       m_CountMeterCGMEntriesDuplicated     = 0;
+	private int                       m_CountMeterCGMEntriesAdded          = 0;
+	private int                       m_CountNightScoutCGMEntriesBefore    = 0;
+	private int                       m_CountNightScoutCGMEntriesAfter     = 0;
+	private int                       m_CountNightScoutLoaderCGMEntries    = 0;
+	private int                       m_CountProximityMeterCGMEntries      = 0;
+	private int                       m_CountProximityNightScoutCGMEntries = 0;
+
 
 	/**
 	 * @return the m_CountMeterEntriesLoaded
@@ -198,6 +224,118 @@ public class ThreadDetermineSaveDifferences implements Runnable
 		this.m_CountProximityNightScoutEntries = m_CountProximityNightScoutEntries;
 	}
 
+	/**
+	 * @return the m_CountMeterCGMEntriesLoaded
+	 */
+	public synchronized int getM_CountMeterCGMEntriesLoaded() {
+		return m_CountMeterCGMEntriesLoaded;
+	}
+
+	/**
+	 * @param m_CountMeterCGMEntriesLoaded the m_CountMeterCGMEntriesLoaded to set
+	 */
+	public synchronized void setM_CountMeterCGMEntriesLoaded(int m_CountMeterCGMEntriesLoaded) {
+		this.m_CountMeterCGMEntriesLoaded = m_CountMeterCGMEntriesLoaded;
+	}
+
+	/**
+	 * @return the m_CountMeterCGMEntriesDuplicated
+	 */
+	public synchronized int getM_CountMeterCGMEntriesDuplicated() {
+		return m_CountMeterCGMEntriesDuplicated;
+	}
+
+	/**
+	 * @param m_CountMeterCGMEntriesDuplicated the m_CountMeterCGMEntriesDuplicated to set
+	 */
+	public synchronized void setM_CountMeterCGMEntriesDuplicated(int m_CountMeterCGMEntriesDuplicated) {
+		this.m_CountMeterCGMEntriesDuplicated = m_CountMeterCGMEntriesDuplicated;
+	}
+
+	/**
+	 * @return the m_CountMeterCGMEntriesAdded
+	 */
+	public synchronized int getM_CountMeterCGMEntriesAdded() {
+		return m_CountMeterCGMEntriesAdded;
+	}
+
+	/**
+	 * @param m_CountMeterCGMEntriesAdded the m_CountMeterCGMEntriesAdded to set
+	 */
+	public synchronized void setM_CountMeterCGMEntriesAdded(int m_CountMeterCGMEntriesAdded) {
+		this.m_CountMeterCGMEntriesAdded = m_CountMeterCGMEntriesAdded;
+	}
+
+	/**
+	 * @return the m_CountNightScoutCGMEntriesBefore
+	 */
+	public synchronized int getM_CountNightScoutCGMEntriesBefore() {
+		return m_CountNightScoutCGMEntriesBefore;
+	}
+
+	/**
+	 * @param m_CountNightScoutCGMEntriesBefore the m_CountNightScoutCGMEntriesBefore to set
+	 */
+	public synchronized void setM_CountNightScoutCGMEntriesBefore(int m_CountNightScoutCGMEntriesBefore) {
+		this.m_CountNightScoutCGMEntriesBefore = m_CountNightScoutCGMEntriesBefore;
+	}
+
+	/**
+	 * @return the m_CountNightScoutCGMEntriesAfter
+	 */
+	public synchronized int getM_CountNightScoutCGMEntriesAfter() {
+		return m_CountNightScoutCGMEntriesAfter;
+	}
+
+	/**
+	 * @param m_CountNightScoutCGMEntriesAfter the m_CountNightScoutCGMEntriesAfter to set
+	 */
+	public synchronized void setM_CountNightScoutCGMEntriesAfter(int m_CountNightScoutCGMEntriesAfter) {
+		this.m_CountNightScoutCGMEntriesAfter = m_CountNightScoutCGMEntriesAfter;
+	}
+
+	/**
+	 * @return the m_CountNightScoutLoaderCGMEntries
+	 */
+	public synchronized int getM_CountNightScoutLoaderCGMEntries() {
+		return m_CountNightScoutLoaderCGMEntries;
+	}
+
+	/**
+	 * @param m_CountNightScoutLoaderCGMEntries the m_CountNightScoutLoaderCGMEntries to set
+	 */
+	public synchronized void setM_CountNightScoutLoaderCGMEntries(int m_CountNightScoutLoaderCGMEntries) {
+		this.m_CountNightScoutLoaderCGMEntries = m_CountNightScoutLoaderCGMEntries;
+	}
+
+	/**
+	 * @return the m_CountProximityMeterCGMEntries
+	 */
+	public synchronized int getM_CountProximityMeterCGMEntries() {
+		return m_CountProximityMeterCGMEntries;
+	}
+
+	/**
+	 * @param m_CountProximityMeterCGMEntries the m_CountProximityMeterCGMEntries to set
+	 */
+	public synchronized void setM_CountProximityMeterCGMEntries(int m_CountProximityMeterCGMEntries) {
+		this.m_CountProximityMeterCGMEntries = m_CountProximityMeterCGMEntries;
+	}
+
+	/**
+	 * @return the m_CountProximityNightScoutCGMEntries
+	 */
+	public synchronized int getM_CountProximityNightScoutCGMEntries() {
+		return m_CountProximityNightScoutCGMEntries;
+	}
+
+	/**
+	 * @param m_CountProximityNightScoutCGMEntries the m_CountProximityNightScoutCGMEntries to set
+	 */
+	public synchronized void setM_CountProximityNightScoutCGMEntries(int m_CountProximityNightScoutCGMEntries) {
+		this.m_CountProximityNightScoutCGMEntries = m_CountProximityNightScoutCGMEntries;
+	}
+
 	// Thread Handler for resynchronization
 	public static abstract class DataLoadCompleteHander 
 	{
@@ -218,6 +356,8 @@ public class ThreadDetermineSaveDifferences implements Runnable
 	public ThreadDetermineSaveDifferences(DataLoadNightScoutTreatments   dataLoadNightScout,
 			ArrayList <DBResult> meterArrayListDBResults,
 			ArrayList <DBResult> nightScoutArrayListDBResults,
+			ArrayList <DBResultEntry> meterArrayListDBResultEntries,
+			ArrayList <DBResultEntry> nightScoutArrayListDBResultEntries,
 			ThreadDataLoad nightscoutLoadThread,
 			ThreadDataLoad meterLoadThread,
 			String deviceUsed,
@@ -226,15 +366,22 @@ public class ThreadDetermineSaveDifferences implements Runnable
 	{
 		m_LoadRunning = false;
 		m_LoadThread  = new Thread(this);
-		m_DataLoadNightScout  = dataLoadNightScout;
-		m_MeterArrayListDBResults = meterArrayListDBResults;
-		m_NightScoutArrayListDBResults = nightScoutArrayListDBResults;
+		m_DataLoadNightScout                 = dataLoadNightScout;
+		m_MeterArrayListDBResults            = meterArrayListDBResults;
+		m_NightScoutArrayListDBResults       = nightScoutArrayListDBResults;
+		m_MeterArrayListDBResultEntries      = meterArrayListDBResultEntries;
+		m_NightScoutArrayListDBResultEntries = nightScoutArrayListDBResultEntries;
 
-		m_MeterArrayListDBResultsSet                  = new HashSet<DBResult>();
-		m_MeterArrayListProximityDBResultsSet         = new HashSet<DBResult>();
-		m_NightScoutArrayListDBResultsSet             = new HashSet<DBResult>();
-		m_ExistingNightScoutProximityDBResultsSet     = new HashSet<DBResult>();
-
+		m_MeterArrayListDBResultsSet                    = new HashSet<DBResult>();
+		m_MeterArrayListProximityDBResultsSet           = new HashSet<DBResult>();
+		m_NightScoutArrayListDBResultsSet               = new HashSet<DBResult>();
+		m_ExistingNightScoutProximityDBResultsSet       = new HashSet<DBResult>();
+		
+		m_MeterArrayListDBResultEntriesSet              = new HashSet<DBResultEntry>();
+		m_MeterArrayListProximityDBResultEntriesSet     = new HashSet<DBResultEntry>();
+		m_NightScoutArrayListDBResultEntriesSet         = new HashSet<DBResultEntry>();
+		m_ExistingNightScoutProximityDBResultEntriesSet = new HashSet<DBResultEntry>();
+		
 		// We want to join the two data load threads though ...
 		m_NightscoutLoadThread              = nightscoutLoadThread;
 		m_MeterLoadThread                   = meterLoadThread;
@@ -244,6 +391,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 		m_DeviceUsed   = new String(deviceUsed);
 		m_FileName     = new String(fileName);
 		m_DateRange    = new String(dateRange);
+		m_CGMSyncPossible = false;;
 
 	}
 
@@ -257,6 +405,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 	{
 		// Launch the thread to determine differences and save them back to MongoDB
 		m_LoadRunning = true;
+		
 
 		// Before this thread can run, we need to join the other two
 		m_Logger.log(Level.FINE, "ThreadDetermineSaveDifferences - Wait for meter thread - start ");
@@ -270,11 +419,42 @@ public class ThreadDetermineSaveDifferences implements Runnable
 		m_Logger.log(Level.FINE, "ThreadDetermineSaveDifferences - All Dependent Threads complete ");
 
 		// Get latest collections from the two threads
-		m_NightScoutArrayListDBResults = m_DataLoadNightScout.getResultsFromDB();		
+		m_NightScoutArrayListDBResults = m_DataLoadNightScout.getResultsFromDB();
+		m_MeterArrayListDBResultEntries = this.m_MeterLoadThread.getM_DataLoader().getRawEntryResultsFromDB();
 		m_MeterArrayListDBResults = this.m_MeterLoadThread.getM_DataLoader().getResultsTreatments();
 
+		m_CGMSyncPossible = false;
+		
+		if (m_MeterArrayListDBResultEntries != null && 
+				PrefsNightScoutLoader.getInstance().isM_SyncCGM() && m_MeterArrayListDBResultEntries.size() > 2)
+		{
+			// We already load CGM entries from Mongo, so see whether the start CGM loaded is before
+			// Mongo entry load
+			long startCGMLoadDateMillies   = m_MeterArrayListDBResultEntries.get(0).getM_EpochMillies();		
+			long startMongoLoadDateMillies = DataLoadNightScoutEntries.getEntryLoadStartDate().getTime();
+			
+			// If Mongo start date is before the earliest CGM date, then we're good
+			if (startMongoLoadDateMillies < startCGMLoadDateMillies)
+			{
+				m_CGMSyncPossible = true;
+			}
+		}
+		
+		// Meter / Pump results
 		determineDifferences();
 		saveDifferences();
+				
+		// CGM results if enabled
+		if (m_CGMSyncPossible)
+		{
+			determineCGMDifferences();
+			saveCGMDifferences();
+		}
+		else
+		{
+			m_CountMeterCGMEntriesLoaded = m_MeterArrayListDBResultEntries.size();
+		}
+
 		updateAuditHistory();
 		loadAuditHistory();
 
@@ -316,6 +496,43 @@ public class ThreadDetermineSaveDifferences implements Runnable
 			m_CountProximityMeterEntries = m_MeterArrayListProximityDBResultsSet.size();
 		}
 	}
+	
+	private void checkEntryForDuplicates()
+	{
+		// Determine the type of duplicate action
+		// 		cb_DuplicateCheckType.setModel(new DefaultComboBoxModel(new String[] {"No Duplicate Checking", "Mark Existing as Dupe", "Mark New as Dupe"}));
+
+		int     checkType           = PrefsNightScoutLoader.getInstance().getM_ProximityCheckType();
+
+		if (checkType == 0)
+		{
+			; // No dupe checking
+		}
+		// -----------------------------------------------------
+		// Give preference to new entries in from meter.
+		// If duplicates are detected, existing CP entries
+		// get marked and could be removed from audit en masse.
+		// -----------------------------------------------------
+		else if (checkType == 1)
+		{
+			m_ExistingNightScoutProximityDBResultEntriesSet = checkEntryListsForDuplicates(m_MeterArrayListDBResultEntriesSet,
+					m_NightScoutArrayListDBResultEntriesSet);
+			m_CountProximityNightScoutCGMEntries = m_ExistingNightScoutProximityDBResultEntriesSet.size();
+		}
+		// -----------------------------------------------------
+		// Give preference to existing CP entries.
+		// If duplicates are detected, new meter entries
+		// get marked and could be removed from audit en masse.
+		// -----------------------------------------------------
+		else
+		{
+			// Ignore the return as it contains new dupe meter entries
+			m_MeterArrayListProximityDBResultEntriesSet = checkEntryListsForDuplicates(m_NightScoutArrayListDBResultEntriesSet, 
+					m_MeterArrayListDBResultEntriesSet);
+			m_CountProximityMeterCGMEntries = m_MeterArrayListProximityDBResultEntriesSet.size();
+		}
+	}
+
 	
 	private Set<DBResult> checkListsForDuplicates(Set<DBResult> referenceList, Set<DBResult> compareList)
 	{
@@ -390,9 +607,73 @@ public class ThreadDetermineSaveDifferences implements Runnable
 		
 		return result;
 	}
+	
+	private Set<DBResultEntry> checkEntryListsForDuplicates(Set<DBResultEntry> referenceList, Set<DBResultEntry> compareList)
+	{
+		Set<DBResultEntry> result = null;
+		
+		// ----------------------------------------------------------------------------------------
+		
+		DBResultEntry.setM_ProximityCheck(true);
+		DBResultEntry.setM_ProximityCheckSecondPass(false);
+
+		// Create a hash map of the Meter loaded results using modified ID
+		Set<DBResultEntry> nsFirstPassHashSet = new HashSet<DBResultEntry>(referenceList);
+		// Create a hash map of Nightscout results for intersection, this time using proximity checking
+		m_FirstPassEntryIntersection          = new HashSet<DBResultEntry>(compareList);
+		// Now elinate all NS results that differ to the meter/pump results leaving possible duplicates only.
+		m_FirstPassEntryIntersection.retainAll(nsFirstPassHashSet);
+		
+		
+		// Clear both
+		DBResult.setM_ProximityCheckSecondPass(false);
+		DBResult.setM_ProximityCheck(false);
+
+		// ----------------------------------------------------------------------------------------
+
+		// ----------------------------------------------------------------------------------------
+
+		// Now set second pass to true and repeat again
+		DBResult.setM_ProximityCheck(true);
+		DBResult.setM_ProximityCheckSecondPass(true);
+		
+		// Create a hash map of the NightScout loaded results using modified ID
+		Set<DBResultEntry> nsSecondPassHashSet = new HashSet<DBResultEntry>(referenceList);
+		// Create a hash map of Meter/Pump results for intersection, this time using proximity checking
+		m_SecondPassEntryIntersection          = new HashSet<DBResultEntry>(compareList);
+		// Now elinate all NS results that differ to the meter/pump results leaving possible duplicates only.
+		m_SecondPassEntryIntersection.retainAll(nsSecondPassHashSet);
+
+		
+		// Finally, merge the two pass intersection results to get the complete list of possible duplicates
+		Set<DBResultEntry> unionIntersection   = new HashSet<DBResultEntry>();
+		
+		unionIntersection.addAll(m_FirstPassEntryIntersection);
+		unionIntersection.addAll(m_SecondPassEntryIntersection);
+				
+		
+		for (DBResultEntry c : unionIntersection)
+		{
+			c.setM_ProximityPossibleDuplicate(true);
+		}
+		
+		m_Logger.log(Level.FINE, "Proximity Count from firstPass is "  + m_FirstPassIntersection.size());
+		m_Logger.log(Level.FINE, "Proximity Count from secondPass is "  + m_SecondPassIntersection.size());
+		m_Logger.log(Level.FINE, "Proximity Count from combined passes is "  + unionIntersection.size());
+
+			
+		// Clear both
+		DBResult.setM_ProximityCheckSecondPass(false);
+		DBResult.setM_ProximityCheck(false);
+		
+		// ----------------------------------------------------------------------------------------
+
+		result = unionIntersection;
+		
+		return result;
+	}
 
 	
-
 	
 	public void determineDifferences()
 	{
@@ -468,11 +749,102 @@ public class ThreadDetermineSaveDifferences implements Runnable
 			}
 			catch(Exception e)
 			{
-				m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " just caught an error: " + e.getMessage() + " - " + e.getLocalizedMessage());
+				m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " just caught an error line 748: " + e.getMessage() + " - " + e.getLocalizedMessage());
 			}
 		}
 		
 		if (this.m_ExistingNightScoutProximityDBResultsSet.size() > 0)
+		{
+			try
+			{
+				// DAVID CHECK THIS .. MIGHT NEED A DIFFERENT CALL TO MONGO DB TO DO AN UPDATE
+				m_DataLoadNightScout.storeResultEntriesFromDB(m_ExistingNightScoutProximityDBResultEntriesSet);
+			}
+			catch(Exception e)
+			{
+				m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " just caught an error: " + e.getMessage() + " - " + e.getLocalizedMessage());
+			}
+		}
+	}
+	
+	public void determineCGMDifferences()
+	{
+		// All results from Meter/Pump
+		m_MeterArrayListDBResultEntriesSet.addAll(m_MeterArrayListDBResultEntries);
+		m_CountMeterCGMEntriesLoaded = m_MeterArrayListDBResultEntriesSet.size();
+
+		// All results from NightScout
+		m_NightScoutArrayListDBResultEntriesSet.addAll(m_NightScoutArrayListDBResultEntries);
+		m_CountNightScoutCGMEntriesBefore = m_NightScoutArrayListDBResultEntriesSet.size();
+
+		// Create a copy of Meter/Pump results for intersection
+		Set<DBResultEntry> existingNSEntriesFromMeterResults = new HashSet<DBResultEntry>(m_MeterArrayListDBResultEntriesSet);
+		existingNSEntriesFromMeterResults.retainAll(m_NightScoutArrayListDBResultEntriesSet);
+		m_CountMeterCGMEntriesDuplicated = existingNSEntriesFromMeterResults.size();
+
+		// Now remove all Mongo results from Meter/Pump already there.
+		m_MeterArrayListDBResultEntriesSet.removeAll(m_NightScoutArrayListDBResultEntriesSet);
+		m_CountMeterCGMEntriesAdded = m_MeterArrayListDBResultEntriesSet.size();
+
+		// Andy Sherwood request - Sep 2016
+		checkEntryForDuplicates();
+		
+		// This is where we move the additional meter DB Results to Nightscout.
+		// Next operation would be to add the same DBResults
+		for (DBResultEntry c : m_MeterArrayListDBResultEntriesSet)
+		{
+			m_NightScoutArrayListDBResultEntries.add(c);
+			m_Logger.log(Level.FINER, "Difference detected: " + c.toString());
+		}
+
+		m_CountNightScoutCGMEntriesAfter = m_NightScoutArrayListDBResultEntriesSet.size();
+
+		int cnt=0;
+		// List out times before and after...
+		for (DBResultEntry c : m_NightScoutArrayListDBResultEntries)
+		{
+			m_Logger.log(Level.FINEST, "BEFORE Epoch Millies at: " + cnt++ + " is " + c.getM_EpochMillies() + " full " + c.toString());
+		}
+
+		// Sort the Mongo Results
+		Collections.sort(m_NightScoutArrayListDBResultEntries, new ResultFromDBComparator());
+
+		m_CountNightScoutLoaderCGMEntries = 0;
+		String enteredByPrefix = AuditHistory.getInstance().getM_UploadIDPrefix();
+		int    length = enteredByPrefix.length();
+		// List out times before and after...
+		for (DBResultEntry c : m_NightScoutArrayListDBResultEntries)
+		{
+			m_Logger.log(Level.FINEST, "AFTER Epoch Millies at: " + cnt++ + " is " + c.getM_EpochMillies() + " full " + c.toString());
+
+			String device = c.getM_Device(); 
+			if (device.length() >= length)
+			{
+				String subStr    = device.substring(0, length);
+
+				if (subStr.equals(enteredByPrefix))
+				{
+					m_CountNightScoutLoaderCGMEntries++;
+				}
+			}
+		}
+	}
+
+	public void saveCGMDifferences()
+	{
+		if (m_MeterArrayListDBResultEntriesSet.size() > 0)
+		{
+			try
+			{
+				m_DataLoadNightScout.storeResultEntriesFromDB(m_MeterArrayListDBResultEntriesSet);
+			}
+			catch(Exception e)
+			{
+				m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " just caught an error - line 839: " + e.getMessage() + " - " + e.getLocalizedMessage());
+			}
+		}
+		
+		if (this.m_ExistingNightScoutProximityDBResultEntriesSet.size() > 0)
 		{
 			try
 			{
@@ -484,6 +856,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 				m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " just caught an error: " + e.getMessage() + " - " + e.getLocalizedMessage());
 			}
 		}
+
 	}
 
 	private void updateAuditHistory()
@@ -497,7 +870,8 @@ public class ThreadDetermineSaveDifferences implements Runnable
 			AuditHistory.getInstance().storeAuditHistory(AuditLog.m_Success, now, 
 					m_DeviceUsed, m_FileName, m_DateRange, m_CountMeterEntriesAdded, 
 					m_CountNightScoutEntriesBefore,	m_CountNightScoutLoaderEntries, 
-					m_CountProximityMeterEntries, m_CountProximityNightScoutEntries);
+					m_CountProximityMeterEntries, m_CountProximityNightScoutEntries, 
+					m_CountMeterCGMEntriesAdded);
 		}
 		catch (UnknownHostException e) 
 		{
@@ -515,6 +889,20 @@ public class ThreadDetermineSaveDifferences implements Runnable
 		{
 			m_Logger.severe("Exception caught loading Audit history. " + e.getMessage());
 		}
+	}
+
+	/**
+	 * @return the m_CGMSyncPossible
+	 */
+	public synchronized boolean isM_CGMSyncPossible() {
+		return m_CGMSyncPossible;
+	}
+
+	/**
+	 * @param m_CGMSyncPossible the m_CGMSyncPossible to set
+	 */
+	public synchronized void setM_CGMSyncPossible(boolean m_CGMSyncPossible) {
+		this.m_CGMSyncPossible = m_CGMSyncPossible;
 	}
 
 	/**

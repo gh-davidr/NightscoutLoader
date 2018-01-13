@@ -4,11 +4,12 @@
 
 * Because [Nightscout](http://www.nightscout.info/) is the CGM in the Cloud environment that this tool supports.
 
-## What is Nightscout Loader?
+## What is [Nightscout Loader](https://david50703.wixsite.com/nightscoutloader)?
 
 A desktop application with the following purposes in mind:
 
 * Synchronize data from meter/pump as treatments in Nightscout Care Portal.
+* Optonally also now synchronize Diasend data from CGM as entries in Nightscout.
 * Quick way of locating and allowing edits to the Notes field in treatment data.
 * Analysis of BG Trends
 * Analysis of CGM Data
@@ -57,17 +58,17 @@ For those without continual sensor use, identifies date ranges when sensor was w
 
 Nightscout Loader can now help with running and maintaining profiles for Autotune
 
-![picture](resources/images/AutotuneManagementRun.JPG)
+![picture](resources/images/Autotune_MainPage.JPG)
 
 As well as integrating Autotune output in the Excel analysis results file, an "Autotune Management" window allows easy access to run Autotune once configured.
 
 
-![picture](resources/images/AutotuneManagementProfileEditor.JPG)
+![picture](resources/images/Autotune_ProfileEditorPage.JPG)
 
 A Profile editor is provided that can edit the remote profile, open profile files on the local machine and also read profile data from a Diasend export.
 
 
-![picture](resources/images/AutotuneManagementListBackups.JPG)
+![picture](resources/images/Autotune_ListBackups.JPG)
 
 Each time the Profile Editor updates the profile on the remote Autotune server, it takes a backup into a separate directory.  The files in the backup directory can be listed (as above) and also downloaded onto the local machine for greater safe keeping.
 
@@ -79,7 +80,7 @@ Nightscout Loader helps get real **Insights** from reams of *Data*.
 
 ## Is it for me?
 
-- [x] Do you use Nightscout and want to upload Treatment data to Nightscout from a supported Meter and or Pump?
+- [x] Do you use Nightscout and want to upload Treatment (and or Diasend CGM) data to Nightscout from a supported Meter and or Pump?
 - [x] Do you want an extra tool to help analyze BGs, Carbs & Insulin?  (Nightscout use is optional)
 - [x] Do you use Nightscout and want an extra tool to visualize repeated patterns of CGM data?
 - [x] Do you have Autotune configured on a separate Linux machine and want assistance with using it - particularly if you also use Diasend?
@@ -99,10 +100,9 @@ It loads the Nightscout Treatment and CGM into memory for comparison with new da
 ### Installation Guide for Nightscout use
 
 1. Check your version of Java at this [link] (https://java.com/en/download/help/version_manual.xml)
-1. Download the application from Google Drive.  
-  1. Latest stable version always available [here] (https://drive.google.com/open?id=0BxlKJmCnE32_bVlpd3pHVjJnTzQ). 
-  1. Occassionally, an early beta version is made available with fixes on the stable version or access to upcoming 
-features.  The [Latest Beta] (https://drive.google.com/open?id=0BxlKJmCnE32_MmxTdXZGaUEyYVE) folder will have the latest beta if one is available.
+1. Download the application from the [Nightscout Loader](https://david50703.wixsite.com/nightscoutloader) page.  
+  1. Latest stable version always available [here] (https://david50703.wixsite.com/nightscoutloader). 
+  1. Occassionally, an early beta version is made available with fixes on the stable version or access to upcoming features.
 2. Copy the NightScoutLoader.jar file to your desktop
 3. Launch the application by double-clicking the icon on your desktop.
 4. Click Tools => Settings to launch the Settings panel
@@ -123,16 +123,16 @@ To convert a previous installation for non-Nightscout to one for Nightscout use,
 ### Installation Guide for non-Nightscout use
 
 1. Check your version of Java at this [link] (https://java.com/en/download/help/version_manual.xml)
-1. Download the application from Google Drive.  
-  1. Latest stable version always available [here] (https://drive.google.com/open?id=0BxlKJmCnE32_bVlpd3pHVjJnTzQ). 
-  1. Occassionally, an early beta version is made available with fixes on the stable version or access to upcoming 
-features.  The [Latest Beta] (https://drive.google.com/open?id=0BxlKJmCnE32_MmxTdXZGaUEyYVE) folder will have the latest beta if one is available.
+1. Download the application from the [Nightscout Loader](https://david50703.wixsite.com/nightscoutloader) page.  
+  1. Latest stable version always available [here] (https://david50703.wixsite.com/nightscoutloader). 
+  1. Occassionally, an early beta version is made available with fixes on the stable version or access to upcoming features.
 2. Copy the NightScoutLoader.jar file to your desktop
-3. Launch the application by double-clicking the icon on your desktop
+3. Launch the application by double-clicking the icon on your desktop.
 
 That's all there is to it!
 
 To convert a previous installation for Nightscout to one for non-Nightscout use, simply clear the Nightscout Server field in the Settings window, save the settings and re-launch the application.
 
+:couple: [Nightscout Loader Website] (https://david50703.wixsite.com/nightscoutloader)
 :couple: [Nightscout Loader Facebook Page] (https://www.facebook.com/NightscoutLoader)
 

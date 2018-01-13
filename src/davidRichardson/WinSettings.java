@@ -137,6 +137,17 @@ public class WinSettings extends JDialog
 	private JSpinner sp_DupeInsulinDecPlace;
 	private JSpinner sp_WeeksBackToLoadEntries;
 	private JComboBox<String> cb_DuplicateCheckType;
+	
+	private int m_Row_NS_Server_URL           = 0;
+	private int m_Row_BG_Units_DateForm_Test  = 1;
+	private int m_Row_SyncCGM                 = 2;
+	
+	private int m_Row_NS_DB_Coll_HB_Label     = 3;
+	private int m_Row_Mins_Bolus_Heartbeat_Sp = 4;
+	private int m_Row_Log_Level_Adv_Timezone  = 5;
+	private int m_Row_Log_File_Details        = 6;
+	private int m_Row_Proximity_DP_Radios     = 7;
+	private int m_Row_Proximity_DP_Spinners   = 8;
 
 	/**
 	 * Launch the application.
@@ -171,7 +182,8 @@ public class WinSettings extends JDialog
 		m_MongoDBLoader   = new DataLoadNightScoutTreatments();
 
 		super.setTitle(title);
-		setBounds(100, 20, 790, 530);
+//		setBounds(100, 20, 790, 530); as of 27 Dec 2017
+		setBounds(100, 20, 790, 560);
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		//		gridBagLayout.columnWidths = new int[] {650, 0};
 
@@ -361,7 +373,7 @@ public class WinSettings extends JDialog
 		//gbc_label.gridwidth = 3;
 		//		gbc_MongoServer.gridx = 1;
 		gbc_MongoServer.gridx = 0;
-		gbc_MongoServer.gridy = 0;
+		gbc_MongoServer.gridy = m_Row_NS_Server_URL;
 		//panel_1.add(lblMongoServer, gbc_MongoServer);
 		mongoPanel.add(lblMongoServer, gbc_MongoServer);
 
@@ -376,7 +388,7 @@ public class WinSettings extends JDialog
 		gbc_tf_MongoNightscoutServer.gridwidth = 8;
 		//		gbc_tf_MongoNightscoutServer.gridx = 2;
 		gbc_tf_MongoNightscoutServer.gridx = 1;
-		gbc_tf_MongoNightscoutServer.gridy = 0;
+		gbc_tf_MongoNightscoutServer.gridy = m_Row_NS_Server_URL;
 		//panel_1.add(tf_MongoNightscoutServer, gbc_tf_MongoNightscoutServer);
 		mongoPanel.add(tf_MongoNightscoutServer, gbc_tf_MongoNightscoutServer);
 		tf_MongoNightscoutServer.setColumns(10);
@@ -389,7 +401,7 @@ public class WinSettings extends JDialog
 		gbc_lblMongoBGUnits.anchor = GridBagConstraints.EAST;
 		gbc_lblMongoBGUnits.insets = new Insets(0, 0, 5, 5);
 		gbc_lblMongoBGUnits.gridx = 0;
-		gbc_lblMongoBGUnits.gridy = 1;
+		gbc_lblMongoBGUnits.gridy = m_Row_BG_Units_DateForm_Test;
 		//panel_1.add(lblMongoBGUnits, gbc_lblMongoBGUnits);
 		mongoPanel.add(lblMongoBGUnits, gbc_lblMongoBGUnits);
 
@@ -402,7 +414,7 @@ public class WinSettings extends JDialog
 		gbc_MongoBGUnitList.insets = new Insets(0, 0, 5, 5);
 		gbc_MongoBGUnitList.fill = GridBagConstraints.HORIZONTAL;
 		gbc_MongoBGUnitList.gridx = 1;
-		gbc_MongoBGUnitList.gridy = 1;
+		gbc_MongoBGUnitList.gridy = m_Row_BG_Units_DateForm_Test;
 		//panel_1.add(cb_MongoBGUnitList, gbc_MongoBGUnitList);
 		mongoPanel.add(cb_MongoBGUnitList, gbc_MongoBGUnitList);
 
@@ -413,7 +425,7 @@ public class WinSettings extends JDialog
 		//		gbc_lblDateFormat_1.gridx = 3;
 		//		gbc_lblDateFormat_1.gridy = 10;
 		gbc_lblDateFormat_1.gridx = 2;
-		gbc_lblDateFormat_1.gridy = 1;
+		gbc_lblDateFormat_1.gridy = m_Row_BG_Units_DateForm_Test;
 		//		panel_1.add(lblDateFormat, gbc_lblDateFormat_1);
 		//		advancedPanel.add(lblDateFormat, gbc_lblDateFormat_1);
 		mongoPanel.add(lblDateFormat, gbc_lblDateFormat_1);
@@ -430,11 +442,33 @@ public class WinSettings extends JDialog
 		//		gbc_cb_DateFormat.gridx = 4;
 		//		gbc_cb_DateFormat.gridy = 10;
 		gbc_cb_DateFormat.gridx = 3;
-		gbc_cb_DateFormat.gridy = 1;
+		gbc_cb_DateFormat.gridy = m_Row_BG_Units_DateForm_Test;
 		//		panel_1.add(cb_InputDateFormat, gbc_cb_DateFormat);
 		//advancedPanel.add(cb_InputDateFormat, gbc_cb_DateFormat);
 		mongoPanel.add(cb_InputDateFormat, gbc_cb_DateFormat);
 
+		
+		
+		JRadioButton rdbtnSyncCGM = new JRadioButton("Sync CGM (Where Available)");
+		rdbtnSyncCGM.setToolTipText("<html>If CGM data is present in Diasend file, then attempt to load it into Nightscout  <br>This may be extended for Medtronic too eventually.</html>");
+		rdbtnSyncCGM.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent actionEvent) {
+				AbstractButton aButton = (AbstractButton) actionEvent.getSource();
+				PrefsNightScoutLoader.getInstance().setM_SyncCGM(aButton.isSelected());
+			}
+		});
+		rdbtnSyncCGM.setBackground(Color.YELLOW);
+		GridBagConstraints gbc_rdbtnSyncCGM = new GridBagConstraints();
+		gbc_rdbtnSyncCGM.anchor = GridBagConstraints.EAST;
+		gbc_rdbtnSyncCGM.insets = new Insets(0, 0, 5, 5);
+		// gbc_rdbtnSyncCGM.gridwidth = 5;
+		gbc_rdbtnSyncCGM.gridx = 2;
+		gbc_rdbtnSyncCGM.gridy = m_Row_SyncCGM;
+		//		panel_1.add(rdbtnSyncCGM, gbc_rdbtnSyncCGM);
+		mongoPanel.add(rdbtnSyncCGM, gbc_rdbtnSyncCGM);
+		rdbtnSyncCGM.setSelected(PrefsNightScoutLoader.getInstance().isM_SyncCGM());
+
+		
 
 		JLabel lblMongoDBLabel = new JLabel("Nightscout DB");
 		GridBagConstraints gbc_MongoDBLabel = new GridBagConstraints();
@@ -442,7 +476,7 @@ public class WinSettings extends JDialog
 		gbc_MongoDBLabel.insets = new Insets(0, 0, 5, 5);
 		//gbc_label_1.gridwidth = 3;
 		gbc_MongoDBLabel.gridx = 0;
-		gbc_MongoDBLabel.gridy = 2;
+		gbc_MongoDBLabel.gridy = m_Row_NS_DB_Coll_HB_Label;
 		//panel_1.add(lblMongoDBLabel, gbc_MongoDBLabel);
 		mongoPanel.add(lblMongoDBLabel, gbc_MongoDBLabel);
 
@@ -454,7 +488,7 @@ public class WinSettings extends JDialog
 		gbc_tf_MongoNightscoutDB.insets = new Insets(0, 0, 5, 5);
 		gbc_tf_MongoNightscoutDB.gridwidth = 1;
 		gbc_tf_MongoNightscoutDB.gridx = 1;
-		gbc_tf_MongoNightscoutDB.gridy = 2;
+		gbc_tf_MongoNightscoutDB.gridy = m_Row_NS_DB_Coll_HB_Label;
 		//panel_1.add(tf_MongoNightscoutDB, gbc_tf_MongoNightscoutDB);
 		mongoPanel.add(tf_MongoNightscoutDB, gbc_tf_MongoNightscoutDB);
 		tf_MongoNightscoutDB.setColumns(10);
@@ -469,7 +503,7 @@ public class WinSettings extends JDialog
 		GridBagConstraints gbc_btnMongoTest = new GridBagConstraints();
 		gbc_btnMongoTest.insets = new Insets(0, 0, 5, 5);
 		gbc_btnMongoTest.gridx = 4;
-		gbc_btnMongoTest.gridy = 1;
+		gbc_btnMongoTest.gridy = m_Row_BG_Units_DateForm_Test;
 		//panel_1.add(btnMongoTest, gbc_btnMongoTest);
 		mongoPanel.add(btnMongoTest, gbc_btnMongoTest);
 
@@ -479,7 +513,7 @@ public class WinSettings extends JDialog
 		gbc_lblMongoCollLabel.insets = new Insets(0, 0, 5, 5);
 		//gbc_label_2.gridwidth = 4;
 		gbc_lblMongoCollLabel.gridx = 2;
-		gbc_lblMongoCollLabel.gridy = 2;
+		gbc_lblMongoCollLabel.gridy = m_Row_NS_DB_Coll_HB_Label;
 		//panel_1.add(lblMongoCollLabel, gbc_lblMongoCollLabel);
 		mongoPanel.add(lblMongoCollLabel, gbc_lblMongoCollLabel);
 
@@ -491,7 +525,7 @@ public class WinSettings extends JDialog
 		gbc_tf_MongoNightscoutCollection.insets = new Insets(0, 0, 5, 5);
 		gbc_tf_MongoNightscoutCollection.gridwidth  = 1;
 		gbc_tf_MongoNightscoutCollection.gridx = 3;
-		gbc_tf_MongoNightscoutCollection.gridy = 2;
+		gbc_tf_MongoNightscoutCollection.gridy = m_Row_NS_DB_Coll_HB_Label;
 		//panel_1.add(tf_MongoNightscoutCollection, gbc_tf_MongoNightscoutCollection);
 		mongoPanel.add(tf_MongoNightscoutCollection, gbc_tf_MongoNightscoutCollection);
 		tf_MongoNightscoutCollection.setColumns(25);
@@ -501,7 +535,7 @@ public class WinSettings extends JDialog
 		GridBagConstraints gbc_lblMongoCheckMinutes = new GridBagConstraints();
 		gbc_lblMongoCheckMinutes.insets = new Insets(0, 0, 5, 5);
 		gbc_lblMongoCheckMinutes.gridx = 4;
-		gbc_lblMongoCheckMinutes.gridy = 2;
+		gbc_lblMongoCheckMinutes.gridy = m_Row_NS_DB_Coll_HB_Label;
 		//panel_1.add(lbl_MongoCheckMinutes, gbc_lblMongoCheckMinutes);
 		mongoPanel.add(lbl_MongoCheckMinutes, gbc_lblMongoCheckMinutes);
 
@@ -513,7 +547,7 @@ public class WinSettings extends JDialog
 		GridBagConstraints gbc_sp_MongoDBAlertMinutes = new GridBagConstraints();
 		gbc_sp_MongoDBAlertMinutes.insets = new Insets(0, 0, 5, 5);
 		gbc_sp_MongoDBAlertMinutes.gridx = 4;
-		gbc_sp_MongoDBAlertMinutes.gridy = 3;
+		gbc_sp_MongoDBAlertMinutes.gridy = m_Row_Mins_Bolus_Heartbeat_Sp;
 		//panel_1.add(sp_MongoDBAlertMinutes, gbc_sp_MongoDBAlertMinutes);
 		mongoPanel.add(sp_MongoDBAlertMinutes, gbc_sp_MongoDBAlertMinutes);
 
@@ -526,7 +560,7 @@ public class WinSettings extends JDialog
 		gbc_label_7.insets = new Insets(0, 0, 5, 5);
 		//	gbc_label_7.gridwidth = 6;
 		gbc_label_7.gridx = 0;
-		gbc_label_7.gridy = 3;
+		gbc_label_7.gridy = m_Row_Mins_Bolus_Heartbeat_Sp;
 		//panel_1.add(lbl_MaxMinsForMealBolus, gbc_label_7);
 		mongoPanel.add(lbl_MaxMinsForMealBolus, gbc_label_7);
 
@@ -536,7 +570,7 @@ public class WinSettings extends JDialog
 		GridBagConstraints gbc_sp_MaxMinsForMealBolus = new GridBagConstraints();
 		gbc_sp_MaxMinsForMealBolus.insets = new Insets(0, 0, 5, 5);
 		gbc_sp_MaxMinsForMealBolus.gridx = 1;
-		gbc_sp_MaxMinsForMealBolus.gridy = 3;
+		gbc_sp_MaxMinsForMealBolus.gridy = m_Row_Mins_Bolus_Heartbeat_Sp;
 		//panel_1.add(sp_MaxMinsForMealBolus, gbc_sp_MaxMinsForMealBolus);
 		mongoPanel.add(sp_MaxMinsForMealBolus, gbc_sp_MaxMinsForMealBolus);
 
@@ -548,7 +582,7 @@ public class WinSettings extends JDialog
 		gbc_label_8.insets = new Insets(0, 0, 5, 5);
 		//	gbc_label_8.gridwidth = 6;
 		gbc_label_8.gridx = 2;
-		gbc_label_8.gridy = 3;
+		gbc_label_8.gridy = m_Row_Mins_Bolus_Heartbeat_Sp;
 		//panel_1.add(lbl_MaxMinsForCorrectionBolus, gbc_label_8);
 		mongoPanel.add(lbl_MaxMinsForCorrectionBolus, gbc_label_8);
 
@@ -560,7 +594,7 @@ public class WinSettings extends JDialog
 		GridBagConstraints gbc_sp_MaxMinsForCorrectionBolus = new GridBagConstraints();
 		gbc_sp_MaxMinsForCorrectionBolus.insets = new Insets(0, 0, 5, 5);
 		gbc_sp_MaxMinsForCorrectionBolus.gridx = 3;
-		gbc_sp_MaxMinsForCorrectionBolus.gridy = 3;
+		gbc_sp_MaxMinsForCorrectionBolus.gridy = m_Row_Mins_Bolus_Heartbeat_Sp;
 		//panel_1.add(sp_MaxMinsForCorrectionBolus, gbc_sp_MaxMinsForCorrectionBolus);
 		mongoPanel.add(sp_MaxMinsForCorrectionBolus, gbc_sp_MaxMinsForCorrectionBolus);		
 
@@ -576,7 +610,7 @@ public class WinSettings extends JDialog
 		//		gbc_label_6.gridx = 1;
 		//		gbc_label_6.gridy = 14;
 		gbc_label_6.gridx = 0;
-		gbc_label_6.gridy = 4;
+		gbc_label_6.gridy = m_Row_Log_Level_Adv_Timezone;
 		//panel_1.add(lbl_LogLevel, gbc_label_6);
 		//		advancedPanel.add(lbl_LogLevel, gbc_label_6);
 		mongoPanel.add(lbl_LogLevel, gbc_label_6);
@@ -591,7 +625,7 @@ public class WinSettings extends JDialog
 		//		gbc_cb_LogLevel.gridx = 2;
 		//		gbc_cb_LogLevel.gridy = 14;
 		gbc_cb_LogLevel.gridx = 1;
-		gbc_cb_LogLevel.gridy = 4;
+		gbc_cb_LogLevel.gridy = m_Row_Log_Level_Adv_Timezone;
 		//panel_1.add(cb_LogLevel, gbc_cb_LogLevel);
 		//		advancedPanel.add(cb_LogLevel, gbc_cb_LogLevel);
 		mongoPanel.add(cb_LogLevel, gbc_cb_LogLevel);
@@ -611,7 +645,7 @@ public class WinSettings extends JDialog
 		gbc_rdbtnAdvancedSettings.insets = new Insets(0, 0, 5, 5);
 		// gbc_rdbtnAdvancedSettings.gridwidth = 5;
 		gbc_rdbtnAdvancedSettings.gridx = 2;
-		gbc_rdbtnAdvancedSettings.gridy = 4;
+		gbc_rdbtnAdvancedSettings.gridy = m_Row_Log_Level_Adv_Timezone;
 		//		panel_1.add(rdbtnAdvancedSettings, gbc_rdbtnAdvancedSettings);
 		mongoPanel.add(rdbtnAdvancedSettings, gbc_rdbtnAdvancedSettings);
 		rdbtnAdvancedSettings.setSelected(PrefsNightScoutLoader.getInstance().isM_AdvancedSettings());
@@ -624,7 +658,7 @@ public class WinSettings extends JDialog
 		//		gbc_lblTimezone.gridx = 3;
 		//		gbc_lblTimezone.gridy = 9;
 		gbc_lblTimezone.gridx = 3;
-		gbc_lblTimezone.gridy = 4;
+		gbc_lblTimezone.gridy = m_Row_Log_Level_Adv_Timezone;
 		//panel_1.add(lblTimezone, gbc_lblTimezone);
 		//		advancedPanel.add(lblTimezone, gbc_lblTimezone);
 		mongoPanel.add(lblTimezone, gbc_lblTimezone);
@@ -645,7 +679,7 @@ public class WinSettings extends JDialog
 		//		gbc_cb_Timezone.gridx = 4;
 		//		gbc_cb_Timezone.gridy = 9;
 		gbc_cb_Timezone.gridx = 4;
-		gbc_cb_Timezone.gridy = 4;
+		gbc_cb_Timezone.gridy = m_Row_Log_Level_Adv_Timezone;
 		//		panel_1.add(cb_Timezone, gbc_cb_Timezone);
 		//		advancedPanel.add(cb_Timezone, gbc_cb_Timezone);
 		mongoPanel.add(cb_Timezone, gbc_cb_Timezone);
@@ -660,7 +694,7 @@ public class WinSettings extends JDialog
 		//		gbc_lblLogFile.gridx = 1;
 		//		gbc_lblLogFile.gridy = 15;
 		gbc_lblLogFile.gridx = 0;
-		gbc_lblLogFile.gridy = 5;
+		gbc_lblLogFile.gridy = m_Row_Log_File_Details;
 		//panel_1.add(lbl_LogFile, gbc_lblLogFile);
 		//		advancedPanel.add(lbl_LogFile, gbc_lblLogFile);
 		mongoPanel.add(lbl_LogFile, gbc_lblLogFile);
@@ -675,7 +709,7 @@ public class WinSettings extends JDialog
 		//		gbc_tf_LogFile.gridx = 2;
 		//		gbc_tf_LogFile.gridy = 15;
 		gbc_tf_LogFile.gridx = 1;
-		gbc_tf_LogFile.gridy = 5;
+		gbc_tf_LogFile.gridy = m_Row_Log_File_Details;
 		//panel_1.add(tf_LogFile, gbc_tf_LogFile);
 		//		advancedPanel.add(tf_LogFile, gbc_tf_LogFile);
 		mongoPanel.add(tf_LogFile, gbc_tf_LogFile);
@@ -706,7 +740,7 @@ public class WinSettings extends JDialog
 		//		gbc_btnSelectLogFile.gridx = 6;
 		//		gbc_btnSelectLogFile.gridy = 15;
 		gbc_btnSelectLogFile.gridx = 4;
-		gbc_btnSelectLogFile.gridy = 5;
+		gbc_btnSelectLogFile.gridy = m_Row_Log_File_Details;
 		//panel_1.add(btn_SelectLogFile, gbc_btnSelectLogFile);
 		//		advancedPanel.add(btn_SelectLogFile, gbc_btnSelectLogFile);
 		mongoPanel.add(btn_SelectLogFile, gbc_btnSelectLogFile);
@@ -724,7 +758,7 @@ public class WinSettings extends JDialog
 		//		gbc_cbDuplicateChecking.gridx = 6;
 		//		gbc_cbDuplicateChecking.gridy = 16;
 		gbc_cbDuplicateChecking.gridx = 0;
-		gbc_cbDuplicateChecking.gridy = 6;
+		gbc_cbDuplicateChecking.gridy = m_Row_Proximity_DP_Radios;
 		//panel_1.add(cb_DuplicateCheckType, gbc_cbDuplicateChecking);
 		//		advancedPanel.add(cb_DuplicateCheckType, gbc_cbDuplicateChecking);
 		mongoPanel.add(cb_DuplicateCheckType, gbc_cbDuplicateChecking);
@@ -747,7 +781,7 @@ public class WinSettings extends JDialog
 		//		gbc_rbDupeBGCheck.gridx = 3;
 		//		gbc_rbDupeBGCheck.gridy = 17;
 		gbc_rbDupeBGCheck.gridx = 1;
-		gbc_rbDupeBGCheck.gridy = 6;
+		gbc_rbDupeBGCheck.gridy = m_Row_Proximity_DP_Radios;
 		//panel_1.add(rb_DupeBGCheck, gbc_rbDupeBGCheck);
 		//		advancedPanel.add(rb_DupeBGCheck, gbc_rbDupeBGCheck);
 		mongoPanel.add(rb_DupeBGCheck, gbc_rbDupeBGCheck);
@@ -769,7 +803,7 @@ public class WinSettings extends JDialog
 		//		gbc_rbDupeInsulinCheck.gridx = 3;
 		//		gbc_rbDupeInsulinCheck.gridy = 19;
 		gbc_rbDupeInsulinCheck.gridx = 2;
-		gbc_rbDupeInsulinCheck.gridy = 6;
+		gbc_rbDupeInsulinCheck.gridy = m_Row_Proximity_DP_Radios;
 		//panel_1.add(rb_DupeInsulinCheck, gbc_rbDupeInsulinCheck);
 		//		advancedPanel.add(rb_DupeInsulinCheck, gbc_rbDupeInsulinCheck);
 		mongoPanel.add(rb_DupeInsulinCheck, gbc_rbDupeInsulinCheck);
@@ -791,7 +825,7 @@ public class WinSettings extends JDialog
 		//		gbc_rbDupeCarbCheck.gridx = 3;
 		//		gbc_rbDupeCarbCheck.gridy = 18;
 		gbc_rbDupeCarbCheck.gridx = 3;
-		gbc_rbDupeCarbCheck.gridy = 6;
+		gbc_rbDupeCarbCheck.gridy = m_Row_Proximity_DP_Radios;
 		//panel_1.add(rb_DupeCarbCheck, gbc_rbDupeCarbCheck);
 		//		advancedPanel.add(rb_DupeCarbCheck, gbc_rbDupeCarbCheck);
 		mongoPanel.add(rb_DupeCarbCheck, gbc_rbDupeCarbCheck);
@@ -820,7 +854,7 @@ public class WinSettings extends JDialog
 		//		gbc_rbLoadEntries.gridx = 3;
 		//		gbc_rbLoadEntries.gridy = 18;
 		gbc_rbLoadEntries.gridx = 4;
-		gbc_rbLoadEntries.gridy = 6;
+		gbc_rbLoadEntries.gridy = m_Row_Proximity_DP_Radios;
 		//panel_1.add(rb_LoadEntries, gbc_rbLoadEntries);
 		//		advancedPanel.add(rb_LoadEntries, gbc_rbLoadEntries);
 		mongoPanel.add(rb_LoadEntries, gbc_rbLoadEntries);
@@ -835,7 +869,7 @@ public class WinSettings extends JDialog
 		gbc_sp_ProximityMinutes.insets = new Insets(0, 0, 5, 5);
 		gbc_sp_ProximityMinutes.gridx = 0;
 		//		gbc_sp_ProximityMinutes.gridy = 16;
-		gbc_sp_ProximityMinutes.gridy = 7;
+		gbc_sp_ProximityMinutes.gridy = m_Row_Proximity_DP_Spinners;
 		//panel_1.add(sp_ProximityMinutes, gbc_sp_ProximityMinutes);
 		//		advancedPanel.add(sp_ProximityMinutes, gbc_sp_ProximityMinutes);
 		mongoPanel.add(sp_ProximityMinutes, gbc_sp_ProximityMinutes);
@@ -848,7 +882,7 @@ public class WinSettings extends JDialog
 		GridBagConstraints gbc_spDupeBGDecPlace = new GridBagConstraints();
 		gbc_spDupeBGDecPlace.insets = new Insets(0, 0, 5, 5);
 		gbc_spDupeBGDecPlace.gridx = 1;
-		gbc_spDupeBGDecPlace.gridy = 7;
+		gbc_spDupeBGDecPlace.gridy = m_Row_Proximity_DP_Spinners;
 		//panel_1.add(sp_DupeBGDecPlace, gbc_spDupeBGDecPlace);
 		mongoPanel.add(sp_DupeBGDecPlace, gbc_spDupeBGDecPlace);
 
@@ -861,7 +895,7 @@ public class WinSettings extends JDialog
 		GridBagConstraints gbc_spDupeInsulinDecPlace = new GridBagConstraints();
 		gbc_spDupeInsulinDecPlace.insets = new Insets(0, 0, 0, 5);
 		gbc_spDupeInsulinDecPlace.gridx = 2;
-		gbc_spDupeInsulinDecPlace.gridy = 7;
+		gbc_spDupeInsulinDecPlace.gridy = m_Row_Proximity_DP_Spinners;
 		//panel_1.add(sp_DupeInsulinDecPlace, gbc_spDupeInsulinDecPlace);
 		mongoPanel.add(sp_DupeInsulinDecPlace, gbc_spDupeInsulinDecPlace);
 
@@ -874,7 +908,7 @@ public class WinSettings extends JDialog
 		GridBagConstraints gbc_spDupeCarbDecPlace = new GridBagConstraints();
 		gbc_spDupeCarbDecPlace.insets = new Insets(0, 0, 5, 5);
 		gbc_spDupeCarbDecPlace.gridx = 3;
-		gbc_spDupeCarbDecPlace.gridy = 7;
+		gbc_spDupeCarbDecPlace.gridy = m_Row_Proximity_DP_Spinners;
 		//panel_1.add(sp_DupeCarbDecPlace, gbc_spDupeCarbDecPlace);
 		mongoPanel.add(sp_DupeCarbDecPlace, gbc_spDupeCarbDecPlace);
 
@@ -897,7 +931,7 @@ public class WinSettings extends JDialog
 		GridBagConstraints gbc_spWeeksBackToLoadEntries = new GridBagConstraints();
 		gbc_spWeeksBackToLoadEntries.insets = new Insets(0, 0, 5, 5);
 		gbc_spWeeksBackToLoadEntries.gridx = 4;
-		gbc_spWeeksBackToLoadEntries.gridy = 7;
+		gbc_spWeeksBackToLoadEntries.gridy = m_Row_Proximity_DP_Spinners;
 		//panel_1.add(sp_WeeksBackToLoadEntries, gbc_spWeeksBackToLoadEntries);
 		mongoPanel.add(sp_WeeksBackToLoadEntries, gbc_spWeeksBackToLoadEntries);
 

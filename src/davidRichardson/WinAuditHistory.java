@@ -120,7 +120,7 @@ public class WinAuditHistory extends JFrame
 
 	private void initialize()
 	{
-		setBounds(100, 100, 700, 450);
+		setBounds(100, 100, 750, 450);
 		//		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		this.setResizable(true);
@@ -215,23 +215,13 @@ public class WinAuditHistory extends JFrame
 		});
 		m_AuditLogTable.setBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null));
 		m_AuditLogTable.setModel(new DefaultTableModel(
-				AuditLog.getM_Initializer(),
-				AuditLog.getM_ColNames()
-				)
-
-				// http://stackoverflow.com/questions/1990817/how-to-make-a-jtable-non-editable
-				{
-
-			/**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public boolean isCellEditable(int row, int column) {
-				//Only the third column
-				return column == 3;
-			}}
+			new Object[][] {
+				{"", "", "", "", "", "", "", "", "", "", "", ""},
+			},
+			new String[] {
+				"Date Time", "Upload ID", "Status", "Device", "Filename", "Date Range", "Entries Added", "CGM Entries Added", "Total Treatments at Start", "NSL Treatments at Start", "Meter Dupes", "NS Dupes"
+			}
+		)
 				);
 
 		// Try setting column widths

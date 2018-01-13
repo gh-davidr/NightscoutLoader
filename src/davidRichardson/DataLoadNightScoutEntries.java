@@ -105,10 +105,22 @@ public class DataLoadNightScoutEntries extends DataLoadNightScout
 	{
 		loadDBResults();
 	}*/
+	
+	static public Date getEntryLoadStartDate() 
+	{
+		int weeksBack = PrefsNightScoutLoader.getInstance().getM_WeeksBackToLoadEntries();
+		Date now = new Date();
+		long nowLong = now.getTime();
+		long thenLong = nowLong - ((long)weeksBack * 7 * 24 * 3600 * 1000); // Arrghh - need to cast this weeks back else get garbage future date!
+		Date result = new Date(thenLong);
+	
+		return result;
+	}
 
 	public void loadDBResults() throws UnknownHostException
 	{
-		int weeksBack = PrefsNightScoutLoader.getInstance().getM_WeeksBackToLoadEntries();
+/*
+ * 		int weeksBack = PrefsNightScoutLoader.getInstance().getM_WeeksBackToLoadEntries();
 		Date now = new Date();
 		long nowLong = now.getTime();
 		long thenLong = nowLong - ((long)weeksBack * 7 * 24 * 3600 * 1000); // Arrghh - need to cast this weeks back else get garbage future date!
@@ -119,6 +131,9 @@ public class DataLoadNightScoutEntries extends DataLoadNightScout
 //		String startDatetring = new String(df.format(startDate));
 		
 		loadDBResults(startDate);
+		*/
+		
+		loadDBResults(getEntryLoadStartDate());
 	}
 
 	public void loadDBResults(Date startDate) throws UnknownHostException

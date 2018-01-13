@@ -14,6 +14,9 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+
 //import javax.swing.JFormattedTextField.AbstractFormatter;
 
 import com.mongodb.DBObject;
@@ -182,8 +185,25 @@ public class CommonUtils
 
 		return result;
 	}
-
 	
+	static String safeIfNull(String par)
+	{
+		String result = new String( par == null ? "" : par );
+		return result;
+	}
+
+	static Double safeIfNull(Double par)
+	{
+		Double result = new Double( par == null ? 0.0 : par );
+		return result;
+	}
+	
+	static Integer safeIfNull(Integer par)
+	{
+		Integer result = new Integer( par == null ? 0 : par );
+		return result;
+	}
+
 	// Used for Analyzer bedtime checks
 	// Between means start <= time < end
 	static boolean isTimeBetween(Date startTime, Date endTime, Date dateTime)
@@ -569,6 +589,126 @@ public class CommonUtils
 
 		return result;
 	}
+	
+	public static Date parseFileDateTime(String date)
+	{
+		Date result = new Date(0);
+		// Combined Date Time
+
+		final String defSlashFormat = new String("dd/MM/yy HH:mm");
+		String prefDateFormat       = PrefsNightScoutLoader.getInstance().getM_InputDateFormat();
+		DateFormat slashformat      = new SimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat), Locale.ENGLISH);
+		//		DateFormat slashformat      = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ENGLISH);
+
+		try
+		{
+			result = slashformat.parse(date);
+		}
+		catch (ParseException e) 
+		{
+			m_Logger.log(Level.SEVERE, "<CommonUtils>" + "parseFileDate - Unexpected error parsing date: " + date);
+		}
+
+		return result;
+	}
+
+	public  static Date parseDate(String date)
+	{
+		Date result = new Date(0);
+		// Combined Date Time
+		DateFormat slashformat = new SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH);
+
+		try
+		{
+			result = slashformat.parse(date);
+		}
+		catch (ParseException e) 
+		{
+			m_Logger.log(Level.SEVERE, "<CommonUtils>" + "parseDate - Unexpected error parsing date: " + date);
+		}
+
+		return result;
+	}
+
+	public static Date parseFromDate(String field)
+	{
+		Date result = new Date(0);
+
+		// field is in the form 2dd/mm/yyyy to dd/mm/yyyy"
+		Pattern fromDatePattern = Pattern.compile("([0-9/]*) to");
+		Matcher fromDateMatcher = fromDatePattern.matcher(field);
+
+		if (fromDateMatcher.find())
+		{
+			String matchedString = fromDateMatcher.group(0);
+			String date = new String(matchedString.substring(0, matchedString.length() - 3));
+			result = parseDate(date);
+		}
+
+		return result;
+	}
+	public static Date parseToDate(String field)
+	{
+		Date result = new Date(0);
+
+		// field is in the form 2dd/mm/yyyy to dd/mm/yyyy"
+		Pattern fromDatePattern = Pattern.compile("to ([0-9/]*)");
+		Matcher fromDateMatcher = fromDatePattern.matcher(field);
+
+		if (fromDateMatcher.find())
+		{
+			String matchedString = fromDateMatcher.group(0);
+			String date = new String(matchedString.substring(3, matchedString.length()));
+			result = parseDate(date);
+		}
+
+		return result;
+	}
+
+	public static String  getStringCellValue(HSSFRow row, int index)
+	{
+		String result = null;
+		HSSFCell cell = row.getCell(index);
+		if (cell != null && (cell.getCellType() != HSSFCell.CELL_TYPE_BLANK))
+		{
+			// David 27 Apr 2016
+			// Get an exception just with diasend when updating the grid.
+			// think might be related to fact that string values actually
+			// owned by the POI Excel reader.
+			// Therefore clone at the lowest level here.
+			//result = cell.getStringCellValue();
+			result = new String(cell.getStringCellValue());
+		}
+		else
+		{
+			// Ensure result gets allocated even if cell is blank
+			result = new String("");
+		}
+		return result;
+	}
+
+	public static Double getDoubleCellValue(HSSFRow row, int index)
+	{
+		Double result = null;
+		HSSFCell cell = row.getCell(index);
+		if (cell != null && (cell.getCellType() != HSSFCell.CELL_TYPE_BLANK))
+		{
+			// David 27 Apr 2016
+			// Get an exception just with diasend when updating the grid.
+			// think might be related to fact that string values actually
+			// owned by the POI Excel reader.
+			// Therefore clone at the lowest level here.
+			//result = cell.getNumericCellValue();
+			result = new Double(cell.getNumericCellValue());
+		}
+		else
+		{
+			// Ensure result gets allocated even if cell is blank
+			result = new Double(0);
+		}
+		return result;
+	}
+
 
 
 }

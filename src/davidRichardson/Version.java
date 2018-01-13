@@ -20,7 +20,6 @@ public class Version
 		return m_Instance;
 	}
 
-
 	private Version()
 	{
 		m_Version    = new String();
@@ -29,7 +28,7 @@ public class Version
 		m_ContactUs  = new String();
 		m_GoogleDriveHelpURI = new String();
 
-		m_Version    = "V2.7";
+		m_Version    = "V3.0";
 		m_Author     = "David Richardson";
 		m_ContactUs  = "NightscoutLoader@gmail.com";
 		//		m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_cEZMbmk4TTlZRUk";
@@ -37,15 +36,18 @@ public class Version
 		// This is a static URL.
 		// m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_MTc4LThSamk2dzA";
 		// m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_RnZUTmxleFkyWlU"; // V2.6
-		m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_d0tpQmtGZXptT28"; // V2.7
+		// m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_d0tpQmtGZXptT28"; // V2.7
+		// m_GoogleDriveHelpURI = "https://drive.google.com/open?id=1FjCzKM4G8xWrChXico9uvblHQhAft4G-"; // V3.0
+		m_GoogleDriveHelpURI = "https://1drv.ms/b/s!At9qWUeNOZ5nbs-PYVnZ8ziZ8ew";  // V3.0 OneDrive
 		
 		m_AboutText += "Nightscout Loader Version" + m_Version + "\r\n\r\n";
 		m_AboutText += "Nightscout Loader\r\n\r\nThree main functions offered:\r\n\r\n";
-		m_AboutText += "  (1) Load data from meter/pump database and upload into Nightscout for display on viewer\r\n";
-		m_AboutText += "  (2) View Nightscout treatment records and support edits\r\n";
-		m_AboutText += "  (3) Perform Analysis on the Care Portal AND CGM results\r\n";
-		m_AboutText += "  (4) Minor features as below\r\n";
-		m_AboutText += "    (a) Download of CarePortal to Excel\r\n";
+		m_AboutText += "  (1) Load Care Portal data from meter/pump database and upload into Nightscout for display on viewer\r\n";
+		m_AboutText += "  (2) Load CGM data from supported sources (Diasend) and upload into Nightscout for display on viewer\r\n";
+		m_AboutText += "  (3) View Nightscout treatment records and support edits\r\n";
+		m_AboutText += "  (4) Perform Analysis on the Care Portal AND CGM results\r\n";
+		m_AboutText += "  (5) Minor features as below\r\n";
+		m_AboutText += "    (a) Download of Care Portal to Excel\r\n";
 		m_AboutText += "    (b) Exports of Care Portal and CGMS from Mongo as JSON\r\n";
 		m_AboutText += "    (c) Full featured audit history for control of Care Portal loads\r\n";
 		m_AboutText += "    (d) Heartbeat checks on Nightscout Mongo alerting of independent updates\r\n";
@@ -110,8 +112,15 @@ public class Version
 		m_AboutText += "              Quick Run autotune with text output based on most recent CGM\r\n";
 		m_AboutText += "              Autotune Profile Editor with automatic backup remotely to Nightscout Loader Backup directory\r\n";
 		m_AboutText += "              Autotune Profile Editor can read settings directly from Diasend\r\n";
+		m_AboutText += " 2.7.1   - Patch fix to Medtronic reader\r\n";
+		m_AboutText += " 2.7.2   - Improved Skip Meal categorization - look for carbs between BGs\r\n";
+		m_AboutText += " 3.0     - Addition of CGM upload from Diasend into Nightscout\r\n";
+		m_AboutText += "           Glooko/Diasend seems to generate files with varying date formats.  Now pre-scan to try and figure out format\r\n";
+		m_AboutText += "           Fixed connection issue for Autotune Server that broke in refactoring prior to V2.7\r\n";
+		m_AboutText += "           Added convenience function to drive an autotune run from a Diasend file (sets basal rates and dates)\r\n";
+		m_AboutText += "           Also some minor improvements to thread management\r\n";
 		m_AboutText += "\r\n\r\n";
-		m_AboutText += "Written by " + m_Author + " - January 2016 through March 2017\r\n";
+		m_AboutText += "Written by " + m_Author + " - January 2016 through January 2018\r\n";
 	}
 
 	/**

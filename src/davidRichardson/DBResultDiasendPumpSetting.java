@@ -33,12 +33,12 @@ public class DBResultDiasendPumpSetting
 		int maxColumns = row.getPhysicalNumberOfCells();
 		if (maxColumns == m_SettingsFields)
 		{			
-			Double cell1 = row.getCell(0).getNumericCellValue();
-			String cell2 = row.getCell(1).getStringCellValue();
-			Double cell3 = row.getCell(2).getNumericCellValue();
+			Double cell1     = row.getCell(0).getNumericCellValue();
+			String cell2     = row.getCell(1).getStringCellValue();
+			Double cell3     = row.getCell(2).getNumericCellValue();
 
-			m_Index      = cell1.intValue();
-			m_Time       = cell2;
+			m_Index          = cell1.intValue();
+			m_Time           = cell2;
 			m_TimeBoundValue = cell3;
 		}
 	}

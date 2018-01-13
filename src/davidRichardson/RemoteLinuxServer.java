@@ -34,6 +34,72 @@ public class RemoteLinuxServer
 	private TextLineReceiverInterface m_TextLineReceiverInterface = null;
 	private String m_BackupDirectory = "NightscoutLoader_Backups";
 
+
+	public class RemoteLinuxServerHostDetails
+	{
+		private Boolean m_KeyFileAuth;
+		private String  m_KeyFile;
+		private String  m_Host;
+		private String  m_User;
+		private String  m_PassWord;
+		private int     m_port;
+
+		RemoteLinuxServerHostDetails()
+		{
+			String suppliedServer = new String(PrefsNightScoutLoader.getInstance().getM_AutoTuneServer());
+
+			m_KeyFileAuth = PrefsNightScoutLoader.getInstance().isM_AutoTuneSSH2KeyLogin();
+			m_KeyFile     = PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile();
+			m_Host        = new String ((suppliedServer.contains("@") ? suppliedServer.substring(suppliedServer.indexOf('@')+1) : ""));
+			m_User        = new String ((suppliedServer.contains("@") ? suppliedServer.substring(0, suppliedServer.indexOf('@')) : ""));
+			m_PassWord    = PrefsNightScoutLoader.getInstance().getM_AutoTunePassword();
+			m_port        = 22;
+		}
+
+		/**
+		 * @return the m_KeyFileAuth
+		 */
+		public synchronized Boolean getM_KeyFileAuth() {
+			return m_KeyFileAuth;
+		}
+
+		/**
+		 * @return the m_KeyFile
+		 */
+		public synchronized String getM_KeyFile() {
+			return m_KeyFile;
+		}
+
+		/**
+		 * @return the m_Host
+		 */
+		public synchronized String getM_Host() {
+			return m_Host;
+		}
+
+		/**
+		 * @return the m_User
+		 */
+		public synchronized String getM_User() {
+			return m_User;
+		}
+
+		/**
+		 * @return the m_PassWord
+		 */
+		public synchronized String getM_PassWord() {
+			return m_PassWord;
+		}
+
+		/**
+		 * @return the m_port
+		 */
+		public synchronized int getM_port() {
+			return m_port;
+		}
+	}
+
+
 	RemoteLinuxServer(Date startDate, Date endDate)
 	{
 		m_JSch = new JSch();
@@ -103,7 +169,7 @@ public class RemoteLinuxServer
 			addTextLine(" Autotune failed to run ");
 			addTextLine("****");
 			addTextLine("\n\n");
-			addTextLine("Please check server details, authentication key file and internet is accessible");
+			addTextLine("Please check server details, authentication key file/password and that internet is accessible");
 		}
 		else
 		{
@@ -134,7 +200,7 @@ public class RemoteLinuxServer
 			addTextLine(" Autotune failed to run ");
 			addTextLine("****");
 			addTextLine("\n\n");
-			addTextLine("Please check server details, authentication key file and internet is accessible");
+			addTextLine("Please check server details, authentication key file/password and that internet is accessible");
 		}
 		else
 		{
@@ -161,8 +227,8 @@ public class RemoteLinuxServer
 		String checkAutotune = execRemoteCommand("ls -alrt myopenaps/settings/autotune.json", null, null);
 		String checkPump     = execRemoteCommand("ls -alrt myopenaps/settings/pumpprofile.json", null, null);
 
-		
-		
+
+
 		return result;
 	}
 
@@ -180,12 +246,30 @@ public class RemoteLinuxServer
 		boolean result = false;
 		try
 		{
-			m_JSch.addIdentity(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
+			RemoteLinuxServerHostDetails details = new RemoteLinuxServerHostDetails();
+			
+			// Either use SSH Key file or User Name and Password
+			if (details.getM_KeyFileAuth())
+			{
+				m_JSch.addIdentity(details.getM_KeyFile());
+			}
+			
+			String host = details.getM_Host();
+			String user = details.getM_User();
+			int    port = details.getM_port();
+			Session session = m_JSch.getSession(user, host, port);
+			
+			if (!details.getM_KeyFileAuth())
+			{
+				session.setPassword(details.getM_PassWord());
+			}
 
-			String host = PrefsNightScoutLoader.getInstance().getM_AutoTuneServer();
-			String user=host.substring(0, host.indexOf('@'));
-			host=host.substring(host.indexOf('@')+1);
-			Session session = m_JSch.getSession(user, host, 22);
+			//			m_JSch.addIdentity(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
+			//			String host = PrefsNightScoutLoader.getInstance().getM_AutoTuneServer();
+			//			String user=host.substring(0, host.indexOf('@'));
+			//			host=host.substring(host.indexOf('@')+1);
+			//			Session session = m_JSch.getSession(user, host, 22);
+
 
 			// username and password will be given via UserInfo interface.
 			UserInfo ui=new MyUserInfo();
@@ -302,118 +386,118 @@ public class RemoteLinuxServer
 		// And ensure it's installed in all three locations.
 	}
 
-	public void runAutotune_orig()
-	{
-		// Only so long as output stream is empty!
-		if (m_OutputStream.length() == 0)
-		{
-			try
-			{
-				m_JSch.addIdentity(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
-
-				String host = PrefsNightScoutLoader.getInstance().getM_AutoTuneServer();
-				String user=host.substring(0, host.indexOf('@'));
-				host=host.substring(host.indexOf('@')+1);
-				Session session = m_JSch.getSession(user, host, 22);
-
-				// username and password will be given via UserInfo interface.
-				UserInfo ui=new MyUserInfo();
-				session.setUserInfo(ui);
-				session.connect();
-				if (m_TextLineReceiverInterface != null)
-				{
-					//					addTextLine("Connected to " +host+ "\n");
-					m_Logger.log(Level.FINE, "Connected to " +host+ " - Running Autotune-Orig");
-				}
-
-				//			String command = "oref0-autotune --dir=~/myopenaps --ns-host=https://dexcom-davidr.azurewebsites.net --start-date=2017-01-29 --end-date=2017-02-12";
-				String command = "oref0-autotune --dir=~/myopenaps --ns-host="; 
-				command += PrefsNightScoutLoader.getInstance().getM_AutoTuneNSURL();
-				command += " --start-date=";
-				command += CommonUtils.convertDateString(m_StartDate, "YYYY-MM-dd");
-				command += " --end-date=";
-				command += CommonUtils.convertDateString(m_EndDate, "YYYY-MM-dd");
-
-				Channel channel=session.openChannel("exec");
-				((ChannelExec)channel).setCommand(command);
-
-				m_Logger.log( Level.INFO, "Autotune Started.");
-
-
-				// X Forwarding
-				// channel.setXForwarding(true);
-
-				//channel.setInputStream(System.in);
-				channel.setInputStream(null);
-
-				//channel.setOutputStream(System.out);
-
-				//FileOutputStream fos=new FileOutputStream("/tmp/stderr");
-				//((ChannelExec)channel).setErrStream(fos);
-				((ChannelExec)channel).setErrStream(System.err);
-
-				InputStream in=channel.getInputStream();
-
-				channel.connect();
-
-				byte[] tmp=new byte[1024];
-				while(true){
-					while(in.available()>0){
-						int i=in.read(tmp, 0, 1024);
-						if(i<0)break;
-						String op = new String(tmp, 0, i);
-						m_OutputStream += op;
-						if (m_TextLineReceiverInterface != null)
-						{
-							addTextLine(op);
-						}
-						else
-						{
-							System.out.print(op);
-						}
-					}
-					if(channel.isClosed()){
-						if(in.available()>0) continue; 
-						//						if (m_TextLineReceiverInterface != null)
-						//						{
-						//							addTextLine("\n\nexit-status: "+channel.getExitStatus());
-						//						}
-						//						else
-						//						{
-						//							System.out.println("exit-status: "+channel.getExitStatus());
-						//						}
-						break;
-					}
-					try{Thread.sleep(1000);}catch(Exception ee){}
-				}
-				channel.disconnect();
-				session.disconnect();
-
-				m_Logger.log(Level.INFO, "Autotune Finished.");
-
-				// Add a sumary line at end of stream
-				String summary = "Autotune ran between " +
-						CommonUtils.convertDateString(m_StartDate, "YYYY-MM-dd") +
-						" and " +
-						CommonUtils.convertDateString(m_EndDate, "YYYY-MM-dd") + 
-						" on host " +
-						PrefsNightScoutLoader.getInstance().getM_AutoTuneServer();
-				if (m_TextLineReceiverInterface != null)
-				{
-					addTextLine(summary);
-				}
-				else
-				{
-					System.out.print(summary);
-				}
-
-			}
-			catch(Exception e)
-			{
-				m_Logger.log(Level.SEVERE, "RemoteLinuxServer.runAutotune() Exception caught: " + e.getMessage());
-			}
-		}
-	}
+//	public void runAutotune_orig()
+//	{
+//		// Only so long as output stream is empty!
+//		if (m_OutputStream.length() == 0)
+//		{
+//			try
+//			{
+//				m_JSch.addIdentity(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
+//
+//				String host = PrefsNightScoutLoader.getInstance().getM_AutoTuneServer();
+//				String user=host.substring(0, host.indexOf('@'));
+//				host=host.substring(host.indexOf('@')+1);
+//				Session session = m_JSch.getSession(user, host, 22);
+//
+//				// username and password will be given via UserInfo interface.
+//				UserInfo ui=new MyUserInfo();
+//				session.setUserInfo(ui);
+//				session.connect();
+//				if (m_TextLineReceiverInterface != null)
+//				{
+//					//					addTextLine("Connected to " +host+ "\n");
+//					m_Logger.log(Level.FINE, "Connected to " +host+ " - Running Autotune-Orig");
+//				}
+//
+//				//			String command = "oref0-autotune --dir=~/myopenaps --ns-host=https://dexcom-davidr.azurewebsites.net --start-date=2017-01-29 --end-date=2017-02-12";
+//				String command = "oref0-autotune --dir=~/myopenaps --ns-host="; 
+//				command += PrefsNightScoutLoader.getInstance().getM_AutoTuneNSURL();
+//				command += " --start-date=";
+//				command += CommonUtils.convertDateString(m_StartDate, "YYYY-MM-dd");
+//				command += " --end-date=";
+//				command += CommonUtils.convertDateString(m_EndDate, "YYYY-MM-dd");
+//
+//				Channel channel=session.openChannel("exec");
+//				((ChannelExec)channel).setCommand(command);
+//
+//				m_Logger.log( Level.INFO, "Autotune Started.");
+//
+//
+//				// X Forwarding
+//				// channel.setXForwarding(true);
+//
+//				//channel.setInputStream(System.in);
+//				channel.setInputStream(null);
+//
+//				//channel.setOutputStream(System.out);
+//
+//				//FileOutputStream fos=new FileOutputStream("/tmp/stderr");
+//				//((ChannelExec)channel).setErrStream(fos);
+//				((ChannelExec)channel).setErrStream(System.err);
+//
+//				InputStream in=channel.getInputStream();
+//
+//				channel.connect();
+//
+//				byte[] tmp=new byte[1024];
+//				while(true){
+//					while(in.available()>0){
+//						int i=in.read(tmp, 0, 1024);
+//						if(i<0)break;
+//						String op = new String(tmp, 0, i);
+//						m_OutputStream += op;
+//						if (m_TextLineReceiverInterface != null)
+//						{
+//							addTextLine(op);
+//						}
+//						else
+//						{
+//							System.out.print(op);
+//						}
+//					}
+//					if(channel.isClosed()){
+//						if(in.available()>0) continue; 
+//						//						if (m_TextLineReceiverInterface != null)
+//						//						{
+//						//							addTextLine("\n\nexit-status: "+channel.getExitStatus());
+//						//						}
+//						//						else
+//						//						{
+//						//							System.out.println("exit-status: "+channel.getExitStatus());
+//						//						}
+//						break;
+//					}
+//					try{Thread.sleep(1000);}catch(Exception ee){}
+//				}
+//				channel.disconnect();
+//				session.disconnect();
+//
+//				m_Logger.log(Level.INFO, "Autotune Finished.");
+//
+//				// Add a sumary line at end of stream
+//				String summary = "Autotune ran between " +
+//						CommonUtils.convertDateString(m_StartDate, "YYYY-MM-dd") +
+//						" and " +
+//						CommonUtils.convertDateString(m_EndDate, "YYYY-MM-dd") + 
+//						" on host " +
+//						PrefsNightScoutLoader.getInstance().getM_AutoTuneServer();
+//				if (m_TextLineReceiverInterface != null)
+//				{
+//					addTextLine(summary);
+//				}
+//				else
+//				{
+//					System.out.print(summary);
+//				}
+//
+//			}
+//			catch(Exception e)
+//			{
+//				m_Logger.log(Level.SEVERE, "RemoteLinuxServer.runAutotune() Exception caught: " + e.getMessage());
+//			}
+//		}
+//	}
 
 	public boolean downloadProfileFile(String remoteProfileName, String localProfileName)
 	{
@@ -421,12 +505,28 @@ public class RemoteLinuxServer
 		try
 		{
 
-			m_JSch.addIdentity(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
+			RemoteLinuxServerHostDetails details = new RemoteLinuxServerHostDetails();
+			if (details.getM_KeyFileAuth())
+			{
+				m_JSch.addIdentity(details.getM_KeyFile());
+			}
+			String host = details.getM_Host();
+			String user = details.getM_User();
+			int    port = details.getM_port();
+			Session session = m_JSch.getSession(user, host, port);
 
-			String host = PrefsNightScoutLoader.getInstance().getM_AutoTuneServer();
-			String user=host.substring(0, host.indexOf('@'));
-			host=host.substring(host.indexOf('@')+1);
-			Session session = m_JSch.getSession(user, host, 22);
+			if (!details.getM_KeyFileAuth())
+			{
+				session.setPassword(details.getM_PassWord());
+			}
+
+			
+			//			m_JSch.addIdentity(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
+			//
+			//			String host = PrefsNightScoutLoader.getInstance().getM_AutoTuneServer();
+			//			String user=host.substring(0, host.indexOf('@'));
+			//			host=host.substring(host.indexOf('@')+1);
+			//			Session session = m_JSch.getSession(user, host, 22);
 
 			// username and password will be given via UserInfo interface.
 			UserInfo ui=new MyUserInfo();
@@ -473,13 +573,27 @@ public class RemoteLinuxServer
 			addTextLine("Copying files to local directory: " + localDirectory + "\n");
 			addTextLine("**************************************************\n");
 
+			RemoteLinuxServerHostDetails details = new RemoteLinuxServerHostDetails();
+			if (details.getM_KeyFileAuth())
+			{
+				m_JSch.addIdentity(details.getM_KeyFile());
+			}
+			String host = details.getM_Host();
+			String user = details.getM_User();
+			int    port = details.getM_port();
+			Session session = m_JSch.getSession(user, host, port);
 
-			m_JSch.addIdentity(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
-
-			String host = PrefsNightScoutLoader.getInstance().getM_AutoTuneServer();
-			String user=host.substring(0, host.indexOf('@'));
-			host=host.substring(host.indexOf('@')+1);
-			Session session = m_JSch.getSession(user, host, 22);
+			if (!details.getM_KeyFileAuth())
+			{
+				session.setPassword(details.getM_PassWord());
+			}
+			
+			//			m_JSch.addIdentity(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
+			//
+			//			String host = PrefsNightScoutLoader.getInstance().getM_AutoTuneServer();
+			//			String user=host.substring(0, host.indexOf('@'));
+			//			host=host.substring(host.indexOf('@')+1);
+			//			Session session = m_JSch.getSession(user, host, 22);
 
 			// username and password will be given via UserInfo interface.
 			UserInfo ui=new MyUserInfo();
@@ -561,12 +675,27 @@ public class RemoteLinuxServer
 	{
 		try
 		{
-			m_JSch.addIdentity(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
+			RemoteLinuxServerHostDetails details = new RemoteLinuxServerHostDetails();
+			if (details.getM_KeyFileAuth())
+			{
+				m_JSch.addIdentity(details.getM_KeyFile());
+			}
+			String host = details.getM_Host();
+			String user = details.getM_User();
+			int    port = details.getM_port();
+			Session session = m_JSch.getSession(user, host, port);
 
-			String host = PrefsNightScoutLoader.getInstance().getM_AutoTuneServer();
-			String user=host.substring(0, host.indexOf('@'));
-			host=host.substring(host.indexOf('@')+1);
-			Session session = m_JSch.getSession(user, host, 22);
+			if (!details.getM_KeyFileAuth())
+			{
+				session.setPassword(details.getM_PassWord());
+			}
+			
+			//			m_JSch.addIdentity(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
+			//
+			//			String host = PrefsNightScoutLoader.getInstance().getM_AutoTuneServer();
+			//			String user=host.substring(0, host.indexOf('@'));
+			//			host=host.substring(host.indexOf('@')+1);
+			//			Session session = m_JSch.getSession(user, host, 22);
 
 			// username and password will be given via UserInfo interface.
 			UserInfo ui=new MyUserInfo();
@@ -674,16 +803,16 @@ public class RemoteLinuxServer
 
 	}
 
-	RemoteLinuxServer(boolean forTestPurposes)
-	{
-		m_JSch = new JSch();
-		m_OutputStream = new String();
-
-		// just_connect();
-		exec_command();
-
-		identifyRecommendations();
-	}
+//	RemoteLinuxServer(boolean forTestPurposes)
+//	{
+//		m_JSch = new JSch();
+//		m_OutputStream = new String();
+//
+//		// just_connect();
+//		exec_command();
+//
+//		identifyRecommendations();
+//	}
 
 	// Consulted http://www.jcraft.com/jsch/examples/UserAuthPubKey.java.html
 	private void just_connect()
@@ -813,36 +942,36 @@ public class RemoteLinuxServer
 
 	}
 
-	private void identifyRecommendations()
-	{
-
-		// Key words to look for:
-		String start   = "Parameter      | Current  | Autotune";
-		String ignored = "---------------------------------------\n";
-
-		int index = m_OutputStream.indexOf(start);
-		if (index >= 0)
-		{
-			// Create a string with rest of output
-			String recommendations = new String(m_OutputStream.substring(index + start.length() + ignored.length()));
-
-			String[] lines = recommendations.split("\n");
-
-			for (int l = 0; l < lines.length; l++)
-			{
-				String[] rec = lines[l].split("\\|");
-
-				for (int r = 0; r < rec.length; r++)
-				{
-					System.out.print(rec[r]);
-				}
-			}
-
-			// Now split this based on the Pipe symbol and strip white space.
-
-		}
-
-	}
+//	private void identifyRecommendations()
+//	{
+//
+//		// Key words to look for:
+//		String start   = "Parameter      | Current  | Autotune";
+//		String ignored = "---------------------------------------\n";
+//
+//		int index = m_OutputStream.indexOf(start);
+//		if (index >= 0)
+//		{
+//			// Create a string with rest of output
+//			String recommendations = new String(m_OutputStream.substring(index + start.length() + ignored.length()));
+//
+//			String[] lines = recommendations.split("\n");
+//
+//			for (int l = 0; l < lines.length; l++)
+//			{
+//				String[] rec = lines[l].split("\\|");
+//
+//				for (int r = 0; r < rec.length; r++)
+//				{
+//					System.out.print(rec[r]);
+//				}
+//			}
+//
+//			// Now split this based on the Pipe symbol and strip white space.
+//
+//		}
+//
+//	}
 
 	public class TextLineAccumulator implements TextLineReceiverInterface
 	{

@@ -141,7 +141,7 @@ Alternatively, you can copy the sqljdbc_auth.dll to a directory in the search pa
 		
 		Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");	
 		//Connection conn = DriverManager.getConnection("jdbc:sqlserver://192.168.1.123\\ACCUCHEK360;integratedSecurity=true;databaseName=KATSERVER_FUJI_ACCUCHEK_1");
-		String connString = "jdbc:sqlserver://" + srv + "\\" + inst + ";integratedSecurity=true;databaseName=" + db;
+		String connString = "jdbc:sqlserver://" + srv + "\\" + inst + ";integratedSecurity=true;databaseName=" + db +";user=sa;";
 		Connection conn = DriverManager.getConnection(connString);
 		Statement sta = conn.createStatement();
     	m_Logger.log(Level.FINE, "Test Connection: Successfully connected to SQL Server: " + srv + "/" + inst);

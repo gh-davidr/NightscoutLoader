@@ -18,6 +18,7 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,7 +59,7 @@ public class WinAutotuneProfile extends JFrame
 	private static final String       m_RemoteProfileName = "myopenaps/settings/profile.json";
 	private static final String       m_LocalProfileName  = "C:\\Temp\\profile.json";
 
-	private WinTextWin                m_Parent;
+	private WinTextWin                m_Parent = null;
 	private JPanel                    m_ContentPane;
 
 	private JSpinner                  m_CarbRatio;
@@ -83,6 +84,16 @@ public class WinAutotuneProfile extends JFrame
 	private  RemoteLinuxServer        m_Autotune;
 	private  ThreadAutotune           m_ATThread;
 
+	private   Date                    m_DiasendStartDate = new Date(0);
+	private   Date                    m_DiasendEndDate   = new Date(0);
+
+	
+	private   double                  m_DefAutoSensMax = 1.2;
+	private   double                  m_DefAutosensMin = 0.7;
+	private   long                    m_DefMin5mCarbImpact = 3;
+	private   long                    m_DefDia = 4;
+	
+	
 	/**
 	 * Create the frame.
 	 */
@@ -213,6 +224,109 @@ public class WinAutotuneProfile extends JFrame
 		loadFile(m_LocalProfileName);
 	}
 
+	public void doLoadDiasend(String diasendPath)
+	{		
+		// Also set it in preferences too
+		PrefsNightScoutLoader.getInstance().setM_DiasendMeterPumpResultFilePath(diasendPath);
+
+		m_Logger.log(Level.INFO, "You chose to open this file: " +
+				diasendPath);
+
+		// Now load the diasend Basal Rates only
+		DataLoadDiasend diasendPumpSettingLoader = new DataLoadDiasend();
+		try 
+		{
+			diasendPumpSettingLoader.loadPumpSettings(diasendPath);
+
+			m_DiasendStartDate = diasendPumpSettingLoader.getM_StartDate();
+			m_DiasendEndDate   = diasendPumpSettingLoader.getM_EndDate();
+
+			ArrayList<DBResultDiasendBasalSetting> basalValues = diasendPumpSettingLoader.getM_BasalSettings();
+			initializeFromBasals(basalValues);
+
+			ArrayList<DBResultDiasendISFSetting>   isfValues   = diasendPumpSettingLoader.getM_ISFSettings();
+			initializeFromISF(isfValues);
+
+			ArrayList<DBResultDiasendCarbRatioSetting> carbRatioValues   = diasendPumpSettingLoader.getM_CarbRatioSettings();
+			initializeFromCarbRatio(carbRatioValues);
+			
+			// Autotune needs additional values set that don;t come from Diasend
+			setRemainingKeyValues();
+		} 
+		catch (ClassNotFoundException | SQLException | IOException e) 
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	public void doSaveAsRemote(Object object) throws IOException
+	{
+		String  localFile      = "c:\\Temp\\profile.json.txt";
+
+		if (m_Parent != null)
+		{
+			m_Parent.addTextLine("**************************************************\n");
+			m_Parent.addTextLine("Remote Save As Thread Started\n");
+			m_Parent.addTextLine("**************************************************\n");
+		}
+
+		// Build JSON from form
+		JSONObject obj = buildJSONObject();
+
+		setAllMenusEnabled(false);
+
+		m_ATThread = new ThreadAutotuneRemoteSaveAs(m_Autotune, obj.toJSONString(), localFile);
+		m_ATThread.runThreadCommand(new AutotuneCompleteHandler(object) 
+		{
+			//		@Override
+			public void exceptionRaised(String message) 
+			{
+				//			m_mntmActionRunAutotune.setEnabled(true);
+				//			m_mntmActionListBackups.setEnabled(true);	
+				if (m_Parent != null)
+				{
+					m_Parent.addTextLine("**************************************************\n");
+					m_Parent.addTextLine("Remote Save As Thread Finished with exception\n");
+					m_Parent.addTextLine("**************************************************\n");
+				}
+				setAllMenusEnabled(true);
+			}
+
+			//		@Override
+			public void runAutotuneComplete(Object obj, String message) 
+			{
+				// m_Logger.log(Level.INFO, "RemoteLinuxServer Finished");
+				//				m_mntmActionRunAutotune.setEnabled(true);
+				//				m_mntmActionListBackups.setEnabled(true);
+				if (m_Parent != null)
+				{
+					m_Parent.addTextLine("**************************************************\n");
+					m_Parent.addTextLine("Thread Finished to handle Remote Save As\n");
+					m_Parent.addTextLine("**************************************************\n");
+				}
+				setAllMenusEnabled(true);
+			}
+		});	
+
+	}
+
+
+	/**
+	 * @return the m_DiasendStartDate
+	 */
+	public synchronized Date getM_DiasendStartDate() {
+		return m_DiasendStartDate;
+	}
+
+	/**
+	 * @return the m_DiasendEndDate
+	 */
+	public synchronized Date getM_DiasendEndDate() {
+		return m_DiasendEndDate;
+	}
+
 	private void retrieveLinuxProfileFile()
 	{
 		// Use the RemoteLinuxServer class to load the file
@@ -316,34 +430,77 @@ public class WinAutotuneProfile extends JFrame
 
 	private void setISFValues(double[] isfRates)
 	{
-		// Having built an array, now set the values accordingly
-		double prev = 0.0;
-		for (int h = 0; h < 24; h++)
+		boolean multiSupport = false;
+
+		double average = getAverageOfRateValues(isfRates);
+		if ( multiSupport == false )
 		{
-			double rate = isfRates[h];
-			if (rate != -1.0)
+			for (int h = 0; h < 24; h++)
 			{
-				prev = rate;
-				m_ISFandBasalRateControls[h].getM_InsSensFactor().setValue((double)rate);
-				m_ISFandBasalRateControls[h].getM_CopyISF().setSelected(false);
+				m_ISFandBasalRateControls[h].getM_InsSensFactor().setValue((double)average);
+				m_ISFandBasalRateControls[h].getM_CopyISF().setSelected(h == 0 ? false : true);
 			}
-			else
+		}
+
+		else if ( multiSupport == true )
+		{
+			// Having built an array, now set the values accordingly
+			double prev = 0.0;
+			for (int h = 0; h < 24; h++)
 			{
-				m_ISFandBasalRateControls[h].getM_InsSensFactor().setValue(prev);
-				m_ISFandBasalRateControls[h].getM_CopyISF().setSelected(true);	
-				ActionListener[] al = m_ISFandBasalRateControls[h].getM_CopyISF().getActionListeners();
-				if (al != null && al.length > 0)
+				double rate = isfRates[h];
+				if (rate != -1.0)
 				{
-					al[0].actionPerformed(null);
+					prev = rate;
+					m_ISFandBasalRateControls[h].getM_InsSensFactor().setValue((double)rate);
+					m_ISFandBasalRateControls[h].getM_CopyISF().setSelected(false);
 				}
-			}
-		}	
+				else
+				{
+					m_ISFandBasalRateControls[h].getM_InsSensFactor().setValue(prev);
+					m_ISFandBasalRateControls[h].getM_CopyISF().setSelected(true);	
+					ActionListener[] al = m_ISFandBasalRateControls[h].getM_CopyISF().getActionListeners();
+					if (al != null && al.length > 0)
+					{
+						al[0].actionPerformed(null);
+					}
+				}
+			}	
+		}
 	}
 
 
-	private void setCarbRatioRateValues(double[] isfRates)
+	private void setCarbRatioRateValues(double[] cvRates)
 	{
+		m_CarbRatio.setValue(getAverageOfRateValues(cvRates));
+	}
 
+	private double getAverageOfRateValues(double[] cvRates)
+	{
+		// Still a single value, so let's average the ratios proportionally
+		// based on how many hours each value is active for
+
+		// Having built an array, now set the values accordingly
+		double prev      = 0.0;
+		double total     = 0.0; 
+		double average = 0.0;
+
+		for (int h = 0; h < 24; h++)
+		{
+			double rate = cvRates[h];
+			if (rate != -1.0)
+			{
+				total += rate;
+				prev = rate;
+			}
+			else
+			{
+				total += prev;
+			}
+		}	
+		average = total / 24.0;
+
+		return average;
 	}
 
 
@@ -650,32 +807,8 @@ public class WinAutotuneProfile extends JFrame
 		{
 			diasendPath = chooser.getSelectedFile().getAbsolutePath();
 
-			// Also set it in preferences too
-			PrefsNightScoutLoader.getInstance().setM_DiasendMeterPumpResultFilePath(diasendPath);
-
-			m_Logger.log(Level.INFO, "You chose to open this file: " +
-					diasendPath);
-
-			// Now load the diasend Basal Rates only
-			DataLoadDiasend diasendPumpSettingLoader = new DataLoadDiasend();
-			try 
-			{
-				diasendPumpSettingLoader.loadPumpSettings(diasendPath);
-				ArrayList<DBResultDiasendBasalSetting> basalValues = diasendPumpSettingLoader.getM_BasalSettings();
-				initializeFromBasals(basalValues);
-				ArrayList<DBResultDiasendISFSetting>   isfValues   = diasendPumpSettingLoader.getM_ISFSettings();
-				initializeFromISF(isfValues);
-				ArrayList<DBResultDiasendCarbRatioSetting> carbRatioValues   = diasendPumpSettingLoader.getM_CarbRatioSettings();
-				initializeFromCarbRatio(carbRatioValues);
-			} 
-			catch (ClassNotFoundException | SQLException | IOException e) 
-			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
+			doLoadDiasend(diasendPath);
 		}
-
 	}
 
 	private void doSaveAsLocal() throws IOException
@@ -690,50 +823,7 @@ public class WinAutotuneProfile extends JFrame
 		}
 	}
 
-	private void doSaveAsRemote() throws IOException
-	{
-		String  localFile      = "c:\\Temp\\profile.json.txt";
-
-		m_Parent.addTextLine("**************************************************\n");
-		m_Parent.addTextLine("Remote Save As Thread Started\n");
-		m_Parent.addTextLine("**************************************************\n");
-
-		// Build JSON from form
-		JSONObject obj = buildJSONObject();
-
-		setAllMenusEnabled(false);
-
-
-		m_ATThread = new ThreadAutotuneRemoteSaveAs(m_Autotune, obj.toJSONString(), localFile);
-		m_ATThread.runThreadCommand(new AutotuneCompleteHandler(this) 
-		{
-			//		@Override
-			public void exceptionRaised(String message) 
-			{
-				//			m_mntmActionRunAutotune.setEnabled(true);
-				//			m_mntmActionListBackups.setEnabled(true);			
-				m_Parent.addTextLine("**************************************************\n");
-				m_Parent.addTextLine("Remote Save As Thread Finished with exception\n");
-				m_Parent.addTextLine("**************************************************\n");
-				setAllMenusEnabled(true);
-			}
-
-			//		@Override
-			public void runAutotuneComplete(Object obj, String message) 
-			{
-				// m_Logger.log(Level.INFO, "RemoteLinuxServer Finished");
-				//				m_mntmActionRunAutotune.setEnabled(true);
-				//				m_mntmActionListBackups.setEnabled(true);
-				m_Parent.addTextLine("**************************************************\n");
-				m_Parent.addTextLine("Thread Finished to handle Remote Save As\n");
-				m_Parent.addTextLine("**************************************************\n");
-				setAllMenusEnabled(true);
-			}
-		});	
-
-	}
-
-	private void setAllMenusEnabled(boolean enabled)
+	public void setAllMenusEnabled(boolean enabled)
 	{
 		setMenusEnabled(m_mnFile, enabled);
 	}
@@ -748,6 +838,11 @@ public class WinAutotuneProfile extends JFrame
 				mi.setEnabled(enabled);
 			}
 		}
+	}
+
+	private void doSaveAsRemote() throws IOException
+	{
+		doSaveAsRemote(this);
 	}
 
 	//	private void doSaveAsRemote_orig() throws IOException
@@ -849,9 +944,13 @@ public class WinAutotuneProfile extends JFrame
 			int hour = Integer.parseInt(isfTime.substring(0, 2));
 			if (hour < 24)
 			{
+				// Convert to mgDL if necessary
+				if (b.getM_BGUnits().equals("mmol/L"))
+				{
+					isfRate *= 18.0;
+				}
 				isfRates[hour] = isfRate;
 			}
-
 		}
 
 		// Having built an array, now set the values accordingly
@@ -890,8 +989,15 @@ public class WinAutotuneProfile extends JFrame
 
 	}
 
+	private void setRemainingKeyValues()
+	{
+		m_AutosensMax.setValue(m_DefAutoSensMax);
+		m_AutosensMin.setValue(m_DefAutosensMin);
+		m_Min5mCarbImpact.setValue(m_DefMin5mCarbImpact);
+		m_Dia.setValue(m_DefDia);
+	}
 
-	private JSONObject buildJSONObject()
+	public JSONObject buildJSONObject()
 	{
 		JSONObject result = null;
 
@@ -910,10 +1016,12 @@ public class WinAutotuneProfile extends JFrame
 		result.put("isfProfile", isfProfile);
 
 		JSONArray sensitivities = new JSONArray();
-		for (int i = 0; i < 24; i++)
-		{
-			addISFProfile(i, sensitivities);
-		}
+		// Just one sensitivity ...
+		addISFProfile(0, sensitivities);
+//		for (int i = 0; i < 24; i++)
+//		{
+//			addISFProfile(i, sensitivities);
+//		}
 		isfProfile.put("sensitivities", sensitivities);
 
 		result.put("carb_ratio",   (double)this.m_CarbRatio.getValue());
@@ -953,7 +1061,7 @@ public class WinAutotuneProfile extends JFrame
 			//			long   minutes       = h * 60;
 			long   minutes       = 1440;  // For now, only one senstivitiy can be used.
 			//			Long  sensitivity   = (Long) profControl.getM_InsSensFactor().getValue();
-			long   sensitivity   = Long.parseLong(sensStr);
+			long   sensitivity   = (long)Double.parseDouble(sensStr);
 			long   offset        = 0;
 			long   x             = 0;
 			start = (h < 10) ? "0" + h + ":00:00" : h + ":00:00";

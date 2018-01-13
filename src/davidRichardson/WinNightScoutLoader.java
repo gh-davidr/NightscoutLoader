@@ -65,6 +65,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -926,21 +927,30 @@ public class WinNightScoutLoader extends JFrame {
 			}
 		});
 		mnHelp.add(mntmFeedback);
-		mnHelp.add(new JSeparator()); // SEPARATOR
-
-		JMenuItem mntmDetailedHelp = new JMenuItem("Offline Help");
-		mntmDetailedHelp.addActionListener(new ActionListener() 
-		{
-			public void actionPerformed(ActionEvent arg0) 
-			{
-				if (m_ThreadHelpLauncher == null)
-				{
-					m_ThreadHelpLauncher = new ThreadHelpLauncher();
-				}
-				m_ThreadHelpLauncher.addHelpRequest("/NightscoutLoader.pdf");
-			}
-		});
-		mnHelp.add(mntmDetailedHelp);
+		
+		
+		// Disabled 13 Jan 2018 just prior to V3.0 release
+		// Noticed that it no longer opens the file
+		// openPdf returns null at InputStream jarPdf = MainNightScoutLoader.class.getResourceAsStream(pdf);
+		//
+//		mnHelp.add(new JSeparator()); // SEPARATOR
+//
+//		// 10 Jan 2018
+//		// Start using OneDrive for distributions with a downloadable link
+//		// Thinking about file size, stop including offline document too
+//		JMenuItem mntmDetailedHelp = new JMenuItem("Offline Help");
+//		mntmDetailedHelp.addActionListener(new ActionListener() 
+//		{
+//			public void actionPerformed(ActionEvent arg0) 
+//			{
+//				if (m_ThreadHelpLauncher == null)
+//				{
+//					m_ThreadHelpLauncher = new ThreadHelpLauncher();
+//				}
+//				m_ThreadHelpLauncher.addHelpRequest("/NightscoutLoader.pdf");
+//			}
+//		});
+//		mnHelp.add(mntmDetailedHelp);
 
 
 		// When fully initialized, come back and set the timezone label
@@ -1694,6 +1704,12 @@ public class WinNightScoutLoader extends JFrame {
 
 									// Update the Audit History Grid too
 									auditHistory.updateGrid();
+
+									// Set the number of CGM entries as may have changed
+									m_CGMEntriesLoadedLbl.setText("CGM : " + NumberFormat.getIntegerInstance().format(m_MongoResultEntries.size()));
+									m_CGMEntriesLoadedLbl.setVisible(true);
+									m_CGMEntriesLoadedLbl.setForeground(m_MongoResultEntries.size() == 0 ? Color.RED : Color.BLUE); // setBackground(Color.YELLOW);										
+
 								}
 							});
 
@@ -1876,7 +1892,8 @@ public class WinNightScoutLoader extends JFrame {
 
 	private void doAutotuneQuickRun()
 	{
-		if (CoreNightScoutLoader.getInstance().getM_NightScoutArrayListDBResultEntries().size() > 0)
+		//		if (CoreNightScoutLoader.getInstance().getM_NightScoutArrayListDBResultEntries().size() > 0)
+		if (CoreNightScoutLoader.getInstance().isM_ThreadDataLoadNightScoutEntriesRunning() == false)
 		{
 			WinRemoteLinuxServer win = createRemoteLinuxManagementWin();
 			if (win != null)
@@ -1886,7 +1903,9 @@ public class WinNightScoutLoader extends JFrame {
 			else
 			{
 				JOptionPane.showMessageDialog(null, 
-						"Autotune is currently disabled.  The option is on the Analyzer window.");
+						"Autotune is currently disabled or there are no CGM entries loaded.\n"
+						+ "CGM date range is in the Settings window\n"
+						+ "The option to enable Autotune is on the Analyzer window.");
 			}
 		}
 		else
@@ -1898,13 +1917,16 @@ public class WinNightScoutLoader extends JFrame {
 
 	private void doAutotuneManagement()
 	{
-		if (CoreNightScoutLoader.getInstance().getM_NightScoutArrayListDBResultEntries().size() > 0)
+		//		if (CoreNightScoutLoader.getInstance().getM_NightScoutArrayListDBResultEntries().size() > 0)
+		if (CoreNightScoutLoader.getInstance().isM_ThreadDataLoadNightScoutEntriesRunning() == false)
 		{
 			WinRemoteLinuxServer win = createRemoteLinuxManagementWin();
 			if (win == null)
 			{
 				JOptionPane.showMessageDialog(null, 
-						"Autotune is currently disabled.  The option is on the Analyzer window.");		
+						"Autotune is currently disabled or there are no CGM entries loaded.\n"
+						+ "CGM date range is in the Settings window\n"
+						+ "The option to enable Autotune is on the Analyzer window.");
 			}
 		}
 		else
@@ -2561,6 +2583,8 @@ public class WinNightScoutLoader extends JFrame {
 		// Need to reload and refresh
 
 		doThreadLoadNightScout(false);
+
+		doThreadLoadNightScoutEntries(false);
 	}
 
 	private boolean isRowProximity(int rowNum)

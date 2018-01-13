@@ -81,27 +81,30 @@ public class DBResultDiasend extends DBResult
 		return m_EndDate;	
 	}
 
-	private Date parseFileDateTime(String date)
-	{
-		Date result = new Date(0);
-		// Combined Date Time
-
-		final String defSlashFormat = new String("dd/MM/yy HH:mm");
-		String prefDateFormat       = PrefsNightScoutLoader.getInstance().getM_InputDateFormat();
-		DateFormat slashformat      = new SimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat), Locale.ENGLISH);
-		//		DateFormat slashformat      = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ENGLISH);
-
-		try
-		{
-			result = slashformat.parse(date);
-		}
-		catch (ParseException e) 
-		{
-			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+"> " + "parseFileDate - Unexpected error parsing date: " + date);
-		}
-
-		return result;
-	}
+//	private Date parseFileDateTime(String date)
+//	{
+//		Date result = new Date(0);
+//		// Combined Date Time
+//
+////		final String defSlashFormat = new String("dd/MM/yy HH:mm");  -- Changed with Glooko?
+//		
+//		final String defSlashFormat = new String("MM/dd/yy HH:mm");
+//		
+//		String prefDateFormat       = PrefsNightScoutLoader.getInstance().getM_InputDateFormat();
+//		DateFormat slashformat      = new SimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat), Locale.ENGLISH);
+//		//		DateFormat slashformat      = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ENGLISH);
+//
+//		try
+//		{
+//			result = slashformat.parse(date);
+//		}
+//		catch (ParseException e) 
+//		{
+//			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+"> " + "parseFileDate - Unexpected error parsing date: " + date);
+//		}
+//
+//		return result;
+//	}
 
 	private static Date parseDate(String date)
 	{
@@ -217,7 +220,6 @@ public class DBResultDiasend extends DBResult
 		return result;
 	}
 
-
 	private void loadRawGlucose(HSSFRow row)
 	{
 		String timeStr  = getStringCellValue(row, m_GlucoseTimeIndex);
@@ -233,7 +235,7 @@ public class DBResultDiasend extends DBResult
 		{
 			Date d = new Date(0);
 			//			d = parseFileDate(timeStr);
-			d = parseFileDateTime(timeStr);
+			d = DataLoadDiasend.parseFileDateTime(timeStr);
 			if (d.getTime() == 0)
 			{
 				m_Valid=false;
@@ -241,6 +243,7 @@ public class DBResultDiasend extends DBResult
 			else
 			{
 				m_Time = d;
+
 				m_Valid = true;
 				setDateFields();
 			}
@@ -262,13 +265,12 @@ public class DBResultDiasend extends DBResult
 
 		// Not sure how data looks for square waves as yet ...
 
-
 		if (timeStr != null && !timeStr.equals(""))
 		{
 			Date d = new Date(0);
 
 			//			d = parseFileDate(timeStr);
-			d = parseFileDateTime(timeStr);
+			d = DataLoadDiasend.parseFileDateTime(timeStr);
 			if (d.getTime() == 0)
 			{
 				m_Valid=false;
@@ -276,6 +278,7 @@ public class DBResultDiasend extends DBResult
 			else
 			{
 				m_Time = d;
+
 				m_Valid = true;
 				setDateFields();
 			}
@@ -360,7 +363,7 @@ public class DBResultDiasend extends DBResult
 		{
 			String cell1 = row.getCell(0).getStringCellValue();
 			String cell2 = row.getCell(1).getStringCellValue();
-
+			
 			if (cell1.equals(m_ReportRange))
 			{
 				// Data in cell2
@@ -438,6 +441,20 @@ public class DBResultDiasend extends DBResult
 			}
 		}
 
+	}
+
+	/**
+	 * @return the m_GlucoseTimeIndex
+	 */
+	public static synchronized int getM_GlucoseTimeIndex() {
+		return m_GlucoseTimeIndex;
+	}
+
+	/**
+	 * @return the m_InsulinTimeIndex
+	 */
+	public static synchronized int getM_InsulinTimeIndex() {
+		return m_InsulinTimeIndex;
 	}
 
 }

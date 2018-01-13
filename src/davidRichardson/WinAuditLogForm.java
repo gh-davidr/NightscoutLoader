@@ -46,6 +46,7 @@ public class WinAuditLogForm extends JFrame
 	private JTextField  tf_FileName;
 	private JTextField  tf_DateRange;
 	private JTextField  tf_EntriesAdded;
+	private JTextField  tf_CGMEntriesAdded;
 	private JTextField  tf_TreatmentsAtStart;
 	private JTextField  tf_TreatmentsByNSLAtStart;
 	private JTextField  tf_ProximityMeterEntries;
@@ -225,12 +226,30 @@ public class WinAuditLogForm extends JFrame
 		gbc_tf_EntriesAdded.gridy = 6;
 		panel_2.add(tf_EntriesAdded, gbc_tf_EntriesAdded);
 
+		JLabel label2 = new JLabel("CGM Entries Added");
+		GridBagConstraints gbc_label2 = new GridBagConstraints();
+		gbc_label2.anchor = GridBagConstraints.EAST;
+		gbc_label2.insets = new Insets(0, 0, 5, 5);
+		gbc_label2.gridx = 0;
+		gbc_label2.gridy = 7;
+		panel_2.add(label2, gbc_label2);
+
+		tf_CGMEntriesAdded = new JTextField();
+		tf_CGMEntriesAdded.setEditable(false);
+		tf_CGMEntriesAdded.setColumns(10);
+		GridBagConstraints gbc_tf_CGMEntriesAdded = new GridBagConstraints();
+		gbc_tf_CGMEntriesAdded.insets = new Insets(0, 0, 5, 0);
+		gbc_tf_CGMEntriesAdded.fill = GridBagConstraints.HORIZONTAL;
+		gbc_tf_CGMEntriesAdded.gridx = 1;
+		gbc_tf_CGMEntriesAdded.gridy = 7;
+		panel_2.add(tf_CGMEntriesAdded, gbc_tf_CGMEntriesAdded);
+
 		JLabel label_1 = new JLabel("Treatments At Start");
 		GridBagConstraints gbc_label_1 = new GridBagConstraints();
 		gbc_label_1.anchor = GridBagConstraints.EAST;
 		gbc_label_1.insets = new Insets(0, 0, 5, 5);
 		gbc_label_1.gridx = 0;
-		gbc_label_1.gridy = 7;
+		gbc_label_1.gridy = 8;
 		panel_2.add(label_1, gbc_label_1);
 
 		tf_TreatmentsAtStart = new JTextField();
@@ -240,7 +259,7 @@ public class WinAuditLogForm extends JFrame
 		gbc_tf_TreatmentsAtStart.insets = new Insets(0, 0, 5, 0);
 		gbc_tf_TreatmentsAtStart.fill = GridBagConstraints.HORIZONTAL;
 		gbc_tf_TreatmentsAtStart.gridx = 1;
-		gbc_tf_TreatmentsAtStart.gridy = 7;
+		gbc_tf_TreatmentsAtStart.gridy = 8;
 		panel_2.add(tf_TreatmentsAtStart, gbc_tf_TreatmentsAtStart);
 
 		JLabel lblNewLabel_5 = new JLabel("Nightscout Loader Treatments");
@@ -248,7 +267,7 @@ public class WinAuditLogForm extends JFrame
 		gbc_lblNewLabel_5.anchor = GridBagConstraints.EAST;
 		gbc_lblNewLabel_5.insets = new Insets(0, 0, 5, 5);
 		gbc_lblNewLabel_5.gridx = 0;
-		gbc_lblNewLabel_5.gridy = 8;
+		gbc_lblNewLabel_5.gridy = 9;
 		panel_2.add(lblNewLabel_5, gbc_lblNewLabel_5);
 
 		tf_TreatmentsByNSLAtStart = new JTextField();
@@ -257,7 +276,7 @@ public class WinAuditLogForm extends JFrame
 		gbc_tf_TimeSlot.insets = new Insets(0, 0, 5, 0);
 		gbc_tf_TimeSlot.fill = GridBagConstraints.HORIZONTAL;
 		gbc_tf_TimeSlot.gridx = 1;
-		gbc_tf_TimeSlot.gridy = 8;
+		gbc_tf_TimeSlot.gridy = 9;
 		panel_2.add(tf_TreatmentsByNSLAtStart, gbc_tf_TimeSlot);
 		tf_TreatmentsByNSLAtStart.setColumns(10);
 
@@ -266,7 +285,7 @@ public class WinAuditLogForm extends JFrame
 		gbc_lblNewLabel_6.anchor = GridBagConstraints.EAST;
 		gbc_lblNewLabel_6.insets = new Insets(0, 0, 5, 5);
 		gbc_lblNewLabel_6.gridx = 0;
-		gbc_lblNewLabel_6.gridy = 9;
+		gbc_lblNewLabel_6.gridy = 10;
 		panel_2.add(lblNewLabel_6, gbc_lblNewLabel_6);
 		
 		tf_ProximityMeterEntries = new JTextField();
@@ -275,7 +294,7 @@ public class WinAuditLogForm extends JFrame
 		gbc_ProximityMeterEntries.insets = new Insets(0, 0, 5, 0);
 		gbc_ProximityMeterEntries.fill = GridBagConstraints.HORIZONTAL;
 		gbc_ProximityMeterEntries.gridx = 1;
-		gbc_ProximityMeterEntries.gridy = 9;
+		gbc_ProximityMeterEntries.gridy = 10;
 		panel_2.add(tf_ProximityMeterEntries, gbc_ProximityMeterEntries);
 		tf_ProximityMeterEntries.setColumns(10);
 		
@@ -285,7 +304,7 @@ public class WinAuditLogForm extends JFrame
 		gbc_lblNightscoutDupes.anchor = GridBagConstraints.EAST;
 		gbc_lblNightscoutDupes.insets = new Insets(0, 0, 5, 5);
 		gbc_lblNightscoutDupes.gridx = 0;
-		gbc_lblNightscoutDupes.gridy = 10;
+		gbc_lblNightscoutDupes.gridy = 11;
 		panel_2.add(lblNightscoutDupes, gbc_lblNightscoutDupes);
 		
 		tf_ProximityNSEntries = new JTextField();
@@ -295,7 +314,7 @@ public class WinAuditLogForm extends JFrame
 		gbc_tf_ProximityNSEntries.insets = new Insets(0, 0, 5, 0);
 		gbc_tf_ProximityNSEntries.fill = GridBagConstraints.HORIZONTAL;
 		gbc_tf_ProximityNSEntries.gridx = 1;
-		gbc_tf_ProximityNSEntries.gridy = 10;
+		gbc_tf_ProximityNSEntries.gridy = 11;
 		panel_2.add(tf_ProximityNSEntries, gbc_tf_ProximityNSEntries);
 		
 		JPanel panel_1 = new JPanel();
@@ -363,6 +382,7 @@ public class WinAuditLogForm extends JFrame
 		tf_FileName.setText(m_result.getM_FileName());
 		tf_DateRange.setText(m_result.getM_DateRange());
 		tf_EntriesAdded.setText(String.format("%d", m_result.getM_EntriesAdded()));
+		tf_CGMEntriesAdded.setText(String.format("%d", m_result.getM_CGMEntriesAdded()));
 		tf_TreatmentsAtStart.setText(String.format("%d", m_result.getM_TreatmentsAtStart()));
 		tf_TreatmentsByNSLAtStart.setText(String.format("%d", m_result.getM_TreatmentsByNSLAtStart()));
 		

@@ -8,19 +8,76 @@ public class OmniPodBinaryFileSection
 	protected String            m_Encoding;
 	protected ArrayList<String> m_FieldNames;
 	protected ArrayList<String> m_FieldValues;
-	protected OmniPodValidator  m_Validator;
-	
+	protected OmniPodValidator  m_Validator    = null;
+
 	OmniPodBinaryFileSection(String sectionHeader, String encoding, String[] fieldNames)
 	{
 		m_SectionHeader = new String(sectionHeader);
 		m_Encoding      = new String(encoding);
 		m_FieldNames    = new ArrayList<String>();
 		m_FieldValues   = new ArrayList<String>();
-		
+
+		if (fieldNames != null)
+		{
+			for (String f : fieldNames)
+			{
+				m_FieldNames.add(f);
+			}
+		}
+	}
+
+	OmniPodBinaryFileSection(String sectionHeader, String encoding, 
+			String[] fieldNames, 
+			OmniPodValidator validator)
+	{
+		m_SectionHeader = new String(sectionHeader);
+		m_Encoding      = new String(encoding);
+		m_FieldNames    = new ArrayList<String>();
+		m_FieldValues   = new ArrayList<String>();
+
 		for (String f : fieldNames)
 		{
 			m_FieldNames.add(f);
 		}
+		m_Validator = validator;
+	}
+
+	OmniPodBinaryFileSection(String sectionHeader, String encoding, 
+			String[] fieldNames, String[] fieldValues)
+	{
+		m_SectionHeader = new String(sectionHeader);
+		m_Encoding      = new String(encoding);
+		m_FieldNames    = new ArrayList<String>();
+		m_FieldValues   = new ArrayList<String>();
+
+		for (String f : fieldNames)
+		{
+			m_FieldNames.add(f);
+		}
+		for (String f : fieldValues)
+		{
+			m_FieldValues.add(f);
+		}
+	}
+
+	OmniPodBinaryFileSection(String sectionHeader, String encoding, 
+			String[] fieldNames, String[] fieldValues,
+			OmniPodValidator validator)
+	{
+		m_SectionHeader = new String(sectionHeader);
+		m_Encoding      = new String(encoding);
+		m_FieldNames    = new ArrayList<String>();
+		m_FieldValues   = new ArrayList<String>();
+
+		for (String f : fieldNames)
+		{
+			m_FieldNames.add(f);
+		}
+		for (String f : fieldValues)
+		{
+			m_FieldValues.add(f);
+		}
+		m_Validator = validator;
 	}
 
 	/**

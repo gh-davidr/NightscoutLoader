@@ -21,24 +21,36 @@ public abstract class DataLoadBase
 	// Merge results into treatments ready for comparison/loading to Nightscout
 	protected ArrayList <DBResult> resultTreatments;
 
+	// Loaded from raw device such as meter, pump DB or file
+	protected ArrayList <DBResultEntry> rawEntryResultsFromDB;
+	
 	
 	public void clearLists()
 	{
 		rawResultsFromDB.clear();
 		resultTreatments.clear();
+		rawEntryResultsFromDB.clear();
 	}
 	
 	public DataLoadBase()
 	{
 		rawResultsFromDB = new ArrayList<DBResult>();
 		resultTreatments = new ArrayList<DBResult>();
+		rawEntryResultsFromDB = new ArrayList<DBResultEntry>();
 	}
 	
 	public ArrayList <DBResult> getResultsTreatments()
 	{
 		return resultTreatments;
 	}
-	
+
+	/**
+	 * @return the rawEntryResultsFromDB
+	 */
+	public synchronized ArrayList<DBResultEntry> getRawEntryResultsFromDB() {
+		return rawEntryResultsFromDB;
+	}
+
 	// Derived classes must return a String that gets used in storing treatments.
 	protected abstract String getDevice();
 	
@@ -53,7 +65,12 @@ public abstract class DataLoadBase
 		Collections.sort(rawResultsFromDB, new ResultFromDBComparator(false));
 	}
 
-	
+	protected void sortDBResultEntries()
+	{
+		// Sort the CGM Results
+		Collections.sort(rawEntryResultsFromDB, new ResultFromDBComparator(false));
+	}
+
 	// Provide a common means of inferring basals where needed
 	protected void locateTempBasals()
 	{

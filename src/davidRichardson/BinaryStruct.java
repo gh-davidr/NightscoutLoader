@@ -2,11 +2,17 @@ package davidRichardson;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class BinaryStruct {
+public class BinaryStruct 
+{
 
 	enum VarType
 	{
+		vt_Unknown,
+		
 		vt_short,
 		vt_signed_short,
 		vt_int,
@@ -25,6 +31,9 @@ public class BinaryStruct {
 
 	private static FieldType[] m_FieldType   = new FieldType[15];
 	private static boolean     m_Initialized = false;
+	
+	private int                m_Count = 0;
+	private String             m_Expression = "";
 
 	private class FieldType
 	{
@@ -82,105 +91,41 @@ public class BinaryStruct {
 		}
 	}
 
-
-	public class FieldAccess 
+	// See parseformat in struct.js from tidepool on which this is modeled
+	public static ArrayList<BinaryStruct> parseFormat(String format)
 	{
-		private byte[] m_RawData = null;		
-
-		FieldAccess(byte[] rawdata)
-		{
-			m_RawData = rawdata;
-		}
-
-		public int extractInt(byte[] rawdata, int offset)
-		{
-			int result =  ByteBuffer.wrap(rawdata,offset,4).order(ByteOrder.LITTLE_ENDIAN).getInt();
-			return result;
-		}
-		public int extractSignedInt(byte[] rawdata, int offset)
-		{
-			int result =  extractInt(rawdata, offset);
-			return result;
-		}
-
-		public short extractShort(byte[] rawdata, int offset)
-		{
-			short result =  ByteBuffer.wrap(rawdata,offset,4).order(ByteOrder.LITTLE_ENDIAN).getShort();
-			return result;
-		}
-		public short extractSignedShort(byte[] rawdata, int offset)
-		{
-			short result = extractShort(rawdata, offset);
-			return result;
-		}
-
-		public byte extractbyte(byte[] rawdata, int offset)
-		{
-			return rawdata[offset];
-		}
-
-		public byte extractSignedbyte(byte[] rawdata, int offset)
-		{
-			byte result = extractbyte(rawdata, offset);
-
-			result = (byte) ((result & 127) - (result & 128));
-			return result;
-		}
-
-		public String  extractbytes(byte[] rawdata, int offset, int len)
-		{
-			String result = new String();
-			for (int c = offset; c < offset + len; c++)
-			{
-				result += rawdata[c];	
-			}
-						
-			return result;
-		}
+		ArrayList<BinaryStruct> result = new ArrayList<BinaryStruct>();
 		
-		public float extractFloat(byte[] rawdata, int offset)
-		{
-			float result =  ByteBuffer.wrap(rawdata,offset,4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-			return result;
-		}
+		int count = 0;
+		String exp = new String("");
 		
-		public int extractBEInt(byte[] rawdata, int offset)
+		Pattern formatPattern = Pattern.compile("(([0-9]*)([a-zA-Z.]))+");
+		Matcher formatMatcher = formatPattern.matcher(format);
+
+		while (formatMatcher.find())
 		{
-			int result =  ByteBuffer.wrap(rawdata,offset,4).order(ByteOrder.BIG_ENDIAN).getInt();
-			return result;	
+			count = Integer.parseInt(formatMatcher.group(1));
+			exp   = formatMatcher.group(2);
+			BinaryStruct entry = new BinaryStruct(count, exp);
+			result.add(entry);
 		}
-		
-		public int extractBESignedInt(byte[] rawdata, int offset)
-		{
-			int result =  extractBEInt(rawdata, offset);
-			return result;
-		}
-		
-		public short extractBEShort(byte[] rawdata, int offset)
-		{
-			short result =  ByteBuffer.wrap(rawdata,offset,4).order(ByteOrder.BIG_ENDIAN).getShort();
-			return result;
-		}
-		
-		public short extractBESignedShort(byte[] rawdata, int offset)
-		{
-			short result = extractBEShort(rawdata, offset);
-			return result;
-		}
-		
-		public String  extractZString(byte[] rawdata, int offset, int len)
-		{
-			 String result = extractbytes(rawdata, offset, len);
-			 return result;
-		}
-		public String  extractString(byte[] rawdata, int offset, int len)
-		{
-			 String result = extractbytes(rawdata, offset, len);
-			 return result;
-		}
+
+		return result;
+	}
+	
+	BinaryStruct(int count, String exp)
+	{
+		initialize();
+		m_Count      = count;
+		m_Expression = new String(exp);
 	}
 	
 	BinaryStruct()
+	{
+		initialize();
+	}
+	
+	private void initialize()
 	{
 		if (m_Initialized == false)
 		{

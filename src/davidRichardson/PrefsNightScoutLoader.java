@@ -63,40 +63,42 @@ public class PrefsNightScoutLoader
 	// http://www.vogella.com/tutorials/JavaPreferences/article.html
 	
 	// Note the defaults
-	final private int    def_M_BGUnits                           = 0;  // mmol
-	final private String def_M_SelectedMeter                     = "Roche Combo";
-	final private int    def_M_DaysToLoad                        = 45;
-	final private String def_M_SQLFile                           = "C:\\Local_Data\\SQL_Query_For_Java.txt";
-	final private String def_M_SQLDBServerHost                   = "192.168.1.123";
-	final private String def_M_SQLDBServerInstance               = "ACCUCHEK360";
-	final private String def_M_SQLDBName                         = "KATSERVER_FUJI_ACCUCHEK_1";
-	final private String def_M_MedtronicMeterPumpResultFilePath  = "";
-	final private String def_M_DiasendMeterPumpResultFilePath    = "";
-	final private String def_M_OmniPodMeterPumpResultFilePath    = "";
-	final private String def_M_RocheExtractMeterPumpResultFilePath    = "";
-	final private String def_M_TandemMeterPumpResultFilePath     = "";
-	final private String def_M_ExportFilePath                    = "";
-	final private String def_M_DownloadTreatmentFilePath         = "";
-	final private String def_M_DownloadSensorFilePath            = "";
-	final private String def_M_AnalysisFilePath                  = "";
+	final private int     def_M_BGUnits                           = 0;  // mmol
+	final private String  def_M_SelectedMeter                     = "Roche Combo";
+	final private int     def_M_DaysToLoad                        = 45;
+	final private String  def_M_SQLFile                           = "C:\\Local_Data\\SQL_Query_For_Java.txt";
+	final private String  def_M_SQLDBServerHost                   = "192.168.1.123";
+	final private String  def_M_SQLDBServerInstance               = "ACCUCHEK360";
+	final private String  def_M_SQLDBName                         = "KATSERVER_FUJI_ACCUCHEK_1";
+	final private String  def_M_MedtronicMeterPumpResultFilePath  = "";
+	final private String  def_M_DiasendMeterPumpResultFilePath    = "";
+	final private String  def_M_DiasendDateFormat                 = "dd/MM/yyyy";
+	
+	final private String  def_M_OmniPodMeterPumpResultFilePath    = "";
+	final private String  def_M_RocheExtractMeterPumpResultFilePath    = "";
+	final private String  def_M_TandemMeterPumpResultFilePath     = "";
+	final private String  def_M_ExportFilePath                    = "";
+	final private String  def_M_DownloadTreatmentFilePath         = "";
+	final private String  def_M_DownloadSensorFilePath            = "";
+	final private String  def_M_AnalysisFilePath                  = "";
 
-//	final private String def_M_NightscoutMongoServer             = "localhost";
-	final private String def_M_NightscoutMongoServer             = "";
+//	final private String  def_M_NightscoutMongoServer             = "localhost";
+	final private String  def_M_NightscoutMongoServer             = "";
 //	m_NightscoutMongoPort               = 27017;
-	final private String def_M_NightscoutMongoDB                 = "dexcom_db";
-	final private String def_M_NightscoutMongoCollection         = "treatments";
-	final private String def_M_NightscoutSensorMongoCollection   = "entries";
-	final private String def_M_NightscoutAuditCollection         = "treatments_loads";
-	final private String def_M_MongoMeterCollection              = "Roche_Results";
+	final private String  def_M_NightscoutMongoDB                 = "dexcom_db";
+	final private String  def_M_NightscoutMongoCollection         = "treatments";
+	final private String  def_M_NightscoutSensorMongoCollection   = "entries";
+	final private String  def_M_NightscoutAuditCollection         = "treatments_loads";
+	final private String  def_M_MongoMeterCollection              = "Roche_Results";
 	final private Boolean def_M_LoadNightscoutEntries            = true;
-	private int def_M_WeeksBackToLoadEntries               = 4;
+	final private int     def_M_WeeksBackToLoadEntries               = 4;
 	
 	final private Boolean def_M_AdvancedSettings                 = false;
 	final private String  def_M_MongoMeterServer                 = "";
 	final private String  def_M_MongoMeterDB                     = "";
 
-	final private int    def_M_MaxMinsBetweenSameMealEvent       = 30; // Allow up to half an hour between BG, Carbs & Ins
-	final private int    def_M_MaxMinsBetweenSameCorrectionEvent = 5;  // Allow up to 5 mins between BG & Ins	
+	final private int     def_M_MaxMinsBetweenSameMealEvent       = 30; // Allow up to half an hour between BG, Carbs & Ins
+	final private int     def_M_MaxMinsBetweenSameCorrectionEvent = 5;  // Allow up to 5 mins between BG & Ins	
 	final private Boolean def_M_UseMongoForRocheResults          = false; 
 	
 	final private int     def_M_LogLevel                         = 0; // CHanged now.  It's an index onto 3 values
@@ -172,8 +174,11 @@ public class PrefsNightScoutLoader
 	final private String  def_M_AutoTuneNSURL                      = ""; // We've managed without the URL all this time :-)
 	final private boolean def_M_AutoTuneSSH2KeyLogin               = true;
 	final private String  def_M_AutoTuneKeyFile                    = "";
+	final private String  def_M_AutoTunePassword                   = "";
 	final private String  def_M_AutoTuneLocalFolderForBackups      = "C:\\Temp\\NightscoutLoaderAutotuneBackups";
 	final private String  def_M_AutoTuneLocalProfileFileLoaded     = "";
+	
+	final private boolean def_M_SyncCGM                            = true; 
 	
 	
 	private int     m_BGUnits;    // 0 ==> mmol/L 1 ==> mg/
@@ -185,6 +190,7 @@ public class PrefsNightScoutLoader
 	private String  m_SQLDBName;
 	private String  m_MedtronicMeterPumpResultFilePath;
 	private String  m_DiasendMeterPumpResultFilePath;
+	private String  m_DiasendDateFormat;
 	private String  m_OmniPodMeterPumpResultFilePath;
 	private String  m_RocheExtractMeterPumpResultFilePath;
 	private String  m_TandemMeterPumpResultFilePath;
@@ -286,8 +292,10 @@ public class PrefsNightScoutLoader
 	private String  m_AutoTuneNSURL; // We've managed without the URL all this time :-)
 	private boolean m_AutoTuneSSH2KeyLogin;
 	private String  m_AutoTuneKeyFile;
+	private String  m_AutoTunePassword;
 	private String  m_AutoTuneLocalFolderForBackups;
 	private String  m_AutoTuneLocalProfileFileLoaded;
+	private boolean m_SyncCGM;
 
 
 	// Handles to retrieve preferences
@@ -300,6 +308,7 @@ public class PrefsNightScoutLoader
 	final private String pref_SQLDBName                         = "NSL_SQLDBName";
 	final private String pref_MedtronicMeterPumpResultFilePath  = "NSL_MedtronicMeterPumpResultFilePath";
 	final private String pref_DiasendMeterPumpResultFilePath    = "NSL_DiasendMeterPumpResultFilePath";
+	final private String pref_DiasendDateFormat                 = "NSL_DiasendDateFormat";
 	final private String pref_OmniPodMeterPumpResultFilePath    = "NSL_OmniPodMeterPumpResultFilePath";
 	final private String pref_RocheExtractMeterPumpResultFilePath    = "NSL_RocheExtractMeterPumpResultFilePath";
 	final private String pref_TandemMeterPumpResultFilePath     = "NSL_TandemMeterPumpResultFilePath";
@@ -391,8 +400,10 @@ public class PrefsNightScoutLoader
 	final private String  pref_AutoTuneNSURL                        = "NSL_AutoTuneNSURL";
 	final private String  pref_AutoTuneSSH2KeyLogin                 = "NSL_AutoTuneSSH2KeyLogin";
 	final private String  pref_AutoTuneKeyFile                      = "NSL_AutoTuneKeyFile";
+	final private String  pref_AutoTunePassword                     = "NSL_AutoTunePassword";
 	final private String  pref_AutoTuneLocalFolderForBackups        = "NSL_AutoTuneLocalFolderForBackups";
 	final private String  pref_AutoTuneLocalProfileFileLoaded       = "NSL_AutoTuneLocalProfileFileLoaded";
+	final private String  pref_SyncCGM                              = "NSL_SyncCGM";
 		
 	static int getBGUnitMultiplier()
 	{
@@ -418,6 +429,7 @@ public class PrefsNightScoutLoader
 		m_SQLDBName                         = def_M_SQLDBName;
 		m_MedtronicMeterPumpResultFilePath  = def_M_MedtronicMeterPumpResultFilePath;
 		m_DiasendMeterPumpResultFilePath    = def_M_DiasendMeterPumpResultFilePath;
+		m_DiasendDateFormat                 = def_M_DiasendDateFormat;
 		m_OmniPodMeterPumpResultFilePath    = def_M_OmniPodMeterPumpResultFilePath;
 		m_RocheExtractMeterPumpResultFilePath    = def_M_RocheExtractMeterPumpResultFilePath;
 		m_TandemMeterPumpResultFilePath     = def_M_TandemMeterPumpResultFilePath;
@@ -538,8 +550,10 @@ public class PrefsNightScoutLoader
 		m_AutoTuneNSURL                        = def_M_AutoTuneServer; // We've managed without the URL all this time :-)
 		m_AutoTuneSSH2KeyLogin                 = def_M_AutoTuneSSH2KeyLogin;
 		m_AutoTuneKeyFile                      = def_M_AutoTuneKeyFile;
+		m_AutoTunePassword                     = def_M_AutoTunePassword;
 		m_AutoTuneLocalFolderForBackups        = def_M_AutoTuneLocalFolderForBackups;
 		m_AutoTuneLocalProfileFileLoaded       = def_M_AutoTuneLocalProfileFileLoaded;
+		m_SyncCGM                              = def_M_SyncCGM;
 	}
 	
 	private void resetBGValues()
@@ -579,6 +593,8 @@ public class PrefsNightScoutLoader
 	    prefs.put(pref_SQLDBName, m_SQLDBName);
 	    prefs.put(pref_MedtronicMeterPumpResultFilePath, m_MedtronicMeterPumpResultFilePath);
 	    prefs.put(pref_DiasendMeterPumpResultFilePath, m_DiasendMeterPumpResultFilePath);
+	    prefs.put(pref_DiasendDateFormat, m_DiasendDateFormat);
+	    
 	    prefs.put(pref_OmniPodMeterPumpResultFilePath, m_OmniPodMeterPumpResultFilePath);
 	    prefs.put(pref_RocheExtractMeterPumpResultFilePath, m_RocheExtractMeterPumpResultFilePath);
 	    prefs.put(pref_TandemMeterPumpResultFilePath, m_TandemMeterPumpResultFilePath);
@@ -672,8 +688,10 @@ public class PrefsNightScoutLoader
 		prefs.put(pref_AutoTuneNSURL,   m_AutoTuneNSURL);
 		prefs.putBoolean(pref_AutoTuneSSH2KeyLogin, m_AutoTuneSSH2KeyLogin);
 		prefs.put(pref_AutoTuneKeyFile,   m_AutoTuneKeyFile);
+		prefs.put(pref_AutoTunePassword,   m_AutoTunePassword);
 		prefs.put(pref_AutoTuneLocalFolderForBackups, m_AutoTuneLocalFolderForBackups);
 		prefs.put(pref_AutoTuneLocalProfileFileLoaded, m_AutoTuneLocalProfileFileLoaded);
+		prefs.putBoolean(pref_SyncCGM, m_SyncCGM);
 
 	}
 	
@@ -694,6 +712,8 @@ public class PrefsNightScoutLoader
 		m_SQLDBName                         = prefs.get(pref_SQLDBName,            def_M_SQLDBName);
 		m_MedtronicMeterPumpResultFilePath  = prefs.get(pref_MedtronicMeterPumpResultFilePath, def_M_MedtronicMeterPumpResultFilePath);
 		m_DiasendMeterPumpResultFilePath    = prefs.get(pref_DiasendMeterPumpResultFilePath, def_M_DiasendMeterPumpResultFilePath);
+		m_DiasendDateFormat                 = prefs.get(pref_DiasendDateFormat, def_M_DiasendDateFormat);
+		
 		m_OmniPodMeterPumpResultFilePath    = prefs.get(pref_OmniPodMeterPumpResultFilePath, def_M_OmniPodMeterPumpResultFilePath);
 		m_RocheExtractMeterPumpResultFilePath    = prefs.get(pref_RocheExtractMeterPumpResultFilePath, def_M_RocheExtractMeterPumpResultFilePath);
 		m_TandemMeterPumpResultFilePath     = prefs.get(pref_TandemMeterPumpResultFilePath, def_M_TandemMeterPumpResultFilePath);
@@ -792,8 +812,10 @@ public class PrefsNightScoutLoader
 		m_AutoTuneNSURL                     = prefs.get(pref_AutoTuneNSURL,   def_M_AutoTuneNSURL);
 		m_AutoTuneSSH2KeyLogin              = prefs.getBoolean(pref_AutoTuneSSH2KeyLogin, def_M_AutoTuneSSH2KeyLogin);
 		m_AutoTuneKeyFile                   = prefs.get(pref_AutoTuneKeyFile,   def_M_AutoTuneKeyFile);
+		m_AutoTunePassword                  = prefs.get(pref_AutoTunePassword,   def_M_AutoTunePassword);
 		m_AutoTuneLocalFolderForBackups     = prefs.get(pref_AutoTuneLocalFolderForBackups, def_M_AutoTuneLocalFolderForBackups);
 		m_AutoTuneLocalProfileFileLoaded    = prefs.get(pref_AutoTuneLocalProfileFileLoaded, def_M_AutoTuneLocalProfileFileLoaded);
+		m_SyncCGM                           = prefs.getBoolean(pref_SyncCGM, def_M_SyncCGM);
 
 	//	prefs.nodeExists(arg0)
 	}
@@ -945,6 +967,20 @@ public class PrefsNightScoutLoader
 	 */
 	public synchronized void setM_DiasendMeterPumpResultFilePath(String m_DiasendMeterPumpResultFilePath) {
 		this.m_DiasendMeterPumpResultFilePath = m_DiasendMeterPumpResultFilePath;
+	}
+
+	/**
+	 * @return the m_DiasendDateFormat
+	 */
+	public synchronized String getM_DiasendDateFormat() {
+		return m_DiasendDateFormat;
+	}
+
+	/**
+	 * @param m_DiasendDateFormat the m_DiasendDateFormat to set
+	 */
+	public synchronized void setM_DiasendDateFormat(String m_DiasendDateFormat) {
+		this.m_DiasendDateFormat = m_DiasendDateFormat;
 	}
 
 	/**
@@ -1206,13 +1242,6 @@ public class PrefsNightScoutLoader
 	 */
 	public synchronized int getDef_M_WeeksBackToLoadEntries() {
 		return def_M_WeeksBackToLoadEntries;
-	}
-
-	/**
-	 * @param def_M_WeeksBackToLoadEntries the def_M_WeeksBackToLoadEntries to set
-	 */
-	public synchronized void setDef_M_WeeksBackToLoadEntries(int def_M_WeeksBackToLoadEntries) {
-		this.def_M_WeeksBackToLoadEntries = def_M_WeeksBackToLoadEntries;
 	}
 
 	/**
@@ -2115,6 +2144,20 @@ public class PrefsNightScoutLoader
 	}
 
 	/**
+	 * @return the m_AutoTunePassword
+	 */
+	public synchronized String getM_AutoTunePassword() {
+		return m_AutoTunePassword;
+	}
+
+	/**
+	 * @param m_AutoTunePassword the m_AutoTunePassword to set
+	 */
+	public synchronized void setM_AutoTunePassword(String m_AutoTunePassword) {
+		this.m_AutoTunePassword = m_AutoTunePassword;
+	}
+
+	/**
 	 * @return the m_AutoTuneLocalFolderForBackups
 	 */
 	public synchronized String getM_AutoTuneLocalFolderForBackups() {
@@ -2140,6 +2183,20 @@ public class PrefsNightScoutLoader
 	 */
 	public synchronized void setM_AutoTuneLocalProfileFileLoaded(String m_AutoTuneLocalProfileFileLoaded) {
 		this.m_AutoTuneLocalProfileFileLoaded = m_AutoTuneLocalProfileFileLoaded;
+	}
+
+	/**
+	 * @return the m_SyncCGM
+	 */
+	public synchronized boolean isM_SyncCGM() {
+		return m_SyncCGM;
+	}
+
+	/**
+	 * @param m_SyncCGM the m_SyncCGM to set
+	 */
+	public synchronized void setM_SyncCGM(boolean m_SyncCGM) {
+		this.m_SyncCGM = m_SyncCGM;
 	}
 
 

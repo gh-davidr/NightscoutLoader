@@ -14,17 +14,17 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-public class DBResult implements DBResultInterface
+public class DBResult extends DBResultCore 
 {
 
 	protected static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());
 
-	// Sep 2016
-	// Proximity checks are for where we have a new Meter/Pump entry coming into an
-	// existing NightScout Care Portal data set, and there's a possible duplicate
-	// among them.
-	private static boolean m_ProximityCheck           = false;
-	private static boolean m_ProximityCheckSecondPass = false;
+//	// Sep 2016
+//	// Proximity checks are for where we have a new Meter/Pump entry coming into an
+//	// existing NightScout Care Portal data set, and there's a possible duplicate
+//	// among them.
+//	private static boolean m_ProximityCheck           = false;
+//	private static boolean m_ProximityCheckSecondPass = false;
 
 
 	// Enumerator for Analysis
@@ -252,8 +252,8 @@ public class DBResult implements DBResultInterface
 	private boolean m_Corr = false; // A correction will be a BG then Ins in that order :-)
 	private boolean m_TmpBasal = false;
 
-	// Proximity match with an existing record
-	private boolean m_ProximityPossibleDuplicate = false;
+//	// Proximity match with an existing record
+//	private boolean m_ProximityPossibleDuplicate = false;
 
 	// For knowing how we store results in MongoDB
 	protected static String  m_determinantField = "enteredBy";
@@ -526,9 +526,6 @@ public class DBResult implements DBResultInterface
 	}
 
 
-
-
-
 	public String getId() 
 	{
 		return getIdentity();
@@ -549,8 +546,11 @@ public class DBResult implements DBResultInterface
 
 		if (m_ProximityCheck == true)
 		{
-			// How many minutes apart two entries can be before being considered proximity/duplicate
-			int     proximityMinutes    = PrefsNightScoutLoader.getInstance().getM_ProximityMinutes();
+			time = getProximityAdjustedTime(time);
+			
+//			// How many minutes apart two entries can be before being considered proximity/duplicate
+//			int     proximityMinutes    = PrefsNightScoutLoader.getInstance().getM_ProximityMinutes();
+
 			int     checkType           = PrefsNightScoutLoader.getInstance().getM_ProximityCheckType();
 
 			//			boolean typeCheck           = PrefsNightScoutLoader.getInstance().isM_ProximityTypeCheck();
@@ -563,30 +563,30 @@ public class DBResult implements DBResultInterface
 			int     checkCarbValueDP    = PrefsNightScoutLoader.getInstance().getM_CarbDecPlacesProximityCheck();
 			int     checkInsulinValueDP = PrefsNightScoutLoader.getInstance().getM_InsulinDecPlacesProximityCheck();
 
-			// Since we may have 2 adjacent readings either side of the mid point of proximityMinutes, we do a second
-			// pass looking for proximity matches but this time slide the time forward by half the proximityMinutes
-			if (m_ProximityCheckSecondPass == true)
-			{
-				long halfProximityMinutesMillis = proximityMinutes * 60 * 1000 / 2;
-
-				time += halfProximityMinutesMillis;
-			}
-
-			long roundPeriodMins = proximityMinutes * 60 * 1000;
-			// Adjust time by rounding up or down to nearest proximity minutes approximately.
-
-			long timeUp   = time - (time % roundPeriodMins) + roundPeriodMins;
-			long timeDown = time - (time % roundPeriodMins);
-
-			// Are we closer to Up time or Down
-			if ( (timeUp - time) > (time - timeDown) )
-			{
-				time = timeDown;
-			}
-			else
-			{
-				time = timeUp;
-			}
+//			// Since we may have 2 adjacent readings either side of the mid point of proximityMinutes, we do a second
+//			// pass looking for proximity matches but this time slide the time forward by half the proximityMinutes
+//			if (m_ProximityCheckSecondPass == true)
+//			{
+//				long halfProximityMinutesMillis = proximityMinutes * 60 * 1000 / 2;
+//
+//				time += halfProximityMinutesMillis;
+//			}
+//
+//			long roundPeriodMins = proximityMinutes * 60 * 1000;
+//			// Adjust time by rounding up or down to nearest proximity minutes approximately.
+//
+//			long timeUp   = time - (time % roundPeriodMins) + roundPeriodMins;
+//			long timeDown = time - (time % roundPeriodMins);
+//
+//			// Are we closer to Up time or Down
+//			if ( (timeUp - time) > (time - timeDown) )
+//			{
+//				time = timeDown;
+//			}
+//			else
+//			{
+//				time = timeUp;
+//			}
 
 			// Based on preferences, include the BG, Carb and Insulin formatted
 			// again to preference decimal places for each parameter
@@ -723,16 +723,16 @@ public class DBResult implements DBResultInterface
 				m_ResultType, m_Result, m_ExtendedAmount, m_Year, m_Month, m_Day, m_EpochMillies);		
 	}
 
-	static public boolean doubleIsInteger(double val)
-	{
-		boolean result = false;  // Assume not initially
-
-		if (val == Math.floor(val))
-		{
-			result = true;
-		}
-		return result;
-	}
+//	static public boolean doubleIsInteger(double val)
+//	{
+//		boolean result = false;  // Assume not initially
+//
+//		if (val == Math.floor(val))
+//		{
+//			result = true;
+//		}
+//		return result;
+//	}
 
 	private	String getDoubleValue(Double val)
 	{	
@@ -1347,47 +1347,47 @@ public class DBResult implements DBResultInterface
 		return result;
 	}
 
-	static public void appendToDoc(BasicDBObject doc, String label, String value)
-	{
-		if (value.length() > 0)
-		{
-			doc.append(label, value);
-		}
-	}
-
-	static public void appendToDoc(BasicDBObject doc, String label, Double value)
-	{
-		if (value != null)
-		{
-			doc.append(label, doubleIsInteger(value) ? value.longValue() : value.doubleValue());
-		}
-	}
-
-	static public void appendToDoc(BasicDBObject doc, String label, int value)
-	{
-		doc.append(label, value);
-	}
-
-	static public void appendToDoc(BasicDBObject doc, String label, Date value)
-	{
-		if (value != null)
-		{
-			// 16 Jun 2016
-			// Feedback from Mel in Australia that times are shifted
-			// Realise that I need to convert from local to UTC times!
-			//			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.S'Z'", Locale.ENGLISH);
-			//			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH); // Try something different
-
-			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-			//			Date utcValue = new Date(CommonUtils.toUTC(value.getTime(), CommonUtils.locTZ)); 
-			//			String dVal = format.format(utcValue);
-
-			String dVal = format.format(value);
-
-			doc.append(label, dVal);
-		}
-
-	}
+//	static public void appendToDoc(BasicDBObject doc, String label, String value)
+//	{
+//		if (value.length() > 0)
+//		{
+//			doc.append(label, value);
+//		}
+//	}
+//
+//	static public void appendToDoc(BasicDBObject doc, String label, Double value)
+//	{
+//		if (value != null)
+//		{
+//			doc.append(label, doubleIsInteger(value) ? value.longValue() : value.doubleValue());
+//		}
+//	}
+//
+//	static public void appendToDoc(BasicDBObject doc, String label, int value)
+//	{
+//		doc.append(label, value);
+//	}
+//
+//	static public void appendToDoc(BasicDBObject doc, String label, Date value)
+//	{
+//		if (value != null)
+//		{
+//			// 16 Jun 2016
+//			// Feedback from Mel in Australia that times are shifted
+//			// Realise that I need to convert from local to UTC times!
+//			//			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.S'Z'", Locale.ENGLISH);
+//			//			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH); // Try something different
+//
+//			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+//			//			Date utcValue = new Date(CommonUtils.toUTC(value.getTime(), CommonUtils.locTZ)); 
+//			//			String dVal = format.format(utcValue);
+//
+//			String dVal = format.format(value);
+//
+//			doc.append(label, dVal);
+//		}
+//
+//	}
 
 	public boolean isValid()
 	{
@@ -1865,54 +1865,54 @@ public class DBResult implements DBResultInterface
 		this.m_CP_BasalValue = m_CP_BasalValue;
 	}
 
-	/**
-	 * @return the m_ProximityPossibleDuplicate
-	 */
-	public synchronized boolean isM_ProximityPossibleDuplicate() 
+//	/**
+//	 * @return the m_ProximityPossibleDuplicate
+//	 */
+//	public synchronized boolean isM_ProximityPossibleDuplicate() 
+//	{
+//		m_ProximityPossibleDuplicate = m_CP_EnteredBy.length() > 0 && m_CP_EnteredBy.contains("-PROXIMITY") ?
+//				true : false;
+//		return m_ProximityPossibleDuplicate;
+//	}
+//
+//	/**
+//	 * @param m_ProximityPossibleDuplicate the m_ProximityPossibleDuplicate to set
+//	 */
+//	public synchronized void setM_ProximityPossibleDuplicate(boolean m_ProximityMatch) {
+//		this.m_ProximityPossibleDuplicate = m_ProximityMatch;
+//
+//		if (m_CP_EnteredBy.length() > 0 &&
+//				!m_CP_EnteredBy.contains("-PROXIMITY"))
+//		{
+//			m_CP_EnteredBy += "-PROXIMITY";
+//		}
+//	}
+//	
+	
+	public void setImpactOfProximity()
 	{
-		m_ProximityPossibleDuplicate = m_CP_EnteredBy.length() > 0 && m_CP_EnteredBy.contains("-PROXIMITY") ?
-				true : false;
-		return m_ProximityPossibleDuplicate;
-	}
-
-	/**
-	 * @param m_ProximityPossibleDuplicate the m_ProximityPossibleDuplicate to set
-	 */
-	public synchronized void setM_ProximityPossibleDuplicate(boolean m_ProximityMatch) {
-		this.m_ProximityPossibleDuplicate = m_ProximityMatch;
-
-		if (m_CP_EnteredBy.length() > 0 &&
-				!m_CP_EnteredBy.contains("-PROXIMITY"))
+		if (isM_ProximityPossibleDuplicate() == true)
 		{
-			m_CP_EnteredBy += "-PROXIMITY";
+			if (m_CP_EnteredBy.length() > 0 &&
+					!m_CP_EnteredBy.contains("-PROXIMITY"))
+			{
+				m_CP_EnteredBy += "-PROXIMITY";
+			}
+		}
+		else
+		{
+			// Strip out the extra text
+			if (m_CP_EnteredBy.length() > 10 && m_CP_EnteredBy.contains("-PROXIMITY"))
+			{
+				m_CP_EnteredBy = m_CP_EnteredBy.substring(0, m_CP_EnteredBy.length() - 10);
+			}
 		}
 	}
-
-	/**
-	 * @return the m_ProximityCheck
-	 */
-	public static synchronized boolean isM_ProximityCheck() {
-		return m_ProximityCheck;
+	
+	public void determineWhetherInProximity()
+	{
+		setM_ProximityPossibleDuplicate(m_CP_EnteredBy.length() > 0 && m_CP_EnteredBy.contains("-PROXIMITY") ?
+				true : false);
 	}
 
-	/**
-	 * @param m_ProximityCheck the m_ProximityCheck to set
-	 */
-	public static synchronized void setM_ProximityCheck(boolean m_ProximityCheck) {
-		DBResult.m_ProximityCheck = m_ProximityCheck;
-	}
-
-	/**
-	 * @return the m_ProximityCheckSecondPass
-	 */
-	public static synchronized boolean isM_ProximityCheckSecondPass() {
-		return m_ProximityCheckSecondPass;
-	}
-
-	/**
-	 * @param m_ProximityCheckSecondPass the m_ProximityCheckSecondPass to set
-	 */
-	public static synchronized void setM_ProximityCheckSecondPass(boolean m_ProximityCheckSecondPass) {
-		DBResult.m_ProximityCheckSecondPass = m_ProximityCheckSecondPass;
-	}
 }

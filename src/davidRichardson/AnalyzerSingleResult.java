@@ -23,6 +23,13 @@ class AnalyzerSingleResult
 	private boolean           m_isMeal = false;
 	private boolean           m_isCorrection = false;
 	private boolean           m_isCarbCorrection = false; // Have to infer this from a low
+	
+	// Additional fields that understand context of this result
+	// Carbs are a Single Result that doesn't have a BG
+	private boolean           m_SeenCarbsBeforeBG = false;
+	private boolean           m_SeenCarbsAfterBG = false; 
+	private boolean           m_SeenInsulinBeforeBG = false;
+	private boolean           m_SeenInsulinAfterBG = false; 
 
 	public synchronized static void resetStaticID()
 	{
@@ -276,5 +283,61 @@ class AnalyzerSingleResult
 	 */
 	public synchronized void setM_isCarbCorrection(boolean m_isCarbCorrection) {
 		this.m_isCarbCorrection = m_isCarbCorrection;
+	}
+
+	/**
+	 * @return the m_SeenCarbsBeforeBG
+	 */
+	public synchronized boolean isM_SeenCarbsBeforeBG() {
+		return m_SeenCarbsBeforeBG;
+	}
+
+	/**
+	 * @return the m_SeenInsulinBeforeBG
+	 */
+	public synchronized boolean isM_SeenInsulinBeforeBG() {
+		return m_SeenInsulinBeforeBG;
+	}
+
+	/**
+	 * @param m_SeenInsulinBeforeBG the m_SeenInsulinBeforeBG to set
+	 */
+	public synchronized void setM_SeenInsulinBeforeBG(boolean m_SeenInsulinBeforeBG) {
+		this.m_SeenInsulinBeforeBG = m_SeenInsulinBeforeBG;
+	}
+
+	/**
+	 * @return the m_SeenInsulinAfterBG
+	 */
+	public synchronized boolean isM_SeenInsulinAfterBG() {
+		return m_SeenInsulinAfterBG;
+	}
+
+	/**
+	 * @param m_SeenInsulinAfterBG the m_SeenInsulinAfterBG to set
+	 */
+	public synchronized void setM_SeenInsulinAfterBG(boolean m_SeenInsulinAfterBG) {
+		this.m_SeenInsulinAfterBG = m_SeenInsulinAfterBG;
+	}
+
+	/**
+	 * @param m_SeenCarbsBeforeBG the m_SeenCarbsBeforeBG to set
+	 */
+	public synchronized void setM_SeenCarbsBeforeBG(boolean m_SeenCarbsBeforeBG) {
+		this.m_SeenCarbsBeforeBG = m_SeenCarbsBeforeBG;
+	}
+
+	/**
+	 * @return the m_SeenCarbsAfterBG
+	 */
+	public synchronized boolean isM_SeenCarbsAfterBG() {
+		return m_SeenCarbsAfterBG;
+	}
+
+	/**
+	 * @param m_SeenCarbsAfterBG the m_SeenCarbsAfterBG to set
+	 */
+	public synchronized void setM_SeenCarbsAfterBG(boolean m_SeenCarbsAfterBG) {
+		this.m_SeenCarbsAfterBG = m_SeenCarbsAfterBG;
 	}
 };

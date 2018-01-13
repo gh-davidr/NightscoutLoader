@@ -52,11 +52,11 @@ public class AuditHistory
 	public void storeAuditHistory(String uploadStatus, Date uploadDate, 
 			String uploadDevice, String fileName, String dateRange, int entriesAdded, 
 			int treatmentsAtStart, int treatmentsByNSLAtStart, int proximityEntries,
-			int proximityNSEntries) throws UnknownHostException
+			int proximityNSEntries, int cgmEntriesAdded) throws UnknownHostException
 	{
 		AuditLog newLog = new AuditLog("", getM_NextUploadID(), uploadStatus, uploadDate, uploadDevice, 
 				fileName, dateRange, entriesAdded,	treatmentsAtStart, treatmentsByNSLAtStart, proximityEntries,
-				proximityNSEntries);
+				proximityNSEntries, cgmEntriesAdded);
 
 		storeAuditHistory(newLog);
 	}

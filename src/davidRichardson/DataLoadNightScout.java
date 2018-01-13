@@ -493,13 +493,76 @@ public abstract class DataLoadNightScout extends DataLoadBase
 		}
 	}
 
-	public void updateExistingResultsFromDB(Set<DBResult> resultsSet) throws UnknownHostException
+	public void storeResultEntriesFromDB(Set<DBResultEntry> resultsSet) throws UnknownHostException
 	{
 		testMongo();
 
 		if (m_ServerState == MongoDBServerStateEnum.accessible)
 		{
 
+			final String mongoHost      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoServer();
+			//		final int    mongoPort      = NightLoaderPreferences.getInstance().getM_NightscoutMongoPort();
+			final String mongoDB        = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB();
+	//		final String mongoColl      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoCollection();
+			final String mongoColl      = PrefsNightScoutLoader.getInstance().getM_NightscoutSensorMongoCollection();
+
+			MongoClient dbClient;
+			MongoClientURI dbURI;
+
+			if (mongoHost.contains("@"))
+			{
+				// Create full URI with DB too.  This is straight from the https://mongolab.com/databases/dexcom_db page
+				//			dbURI    = new MongoClientURI(mongoHost + ":" + mongoPort + "/" + mongoDB);
+
+				// Left like below after a few days not using server but not working clearly :-(
+				//dbURI    = new MongoClientURI(mongoHost + ":" + "/" + mongoDB);
+
+				dbURI    = new MongoClientURI(mongoHost + "/" + mongoDB);
+				dbClient = new MongoClient(dbURI);
+			}
+			else
+			{
+				dbClient = new MongoClient(mongoHost);
+			}
+
+
+			// Build DBOjects for storing into MongoDB
+
+			// Create & get reference to our Roche Results Collection
+			DB db = dbClient.getDB(mongoDB);
+			DBCollection coll = db.getCollection(mongoColl);
+
+			// In reality, the collection used will probably be treatments!
+
+			// Performance improvement ...
+			// http://stackoverflow.com/questions/18128490/how-to-insert-multiple-documents-at-once-in-mongodb-through-java
+			List<DBObject> documents = new ArrayList<>();
+
+			int i = 0;
+			for (DBResultEntry x: resultsSet)
+			{
+				BasicDBObject doc = x.createNightScoutObject();
+				// coll.insert(doc);
+				documents.add(doc);
+				m_Logger.log(Level.FINEST, "Result added for Nightscout " + x.toString());
+			}
+
+			m_Logger.log(Level.FINE, "About to bulk insert to Nightscout");
+			// Bulk insert instead
+			coll.insert(documents);
+			m_Logger.log(Level.FINE, "Bulk Insert completed.");
+
+			dbClient.close();
+		}
+	}
+
+	
+	public void updateExistingResultsFromDB(Set<DBResult> resultsSet) throws UnknownHostException
+	{
+		testMongo();
+
+		if (m_ServerState == MongoDBServerStateEnum.accessible)
+		{
 			final String mongoHost      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoServer();
 			//		final int    mongoPort      = NightLoaderPreferences.getInstance().getM_NightscoutMongoPort();
 			final String mongoDB        = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB();
@@ -615,7 +678,10 @@ public abstract class DataLoadNightScout extends DataLoadBase
 	// Remove entries for a single upload
 	public int deleteLoadedTreatment(AuditLog entry) throws IOException
 	{
-		return deleteLoadedTreatment(entry, false);
+		int treatmentResult = deleteLoadedTreatment(entry, false);
+		int entriesResult   = deleteLoadedEntries(entry, false);
+		
+		return treatmentResult;
 	}
 
 	// Remove entries for a single upload
@@ -678,6 +744,68 @@ public abstract class DataLoadNightScout extends DataLoadBase
 
 		return result;	
 	}
+	
+	// Remove entries for a single upload
+	public int deleteLoadedEntries(AuditLog entry, boolean proximityOnly) throws IOException
+	{
+		// How many did we actually delete
+		int result = 0;
+		testMongo();
+
+		if (m_ServerState == MongoDBServerStateEnum.accessible)
+		{
+			final String mongoHost      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoServer();
+			final String mongoDB        = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB();
+			final String mongoColl      = PrefsNightScoutLoader.getInstance().getM_NightscoutSensorMongoCollection();
+
+			MongoClient dbClient;
+			MongoClientURI dbURI;
+
+			if (mongoHost.contains("@"))
+			{
+				// Create full URI with DB too.  This is straight from the https://mongolab.com/databases/dexcom_db page
+				//			dbURI    = new MongoClientURI(mongoHost + ":" + mongoPort + "/" + mongoDB);
+
+				// Left like below after a few days not using server but not working clearly :-(
+				//dbURI    = new MongoClientURI(mongoHost + ":" + "/" + mongoDB);
+
+				dbURI    = new MongoClientURI(mongoHost + "/" + mongoDB);
+				dbClient = new MongoClient(dbURI);
+			}
+			else
+			{
+				dbClient = new MongoClient(mongoHost);
+			}
+
+			String collFld = new String();
+			collFld = mongoColl;
+
+			DB db = dbClient.getDB(mongoDB);
+
+			// Get the collection
+			DBCollection coll = db.getCollection(collFld);
+			// Retrieve all the documents
+
+			BasicDBObject query = new BasicDBObject();
+			//		query.append(DBResult.getM_determinantField(), DBResult.getM_determinantValue());
+			// For now, delete all match regexp
+
+			// Deletins by upload ID append proximity if deleting these items
+			query.append(DBResultEntry.getM_determinantField(), entry.getM_UploadID() + (
+					proximityOnly ? "-PROXIMITY" : ""));
+			m_Logger.log(Level.FINE, "deleteLoadedTreatment Mongo Query is now " + query.toString());
+
+			DBCursor cursor = coll.find(query);
+			result = cursor.count();
+
+			coll.remove(query);
+
+			dbClient.close();
+		}
+
+		return result;	
+	}
+
 
 	public int deleteLoadedTreatment(DBResult res) throws UnknownHostException
 	{

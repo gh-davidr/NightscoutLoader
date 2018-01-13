@@ -3,6 +3,7 @@ package davidRichardson;
 import javax.swing.JButton;
 //import javax.swing.AbstractButton;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
@@ -122,10 +123,14 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 	private JTextField tf_AutoTuneServer;
 	private JLabel lblAutoTuneNSURL;
 	private JTextField tf_AutoTuneNSURL;
-	private JRadioButton rdbtnAutoTuneSSH2KeyLogin;
+	private JComboBox<String> cb_AutoTuneKeyOrPass;
 	private JLabel lblAutoTuneKeyFile;
 	private JTextField tf_AutoTuneKeyFile;
-	
+	private JLabel lblAutoTunePassword;
+	private JTextField tf_AutoTunePassword;
+	private JPasswordField pwf_AutoTunePassword;
+	private JRadioButton rb_AutoTunePasswordShow;
+
 	private JButton m_AnaylzeButton;
 	private JTextField tf_BGUnits;
 	private JSpinner sp_breakfastStart;
@@ -192,7 +197,7 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 		//		m_MongoDBLoader   = new DataLoadNightScoutTreatments();
 
 		super.setTitle(title);
-		setBounds(100, 100, 780, 650);
+		setBounds(100, 50, 780, 700);
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] {300, 0};
 		gridBagLayout.rowHeights = new int[] {300, 25};
@@ -290,7 +295,7 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 
 		cb_ExcelOutputLevel = new JComboBox<String>();
 		cb_ExcelOutputLevel.setToolTipText("<html>Determines how much detail is included in Excel report.<br>Full Detail includes extra tabs that show the progression of underlying<br>raw data into intermeidate forms that are then aggregated for trend reports" +
-		"<br><br>It is easy to get lost in a sea of too much data here, <br>so keep at minimal level unless an advanced user with need to access the detail.</html>");
+				"<br><br>It is easy to get lost in a sea of too much data here, <br>so keep at minimal level unless an advanced user with need to access the detail.</html>");
 
 		cb_ExcelOutputLevel.setModel(new DefaultComboBoxModel<String>(new String[] 
 				{"Minimal Detail Excel Summary",  "Moderate Detail Excel Summary", "Full Detail Excel Summary",}));
@@ -946,18 +951,18 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 		gbc_sp_BadnightEnd.gridx = 9;
 		gbc_sp_BadnightEnd.gridy = 15;
 		panel_1.add(sp_BadnightEnd, gbc_sp_BadnightEnd);
-		
+
 		lblCgmTrendHour = new JLabel("CGM Trend Hour Intervals");
 		lblCgmTrendHour.setFont(new Font("Tahoma", Font.BOLD, 11));
 		GridBagConstraints gbc_lblCgmTrendHour = new GridBagConstraints();
 		gbc_lblCgmTrendHour.anchor = GridBagConstraints.EAST;
-		gbc_lblCgmTrendHour.insets = new Insets(0, 0, 0, 5);
+		gbc_lblCgmTrendHour.insets = new Insets(0, 0, 5, 5);
 		gbc_lblCgmTrendHour.gridx = 1;
 		gbc_lblCgmTrendHour.gridy = 16;
 		panel_1.add(lblCgmTrendHour, gbc_lblCgmTrendHour);
 
-		
-		
+
+
 		sp_CGMTrendIntervalDuration = new JSpinner();
 		sp_CGMTrendIntervalDuration.setFont(new Font("Tahoma", Font.BOLD, 11));
 		sp_CGMTrendIntervalDuration.setToolTipText("<html>This parameter sets the number of hours to group CGM entries in for trend analysis.  <br>Groupings can either be 1 hour, 2 hours or 3 hours </hmtl>");
@@ -966,18 +971,18 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 
 		GridBagConstraints gbc_spCGMTrendIntervalDuration = new GridBagConstraints();
 		gbc_spCGMTrendIntervalDuration.anchor = GridBagConstraints.WEST;
-		gbc_spCGMTrendIntervalDuration.insets = new Insets(0, 0, 0, 5);
+		gbc_spCGMTrendIntervalDuration.insets = new Insets(0, 0, 5, 5);
 		gbc_spCGMTrendIntervalDuration.gridx = 3;
 		gbc_spCGMTrendIntervalDuration.gridy = 16;
 		panel_1.add(sp_CGMTrendIntervalDuration, gbc_spCGMTrendIntervalDuration);
 
 
-		
+
 		rdbtnCompressMealTrends = new JRadioButton("Compress Meal Trends");
 		rdbtnCompressMealTrends.setToolTipText("<html>The analyzer can separate out rises from in range to out of range as well as rises from out of range to further out of range.  <br>Compressing the meal trends will just consider all rises to out of range together (and the opposite for falls too).</html>");
 		GridBagConstraints gbc_rdbtnCompressMealTrends = new GridBagConstraints();
 		gbc_rdbtnCompressMealTrends.anchor = GridBagConstraints.WEST;
-		gbc_rdbtnCompressMealTrends.insets = new Insets(0, 0, 0, 5);
+		gbc_rdbtnCompressMealTrends.insets = new Insets(0, 0, 5, 5);
 		gbc_rdbtnCompressMealTrends.gridx = 5;
 		gbc_rdbtnCompressMealTrends.gridy = 16;
 		panel_1.add(rdbtnCompressMealTrends, gbc_rdbtnCompressMealTrends);
@@ -988,13 +993,13 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 		rdbtnTotalRecurringTrendsOnly.setToolTipText("<html>When determining the %ge for recurring results, the analyzer can consider 100% to be either recurring trend results only or ALL trend results</html>");
 		GridBagConstraints gbc_rdbtnTotalRecurringTrendsOnly = new GridBagConstraints();
 		gbc_rdbtnTotalRecurringTrendsOnly.anchor = GridBagConstraints.WEST;
-		gbc_rdbtnTotalRecurringTrendsOnly.insets = new Insets(0, 0, 0, 5);
+		gbc_rdbtnTotalRecurringTrendsOnly.insets = new Insets(0, 0, 5, 5);
 		gbc_rdbtnTotalRecurringTrendsOnly.gridx = 9;
 		gbc_rdbtnTotalRecurringTrendsOnly.gridy = 16;
 		panel_1.add(rdbtnTotalRecurringTrendsOnly, gbc_rdbtnTotalRecurringTrendsOnly);
 		setBGUnitsText();
 
-		
+
 		rdbtnAutoTuneInvoked = new JRadioButton("Run Autotune");
 		rdbtnAutoTuneInvoked.setToolTipText("<html>Control that determines whether Autotune is run as part of analysis</html>");
 		rdbtnAutoTuneInvoked.addActionListener(new ActionListener() {
@@ -1010,12 +1015,12 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 		gbc_rdbtnAutoTuneInvoked.gridy = 17;
 		panel_1.add(rdbtnAutoTuneInvoked, gbc_rdbtnAutoTuneInvoked);
 
-		
+
 		lblAutoTuneNSURL = new JLabel("Nightscout URL");
 		lblAutoTuneNSURL.setFont(new Font("Tahoma", Font.BOLD, 11));
 		GridBagConstraints gbc_lblAutoTuneNSURL = new GridBagConstraints();
 		gbc_lblAutoTuneNSURL.anchor = GridBagConstraints.EAST;
-		gbc_lblAutoTuneNSURL.insets = new Insets(0, 0, 0, 5);
+		gbc_lblAutoTuneNSURL.insets = new Insets(0, 0, 5, 5);
 		gbc_lblAutoTuneNSURL.gridx = 1;
 		gbc_lblAutoTuneNSURL.gridy = 17;
 		panel_1.add(lblAutoTuneNSURL, gbc_lblAutoTuneNSURL);
@@ -1023,7 +1028,7 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 		tf_AutoTuneNSURL = new JTextField(PrefsNightScoutLoader.getInstance().getM_AutoTuneNSURL());
 		tf_AutoTuneNSURL.setToolTipText("Nightscout URL used by Autotune");
 		GridBagConstraints gbc_tf_AutoTuneNSURL = new GridBagConstraints();
-		gbc_tf_AutoTuneNSURL.insets = new Insets(0, 0, 5, 0);
+		gbc_tf_AutoTuneNSURL.insets = new Insets(0, 0, 5, 5);
 		gbc_tf_AutoTuneNSURL.fill = GridBagConstraints.HORIZONTAL;
 		gbc_tf_AutoTuneNSURL.anchor = GridBagConstraints.NORTHWEST;
 		gbc_tf_AutoTuneNSURL.gridwidth = 6;
@@ -1033,20 +1038,22 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 		tf_AutoTuneNSURL.setPreferredSize(new Dimension(7, 20));
 		tf_AutoTuneNSURL.setColumns(25);
 
-		
+
 		lblAutoTuneServer = new JLabel("Autotune Linux Server");
 		lblAutoTuneServer.setFont(new Font("Tahoma", Font.BOLD, 11));
 		GridBagConstraints gbc_lblAutoTuneServer = new GridBagConstraints();
 		gbc_lblAutoTuneServer.anchor = GridBagConstraints.EAST;
-		gbc_lblAutoTuneServer.insets = new Insets(0, 0, 0, 5);
+		gbc_lblAutoTuneServer.insets = new Insets(0, 0, 5, 5);
 		gbc_lblAutoTuneServer.gridx = 1;
 		gbc_lblAutoTuneServer.gridy = 18;
 		panel_1.add(lblAutoTuneServer, gbc_lblAutoTuneServer);
 
 		tf_AutoTuneServer = new JTextField(PrefsNightScoutLoader.getInstance().getM_AutoTuneServer());
-		tf_AutoTuneServer.setToolTipText("Linux Server that can run Autotune");
+		tf_AutoTuneServer.setToolTipText("<html>Linux Server that can run Autotune" +
+				"<br>Should include user name in string as follows:"
+				+ "<br>USERNAME@SERVERNAME</html>");
 		GridBagConstraints gbc_tf_AutoTuneServer = new GridBagConstraints();
-		gbc_tf_AutoTuneServer.insets = new Insets(0, 0, 5, 0);
+		gbc_tf_AutoTuneServer.insets = new Insets(0, 0, 5, 5);
 		gbc_tf_AutoTuneServer.fill = GridBagConstraints.HORIZONTAL;
 		gbc_tf_AutoTuneServer.anchor = GridBagConstraints.NORTHWEST;
 		gbc_tf_AutoTuneServer.gridwidth = 6;
@@ -1055,6 +1062,27 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 		panel_1.add(tf_AutoTuneServer, gbc_tf_AutoTuneServer);
 		tf_AutoTuneServer.setPreferredSize(new Dimension(7, 20));
 		tf_AutoTuneServer.setColumns(25);
+
+
+
+		cb_AutoTuneKeyOrPass = new JComboBox<String>();
+		cb_AutoTuneKeyOrPass.setToolTipText("<html>Determines how connection to AutoTune server is made.<br>Either an SSH key file can be used else a password<br>" +
+				"<br><br></html>");
+		cb_AutoTuneKeyOrPass.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				checkAutoTuneKeyOptions(cb_AutoTuneKeyOrPass);
+			}
+		});
+
+		cb_AutoTuneKeyOrPass.setModel(new DefaultComboBoxModel<String>(new String[] 
+				{"Use SSH Key File",  "Use Password",}));
+		GridBagConstraints gbc_cb_AutoTuneKeyOrPass = new GridBagConstraints();
+		gbc_cb_AutoTuneKeyOrPass.insets = new Insets(0, 0, 5, 5);
+		gbc_cb_AutoTuneKeyOrPass.fill = GridBagConstraints.HORIZONTAL;
+		gbc_cb_AutoTuneKeyOrPass.gridx = 9;
+		gbc_cb_AutoTuneKeyOrPass.gridy = 18;
+		panel_1.add(cb_AutoTuneKeyOrPass, gbc_cb_AutoTuneKeyOrPass);
 
 		lblAutoTuneKeyFile = new JLabel("Autotune SSH Key File");
 		lblAutoTuneKeyFile.setFont(new Font("Tahoma", Font.BOLD, 11));
@@ -1068,7 +1096,7 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 		tf_AutoTuneKeyFile = new JTextField(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
 		tf_AutoTuneKeyFile.setToolTipText("SSH Key file for authentication on Aututune server");
 		GridBagConstraints gbc_tf_AutoTuneKeyFile = new GridBagConstraints();
-		gbc_tf_AutoTuneKeyFile.insets = new Insets(0, 0, 5, 0);
+		gbc_tf_AutoTuneKeyFile.insets = new Insets(0, 0, 0, 5);
 		gbc_tf_AutoTuneKeyFile.fill = GridBagConstraints.HORIZONTAL;
 		gbc_tf_AutoTuneKeyFile.anchor = GridBagConstraints.NORTHWEST;
 		gbc_tf_AutoTuneKeyFile.gridwidth = 6;
@@ -1077,34 +1105,66 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 		panel_1.add(tf_AutoTuneKeyFile, gbc_tf_AutoTuneKeyFile);
 		tf_AutoTuneKeyFile.setPreferredSize(new Dimension(7, 20));
 		tf_AutoTuneKeyFile.setColumns(25);
+
+	
+		lblAutoTunePassword = new JLabel("Autotune Password");
+		lblAutoTunePassword.setFont(new Font("Tahoma", Font.BOLD, 11));
+		GridBagConstraints gbc_lblAutoTunePassword = new GridBagConstraints();
+		gbc_lblAutoTunePassword.anchor = GridBagConstraints.EAST;
+		gbc_lblAutoTunePassword.insets = new Insets(0, 0, 0, 5);
+		gbc_lblAutoTunePassword.gridx = 1;
+		gbc_lblAutoTunePassword.gridy = 20;
+		panel_1.add(lblAutoTunePassword, gbc_lblAutoTunePassword);
 		
-		rdbtnAutoTuneSSH2KeyLogin = new JRadioButton("Autotune Key Auth");
-		rdbtnAutoTuneSSH2KeyLogin.setToolTipText("<html>Future Control.  At present not used, since authorization performed by encrypted key file.</html>");
-		rdbtnAutoTuneSSH2KeyLogin.addActionListener(new ActionListener() {
+		
+		pwf_AutoTunePassword = new JPasswordField(10);
+		pwf_AutoTunePassword.setText(PrefsNightScoutLoader.getInstance().getM_AutoTunePassword());
+		pwf_AutoTunePassword.setToolTipText("Alternate Password authentication on Aututune server");
+		
+//		tf_AutoTunePassword = new JTextField(PrefsNightScoutLoader.getInstance().getM_AutoTunePassword());
+//		tf_AutoTunePassword.setToolTipText("Alternate Password authentication on Aututune server");
+		
+		GridBagConstraints gbc_tf_AutoTunePassword = new GridBagConstraints();
+		gbc_tf_AutoTunePassword.insets = new Insets(0, 0, 0, 5);
+		gbc_tf_AutoTunePassword.fill = GridBagConstraints.HORIZONTAL;
+		gbc_tf_AutoTunePassword.anchor = GridBagConstraints.NORTHWEST;
+		gbc_tf_AutoTunePassword.gridwidth = 6;
+		gbc_tf_AutoTunePassword.gridx = 3;
+		gbc_tf_AutoTunePassword.gridy = 20;
+//		panel_1.add(tf_AutoTunePassword, gbc_tf_AutoTunePassword);
+//		tf_AutoTunePassword.setPreferredSize(new Dimension(7, 20));
+//		tf_AutoTunePassword.setColumns(10);
+		panel_1.add(pwf_AutoTunePassword, gbc_tf_AutoTunePassword);
+		pwf_AutoTunePassword.setPreferredSize(new Dimension(7, 20));
+		pwf_AutoTunePassword.setColumns(10);
+		
+		
+		rb_AutoTunePasswordShow = new JRadioButton("Show Password");
+		rb_AutoTunePasswordShow.setToolTipText("<html>When enabled, shows the password for Autotune server</html>");
+		rb_AutoTunePasswordShow.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) 
 			{
-				checkAutoTuneKeyOptions(rdbtnAutoTuneSSH2KeyLogin);
+				pwf_AutoTunePassword.setEchoChar(rb_AutoTunePasswordShow.isSelected() ? 0 : '*');
 			}
 		});
-		rdbtnAutoTuneSSH2KeyLogin.setSelected(PrefsNightScoutLoader.getInstance().isM_AutoTuneSSH2KeyLogin());
-		GridBagConstraints gbc_rdbtnAutoTuneSSH2KeyLogin = new GridBagConstraints();
-		gbc_rdbtnAutoTuneSSH2KeyLogin.insets = new Insets(0, 0, 5, 5);
-		gbc_rdbtnAutoTuneSSH2KeyLogin.gridx = 9;
-		gbc_rdbtnAutoTuneSSH2KeyLogin.gridy = 19;
-		panel_1.add(rdbtnAutoTuneSSH2KeyLogin, gbc_rdbtnAutoTuneSSH2KeyLogin);
+		rb_AutoTunePasswordShow.setSelected(false);
+		GridBagConstraints gbc_rb_AutoTunePasswordShow = new GridBagConstraints();
+		gbc_rb_AutoTunePasswordShow.insets = new Insets(0, 0, 5, 5);
+		gbc_rb_AutoTunePasswordShow.gridx = 9;
+		gbc_rb_AutoTunePasswordShow.gridy = 20;
+		panel_1.add(rb_AutoTunePasswordShow, gbc_rb_AutoTunePasswordShow);
 
-		
-	/*
-	 * 
-	 
+		/*
+		 * 
+
 	 	private JLabel lblAutoTuneNSURL;
 	private JTextField tf_AutoTuneNSURL;
 	private JRadioButton rdbtnAutoTuneSSH2KeyLogin;
 	private JLabel lblAutoTuneKeyFile;
 	private JTextField tf_AutoTuneKeyFile;
 
-	 */
-		
+		 */
+
 
 		//		private JTextField tf_LogLevel;
 		//		private JTextField tf_LogFile;
@@ -1262,22 +1322,37 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 
 		lblAutoTuneServer.setEnabled(selected);
 		tf_AutoTuneServer.setEnabled(selected);
+		
 		lblAutoTuneNSURL.setEnabled(selected);
 		tf_AutoTuneNSURL.setEnabled(selected);
-		rdbtnAutoTuneSSH2KeyLogin.setEnabled(selected);
-		lblAutoTuneKeyFile.setEnabled(selected);
-		tf_AutoTuneKeyFile.setEnabled(selected);
+		
+		cb_AutoTuneKeyOrPass.setEnabled(selected);
+		
+		rb_AutoTunePasswordShow.setEnabled(selected);
+		
+		checkAutoTuneKeyOptions(cb_AutoTuneKeyOrPass, selected ? false : true);
+	}
+
+	void checkAutoTuneKeyOptions(JComboBox<String> cbJustSet)
+	{
+		checkAutoTuneKeyOptions(cbJustSet, false);
+	}
+
+	void checkAutoTuneKeyOptions(JComboBox<String> cbJustSet, boolean overrideDisable)
+	{
+		int sel = cbJustSet.getSelectedIndex();
+		
+		lblAutoTuneKeyFile.setEnabled(overrideDisable == false && sel == 0 ? true : false);
+		tf_AutoTuneKeyFile.setEnabled(overrideDisable == false && sel == 0 ? true : false);
+
+		lblAutoTunePassword.setEnabled(overrideDisable == false && sel == 1 ? true : false);
+//		tf_AutoTunePassword.setEnabled(overrideDisable == false && sel == 1 ? true : false);
+		
+		pwf_AutoTunePassword.setEnabled(overrideDisable == false && sel == 1 ? true : false);
 	}
 
 	
-	void checkAutoTuneKeyOptions(JRadioButton rbJustSet)
-	{
-		boolean selected = rbJustSet.isSelected() ;
-		lblAutoTuneKeyFile.setEnabled(selected);
-		tf_AutoTuneKeyFile.setEnabled(selected);
-	}
-
-
+	
 	public void resetDefaults()
 	{
 		PrefsNightScoutLoader.getInstance().loadAnalyzerDefaultPreferences();
@@ -1386,7 +1461,7 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 
 		jp_StartDate.getJFormattedTextField().setText(startDateTxt);
 		jp_EndDate.getJFormattedTextField().setText(endDateTxt);
-		
+
 		setDaysBackFromDates();
 	}
 
@@ -1472,7 +1547,7 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 		sp_BadnightEnd.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_AnalyzerBadNightEndTime());
 
 		sp_CGMTrendIntervalDuration.getModel().setValue(PrefsNightScoutLoader.getInstance().getM_EntryAnalyzerIntervalHours());
-		
+
 		rdbtnCompressMealTrends.setSelected(PrefsNightScoutLoader.getInstance().isM_AnalyzerCompressMealTrends());		
 		rdbtnTotalRecurringTrendsOnly.setSelected(PrefsNightScoutLoader.getInstance().isM_AnalyzerTotalRecurringTrendsOnly());	
 
@@ -1486,10 +1561,14 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 		rdbtnAutoTuneInvoked.setSelected(PrefsNightScoutLoader.getInstance().isM_AutoTuneInvoked());
 		tf_AutoTuneServer.setText(PrefsNightScoutLoader.getInstance().getM_AutoTuneServer());
 		tf_AutoTuneNSURL.setText(PrefsNightScoutLoader.getInstance().getM_AutoTuneNSURL());
-		rdbtnAutoTuneSSH2KeyLogin.setSelected(PrefsNightScoutLoader.getInstance().isM_AutoTuneSSH2KeyLogin());
 		tf_AutoTuneKeyFile.setText(PrefsNightScoutLoader.getInstance().getM_AutoTuneKeyFile());
-
+//		tf_AutoTunePassword.setText(PrefsNightScoutLoader.getInstance().getM_AutoTunePassword());
+		pwf_AutoTunePassword.setText(PrefsNightScoutLoader.getInstance().getM_AutoTunePassword());
 		
+		cb_AutoTuneKeyOrPass.setSelectedIndex(PrefsNightScoutLoader.getInstance().isM_AutoTuneSSH2KeyLogin() ? 0 : 1);
+
+		checkAutoTuneInvokedOptions(rdbtnAutoTuneInvoked);
+
 		setBGUnitsText();
 	}
 
@@ -1551,7 +1630,7 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerBadNightEndTime((String)sp_BadnightEnd.getModel().getValue());
 
 		PrefsNightScoutLoader.getInstance().setM_EntryAnalyzerIntervalHours((int)sp_CGMTrendIntervalDuration.getModel().getValue());
-		
+
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerCompressMealTrends(rdbtnCompressMealTrends.isSelected());
 		PrefsNightScoutLoader.getInstance().setM_AnalyzerTotalRecurringTrendsOnly(rdbtnTotalRecurringTrendsOnly.isSelected());
 
@@ -1564,9 +1643,12 @@ public class WinAnalyzer  extends JFrame implements WinSetDatesInterface
 		PrefsNightScoutLoader.getInstance().setM_AutoTuneInvoked(rdbtnAutoTuneInvoked.isSelected());
 		PrefsNightScoutLoader.getInstance().setM_AutoTuneServer(tf_AutoTuneServer.getText());
 		PrefsNightScoutLoader.getInstance().setM_AutoTuneNSURL(tf_AutoTuneNSURL.getText());
-		PrefsNightScoutLoader.getInstance().setM_AutoTuneSSH2KeyLogin(rdbtnAutoTuneSSH2KeyLogin.isSelected());
-		PrefsNightScoutLoader.getInstance().setM_AutoTuneKeyFile(tf_AutoTuneKeyFile.getText());
 		
+		PrefsNightScoutLoader.getInstance().setM_AutoTuneSSH2KeyLogin(cb_AutoTuneKeyOrPass.getSelectedIndex() == 0 ? true : false);
+		PrefsNightScoutLoader.getInstance().setM_AutoTuneKeyFile(tf_AutoTuneKeyFile.getText());
+//		PrefsNightScoutLoader.getInstance().setM_AutoTunePassword(tf_AutoTunePassword.getText());
+		PrefsNightScoutLoader.getInstance().setM_AutoTunePassword(new String(pwf_AutoTunePassword.getPassword()));	
+
 		PrefsNightScoutLoader.getInstance().setPreferences();
 	}
 

@@ -4,12 +4,17 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.logging.Logger;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 
-public class DBResultEntry implements DBResultInterface
+public class DBResultEntry extends DBResultCore 
 {
 	protected static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());
 
+	// For knowing how we store results in MongoDB
+	protected static String  m_determinantField = "device";
+	protected static String  m_determinantValue = "Nightscout Loader";
+	
 	// Entry Data for Nightscout
 	protected String   m_ID;
 	protected Double   m_Unfiltered;
@@ -29,9 +34,14 @@ public class DBResultEntry implements DBResultInterface
 
 	protected Double   m_BG;  // Hold BG reading separately in mmol/L
 
-
 	private AnalyzerResultEntryInterval m_AnalyzerResultEntryInterval;
 
+	public  DBResultEntry()
+	{
+		
+	}
+
+	
 	/**
 	 * @param m_ID
 	 * @param m_Unfiltered
@@ -98,6 +108,7 @@ public class DBResultEntry implements DBResultInterface
 			m_UTCDate = new Date(0);
 		}
 	
+		m_EpochMillies = m_UTCDate.getTime();
 
 	}
 
@@ -135,9 +146,93 @@ public class DBResultEntry implements DBResultInterface
 		return result; 
 	}
 
+	
 	public String getIdentity()
 	{
-		return m_ID;
+		// CHange 27 Dec 2017 since we want to compare
+		// CGM loaded from file against Mongo DB
+		// return m_ID;
+		String result = null;
+
+		//		String result = new String(getM_CP_EventType() + this.getM_CP_EventTime());
+		long   time = this.getM_EpochMillies();
+		String details = new String("");
+		
+		if (m_ProximityCheck == true)
+		{
+			time = getProximityAdjustedTime(time);
+			
+//			// How many minutes apart two entries can be before being considered proximity/duplicate
+//			int     proximityMinutes    = PrefsNightScoutLoader.getInstance().getM_ProximityMinutes();
+
+			int     checkType           = PrefsNightScoutLoader.getInstance().getM_ProximityCheckType();
+
+			//			boolean typeCheck           = PrefsNightScoutLoader.getInstance().isM_ProximityTypeCheck();
+			boolean typeCheck           = checkType == 0 ? false : true;
+			boolean checkBGValue        = PrefsNightScoutLoader.getInstance().isM_CompareBGInProximityCheck();
+			boolean checkCarbValue      = PrefsNightScoutLoader.getInstance().isM_CompareCarbInProximityCheck();
+			boolean checkInsulinValue   = PrefsNightScoutLoader.getInstance().isM_CompareInsulinInProximityCheck();
+
+			int     checkBGValueDP      = PrefsNightScoutLoader.getInstance().getM_BGDecPlacesProximityCheck();
+			int     checkCarbValueDP    = PrefsNightScoutLoader.getInstance().getM_CarbDecPlacesProximityCheck();
+			int     checkInsulinValueDP = PrefsNightScoutLoader.getInstance().getM_InsulinDecPlacesProximityCheck();
+
+
+			// Based on preferences, include the BG, Carb and Insulin formatted
+			// again to preference decimal places for each parameter
+			if (checkBGValue == true && this.getM_BG() != null)
+			{
+				details += " :BG: " + String.format("%." + checkBGValueDP + "f", getM_BG());
+			}
+
+			result = new String("CGM_SGV" + String.format("%d", time) + details);
+		}
+		else
+		{
+			result = new String("CGM_SGV" + String.format("%d", time));
+		}
+
+		return result;
+	}
+	
+	public String toString()
+	{
+		String result = new String(
+		 String.format("DBResultEntry: ID:%s Unfiltered:%f Filtered:%f Direction:%s Device:%s RSSI:%f SGV:%f"
+		 		+ " DateString:%s Type:%s Date:%f Noise:%d",
+				CommonUtils.safeIfNull(m_ID),
+				CommonUtils.safeIfNull(m_Unfiltered),
+				CommonUtils.safeIfNull(m_Filtered),
+				CommonUtils.safeIfNull(m_Direction),
+				CommonUtils.safeIfNull(m_Device),
+				CommonUtils.safeIfNull(m_RSSI),
+				CommonUtils.safeIfNull(m_SGV),
+				CommonUtils.safeIfNull(m_DateString),
+				CommonUtils.safeIfNull(m_Type),
+				CommonUtils.safeIfNull(m_Date),
+				CommonUtils.safeIfNull(m_Noise)));
+		/*
+	protected String   m_ID;
+	protected Double   m_Unfiltered;
+	protected Double   m_Filtered;
+	protected String   m_Direction;
+	protected String   m_Device;
+	protected Double   m_RSSI;   
+	protected Double   m_SGV;
+	protected String   m_DateString;
+	protected String   m_Type;
+	protected Double   m_Date;
+	protected Integer  m_Noise; 
+		 */
+
+		return result;
+	}
+	
+	protected void setEpochMilliesFromUTC()
+	{
+		m_EpochMillies = m_UTCDate.getTime();
+		m_Date = (double) m_EpochMillies; // Its the same
+		m_Hour = CommonUtils.get24Hour(m_UTCDate);
 	}
 
 	/**
@@ -355,6 +450,73 @@ public class DBResultEntry implements DBResultInterface
 	 */
 	public synchronized void setM_AnalyzerResultEntryInterval(AnalyzerResultEntryInterval m_AnalyzerResultEntryInterval) {
 		this.m_AnalyzerResultEntryInterval = m_AnalyzerResultEntryInterval;
+	}
+
+
+	@Override
+	public void setImpactOfProximity() 
+	{
+		if (isM_ProximityPossibleDuplicate() == true)
+		{
+			if (m_Device.length() > 0 &&
+					!m_Device.contains("-PROXIMITY"))
+			{
+				m_Device.concat("-PROXIMITY");
+			}
+		}
+		else
+		{
+			// Strip out the extra text
+			if (m_Device.length() > 10 && m_Device.contains("-PROXIMITY"))
+			{
+				m_Device = m_Device.substring(0, m_Device.length() - 10);
+			}
+		}
+		
+	}
+
+
+	@Override
+	public void determineWhetherInProximity() 
+	{
+		// TODO Auto-generated method stub
+		setM_ProximityPossibleDuplicate(m_Device.length() > 0 && m_Device.contains("-PROXIMITY") ?
+				true : false);
+
+	}
+
+	@Override
+	public BasicDBObject createNightScoutObject()
+	{
+		BasicDBObject result = new BasicDBObject("sysTime", this.m_DateString);
+
+		appendToDoc(result, "filtered",   0);
+		appendToDoc(result, "rssi",       100);
+		appendToDoc(result, "noise",      1);
+		appendToDoc(result, "type",       "sgv");
+		appendToDoc(result, "dateString", this.getM_DateString());
+		appendToDoc(result, "direction",  this.getM_Direction());
+		appendToDoc(result, "date",       this.getM_Date());
+		appendToDoc(result, "device",     this.getM_Device());
+		appendToDoc(result, "unfiltered", 0);
+		appendToDoc(result, "sgv",        this.getM_SGV());
+
+		return result;
+	}
+
+	/**
+	 * @return the m_determinantField
+	 */
+	public static String getM_determinantField() {
+		return m_determinantField;
+	}
+
+
+	/**
+	 * @return the m_determinantValue
+	 */
+	public static String getM_determinantValue() {
+		return m_determinantValue;
 	}
 
 

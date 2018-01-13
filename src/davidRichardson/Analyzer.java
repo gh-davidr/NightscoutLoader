@@ -336,12 +336,18 @@ public class Analyzer extends DataExportExcel
 	// We'll review results over a period of time looking at trends
 	enum L0AnalyzerSingleResultEnum
 	{
+		unknown,
+		
 		// Individual results
 		tooLow,        // Typically        x <  3.1
 		belowRange,    // Typically  3.1 < x <  4.0
 		inRange,       // Typically  4.0 < x <  7.0
 		aboveRange,    // Typically  7.0 < x < 14.0
 		tooHigh,       // Typically 14.0 < x
+		
+		carbValue,
+		insulinValue,
+		carbAndInsulinValue,
 	};
 
 
@@ -1004,16 +1010,16 @@ public class Analyzer extends DataExportExcel
 	{
 		return analyzeResults(results, excelFileName, null);
 	}
-	
+
 	public AnalyzerResult analyzeResults(ArrayList <DBResult> results, String excelFileName, WinTextWin autotunerWin)
 	{
 		AnalyzerResult result = AnalyzerResult.analysisComplete;
 
 		//		boolean result = true;
-		
+
 		m_AutotunerWin = autotunerWin;
-		
-		
+
+
 		if (m_SummaryOnly == true || m_AnalyzerMode == Analyzer.AnalyzerMode.summaryOnly)
 		{
 			Date lastDate = new Date(0);
@@ -1355,59 +1361,59 @@ public class Analyzer extends DataExportExcel
 		return result;
 	}
 
-//	private void analyzeAutotune_triedButStillNotHappy(long startDateLong, long endDateLong)
-//	{
-//		// This had better not be summary or full history mode?	
-//		// Is Autotune enabled to run?
-//		// Then some additional basic checks ...
-//		//   Is the server configured?
-//		//   Is the NS URL defined?
-//		if (m_AnalyzerMode != Analyzer.AnalyzerMode.summaryOnly &&
-//				m_AnalyzerMode != Analyzer.AnalyzerMode.fullHistory &&
-//				PrefsNightScoutLoader.getInstance().isM_AutoTuneInvoked() &&
-//				!PrefsNightScoutLoader.getInstance().getM_AutoTuneServer().isEmpty() &&
-//				!PrefsNightScoutLoader.getInstance().getM_AutoTuneNSURL().isEmpty())
-//
-//		{
-//			Date startDate = new Date(startDateLong);
-//			Date endDate   = new Date(endDateLong);
-//			//			m_AutotunerWin = new WinTextWin("Nightscout Loader " + Version.getInstance().getM_Version() + " - Autotune (within Analysis)");
-//			if (m_AutotunerWin != null)
-//			{
-//				/*
-//				 * Below ok if we hold winremotelinuxserver rather than wintextwin
-//				 * 
-//				 * 
-//				// Set dates
-//				// We need to subtract one day from end Date since it's advanced
-//				// to ensure we read treatment dates usually for regular analysis		
-//				m_AutotunerWin.setDatesAndHandlerFromAnalyzer(startDate, 
-//						CommonUtils.addDaysToDate(endDate, -1));	
-//
-//				m_AutotunerWin.runAutotune();
-//				m_Autotune_Thread = m_AutotunerWin.getM_ATThread();
-//				m_Autotuner = m_AutotunerWin.getM_Autotune();
-//				*/
-//				
-//				
-//				// Swing is not threadsafe, so add a request to update the grid onto the even queue
-//				// Found this technique here:
-//				// http://www.informit.com/articles/article.aspx?p=26326&seqNum=9
-//				EventQueue.invokeLater(new 
-//						Runnable()
-//				{ 
-//					public void run()
-//					{ 
-//						m_AutotunerWin.setVisible(true);
-//					}
-//				});
-//			}
-//		}
-//		else
-//		{
-//			m_Autotune_Thread = null;
-//		}
-//	}
+	//	private void analyzeAutotune_triedButStillNotHappy(long startDateLong, long endDateLong)
+	//	{
+	//		// This had better not be summary or full history mode?	
+	//		// Is Autotune enabled to run?
+	//		// Then some additional basic checks ...
+	//		//   Is the server configured?
+	//		//   Is the NS URL defined?
+	//		if (m_AnalyzerMode != Analyzer.AnalyzerMode.summaryOnly &&
+	//				m_AnalyzerMode != Analyzer.AnalyzerMode.fullHistory &&
+	//				PrefsNightScoutLoader.getInstance().isM_AutoTuneInvoked() &&
+	//				!PrefsNightScoutLoader.getInstance().getM_AutoTuneServer().isEmpty() &&
+	//				!PrefsNightScoutLoader.getInstance().getM_AutoTuneNSURL().isEmpty())
+	//
+	//		{
+	//			Date startDate = new Date(startDateLong);
+	//			Date endDate   = new Date(endDateLong);
+	//			//			m_AutotunerWin = new WinTextWin("Nightscout Loader " + Version.getInstance().getM_Version() + " - Autotune (within Analysis)");
+	//			if (m_AutotunerWin != null)
+	//			{
+	//				/*
+	//				 * Below ok if we hold winremotelinuxserver rather than wintextwin
+	//				 * 
+	//				 * 
+	//				// Set dates
+	//				// We need to subtract one day from end Date since it's advanced
+	//				// to ensure we read treatment dates usually for regular analysis		
+	//				m_AutotunerWin.setDatesAndHandlerFromAnalyzer(startDate, 
+	//						CommonUtils.addDaysToDate(endDate, -1));	
+	//
+	//				m_AutotunerWin.runAutotune();
+	//				m_Autotune_Thread = m_AutotunerWin.getM_ATThread();
+	//				m_Autotuner = m_AutotunerWin.getM_Autotune();
+	//				*/
+	//				
+	//				
+	//				// Swing is not threadsafe, so add a request to update the grid onto the even queue
+	//				// Found this technique here:
+	//				// http://www.informit.com/articles/article.aspx?p=26326&seqNum=9
+	//				EventQueue.invokeLater(new 
+	//						Runnable()
+	//				{ 
+	//					public void run()
+	//					{ 
+	//						m_AutotunerWin.setVisible(true);
+	//					}
+	//				});
+	//			}
+	//		}
+	//		else
+	//		{
+	//			m_Autotune_Thread = null;
+	//		}
+	//	}
 
 	private void analyzeAutotune(long startDateLong, long endDateLong)
 	{
@@ -1469,7 +1475,7 @@ public class Analyzer extends DataExportExcel
 		}
 	}
 
-	
+
 	public void analyzeResults(long startDateLong, long endDateLong)
 	{
 		if (settingsAreAllFine())
@@ -1503,14 +1509,112 @@ public class Analyzer extends DataExportExcel
 			currDateLong = result.getM_Time().getTime();
 			Double bg    = result.getM_CP_Glucose();
 
-			if (bg != null && (startDateLong <= currDateLong) && (endDateLong >= currDateLong))
+			// 22 Oct 2017 - now allow null BGs through as single results...
+			// But get issues late with null pointer exception
+			Double carb  = result.getM_CP_Carbs();
+			Double ins   = result.getM_CP_Insulin();
+//			if (bg != null && (startDateLong <= currDateLong) && (endDateLong >= currDateLong))
+			if ( (bg != null || carb != null || ins != null)
+					&& (startDateLong <= currDateLong) && (endDateLong >= currDateLong))
 			{
+				if (bg == null)
+				{
+					int i = 0;
+					i++;
+				}
 				AnalyzerSingleResult singleResult = buildAnalyzerSingleResult(result);
 				buildDaySummary(singleResult);
 
 				categorizeResultNew(singleResult);				
-				categorizeResultNew(singleResult);
+				//				categorizeResultNew(singleResult);  22 Oct 2017 - why called twice
 			}
+		}
+
+		// David 17 Oct 2017
+		// Now iterate through the single results and set the carbs before / carbs after flag accordingly
+
+		AnalyzerSingleResult prevSingleBGResult = null;
+		boolean              prevHasCarb       = false;
+		boolean              prevHasIns        = false;
+		
+		DBResult.TimeSlot  currentTimeslot   = DBResult.TimeSlot.UnknownTime;
+		ArrayList<AnalyzerSingleResult> sameTimeSlotSingleResults  = new ArrayList<AnalyzerSingleResult>();
+		boolean              timeSlotHasCarb = false;
+		boolean              timeSlotHasIns  = false;
+		
+		// A more advanced way of doing this is to hold a list of results all in the same timeslot.
+		// Only when we see a result outside the same timeslot and there has been no carb or ins, can 
+		// we truly say that there are carbs/ins.  Otherwise, we really ought to iterate through the
+		// list of single results sharing same timeslot and update
+		// 
+		// For example
+		//   10:00  BG (no carb)
+		//   10:30  BG (no carb) - update the 10:00 to say no carb
+		//   11:00  BG (no carb) - update the 10:30 to say no carb
+		//   11:15  Carbs        - Update the 11:00 to say there is carb
+		//
+		// Since 10:00 through 12:00 is morning, we should really go back and update all results
+		// 10:00, 10:30, 11:00 to say that there is actually a carb...
+		
+		for (AnalyzerSingleResult singleBGResult : this.m_CombinedSingleResults)
+		{
+			boolean hasBG    = singleBGResult.getM_DBResult().getM_CP_Glucose() == null ? false : true;
+			boolean hasIns   = singleBGResult.getM_DBResult().getM_CP_Insulin() == null ? false : true;
+			boolean hasCarb  = singleBGResult.getM_DBResult().getM_CP_Carbs()   == null ? false : true;
+			
+			DBResult.TimeSlot timeslot = singleBGResult.getM_TimeSlot();
+			if (currentTimeslot == DBResult.TimeSlot.UnknownTime)
+			{
+				currentTimeslot = timeslot;
+			}
+			
+			if (prevSingleBGResult != null)
+			{
+				// Ensure that a later non-carb result doesn't overwrite a carb
+				prevSingleBGResult.setM_SeenCarbsAfterBG(hasCarb ? hasCarb : prevSingleBGResult.isM_SeenCarbsAfterBG());
+				
+				// Same for an insulin
+				prevSingleBGResult.setM_SeenInsulinAfterBG(hasIns ? hasIns : prevSingleBGResult.isM_SeenInsulinAfterBG());
+			}
+
+			if (hasBG)
+			{
+				singleBGResult.setM_SeenCarbsBeforeBG(prevHasCarb);
+				singleBGResult.setM_SeenInsulinAfterBG(prevHasIns);
+				
+				prevSingleBGResult = singleBGResult;
+			}
+			prevHasCarb = hasCarb;
+			prevHasIns  = hasIns;
+			
+			timeSlotHasCarb = timeSlotHasCarb ? timeSlotHasCarb : prevHasCarb;
+			timeSlotHasIns  = timeSlotHasIns  ? timeSlotHasIns  : prevHasIns;
+
+			// 
+			if (timeslot == currentTimeslot)
+			{
+				sameTimeSlotSingleResults.add(singleBGResult);
+			}
+			
+			
+			// Need to iterate over the arraylist and set everything to timeslot values
+			else
+			{
+				for (AnalyzerSingleResult sameTimeSlotSingleResult : sameTimeSlotSingleResults)
+				{
+					sameTimeSlotSingleResult.setM_SeenCarbsBeforeBG(timeSlotHasCarb);
+					sameTimeSlotSingleResult.setM_SeenCarbsAfterBG(timeSlotHasCarb);
+					
+					sameTimeSlotSingleResult.setM_SeenInsulinBeforeBG(timeSlotHasIns);
+					sameTimeSlotSingleResult.setM_SeenInsulinAfterBG(timeSlotHasIns);							
+				}
+				
+				sameTimeSlotSingleResults.clear();
+				timeSlotHasCarb = false;
+				timeSlotHasIns  = false;
+			}
+
+		
 		}
 	}
 
@@ -1645,7 +1749,7 @@ public class Analyzer extends DataExportExcel
 				m_Logger.log(Level.FINE, "writeResultsToExcel - Wait for meter thread - start ");
 				m_Autotune_Thread.waitUntilFree();
 				m_Logger.log(Level.FINE, "writeResultsToExcel - Wait for meter thread - done ");
-				
+
 				m_AutotunerWin = null;
 			}
 
@@ -1711,11 +1815,11 @@ public class Analyzer extends DataExportExcel
 
 			//			reorderExcelTabs(wb);
 
-			
+
 			// Now wait and generate RemoteLinuxServer report content details
 			writeAutoTuneContentsToExcel(wb);
-	
-			
+
+
 			wb.setActiveSheet(0);
 
 			FileOutputStream out = new FileOutputStream(filename);
@@ -2055,7 +2159,7 @@ public class Analyzer extends DataExportExcel
 			}
 		}
 	}
-	
+
 	private void writeAutoTuneContentsToExcel(HSSFWorkbook wb)
 	{
 		// We pause the writing of Excel file to actually run Autotune if configured
@@ -2390,7 +2494,10 @@ public class Analyzer extends DataExportExcel
 				cell = row.createCell(j++);
 				cell.setCellValue(res.getM_RelevanceScore());
 				cell = row.createCell(j++);
-				cell.setCellValue(res.getM_DBResult().getM_CP_Glucose());
+				// 22 Oct 2017 - now BG not gauranteed
+				// cell.setCellValue(res.getM_DBResult().getM_CP_Glucose());
+				cell.setCellValue((res.getM_DBResult().getM_CP_Glucose() == null ?
+						0.0 : res.getM_DBResult().getM_CP_Glucose()));
 				cell = row.createCell(j++);
 				cell.setCellValue(res.getM_DBResult().getM_TreatmentTime());
 
@@ -2512,17 +2619,28 @@ public class Analyzer extends DataExportExcel
 
 			boolean noCarbs = res.isNoCarbsTrend();
 
+
 			// We exclude if asked to supply noCarbs only and this has carbs,
 			// or if asked to supply carbs only and this has no carbs.
 			boolean exclude = false;
 			exclude = (noCarbsOnly == true && noCarbs == false) ? true : exclude;
 			exclude = (carbsOnly   == true && noCarbs == true)  ? true : exclude;
 
+			// 22 Oct 2017
+			// Let's also exclude trend results in the same timeslot too when looking for results
+			// with no carbs
+			boolean sameTimeSlot = (res.getM_StartTimeSlot() == res.getM_EndTimeSlot() ? true : false); 
+			if (exclude == false && noCarbsOnly == true && sameTimeSlot == true)
+			{
+				exclude = true;
+			}
+			
 			// It's possible we started a trend but never completed it
 			// In such cases, result2 is null
 			if ( (res.getM_AnalyzerSingleResult1() != null & res.getM_AnalyzerSingleResult2() != null) && (exclude == false) )
 			{
 				int j = 0;
+				
 
 				// 	 m_Highs_Lows_ColNames = {"Date", "Day Name", "TimeSlot", "Type", "Relevance", "BG", "Time"};
 
@@ -2582,8 +2700,11 @@ public class Analyzer extends DataExportExcel
 				cell.setCellValue(res.getM_AnalyzerSingleResult1().getM_DayName());
 				cell.setCellStyle(style);
 
-				cell = row.createCell(j++);				
-				cell.setCellValue(getL2TrendResultString(res.getM_L2TrendResultEnum()));
+				cell = row.createCell(j++);		
+				// Add some text if there really are no Carbs after this BG
+				cell.setCellValue(getL2TrendResultString(res.getM_L2TrendResultEnum()) 
+						+ (res.getM_AnalyzerSingleResult1().isM_SeenCarbsAfterBG() ?
+								" - Carbs After" : " - NO CARBS AFTER"));
 				cell.setCellStyle(style);
 
 				cell = row.createCell(j++);			
@@ -4183,112 +4304,121 @@ public class Analyzer extends DataExportExcel
 				applicableIndividualList.add(singleResult);  // WIll happen multiple times
 			}
 
-			// A result can be either the start of a trend or the end of a trend, but not both.
-			// Two trend results can span different time slot periods too.
-
-			if (trendResult != null)
+			// 22 Oct 2017
+			// Only do trend result processing if we have a BG result here
+			if (bgResult != null)
 			{
-				boolean stored = trendResult.checkForResult(singleResult, minDiffMins, trendRatio);
-				if (!stored)
+
+				// A result can be either the start of a trend or the end of a trend, but not both.
+				// Two trend results can span different time slot periods too.
+
+				if (trendResult != null)
 				{
-					// Check whether bg1 was discarded too.  If so, then remove
-					// this trend result and start again.
-					if (trendResult.getM_AnalyzerSingleResult1() == null)
+					boolean stored = trendResult.checkForResult(singleResult, minDiffMins, trendRatio);
+					if (!stored)
 					{
-						singleResult.setM_ReasonForDiscard("Trend Result - checkForResult - returned Not Stored");
-						trendResultList.remove(trendResult);
+						// Check whether bg1 was discarded too.  If so, then remove
+						// this trend result and start again.
+						if (trendResult.getM_AnalyzerSingleResult1() == null)
+						{
+							singleResult.setM_ReasonForDiscard("Trend Result - checkForResult - returned Not Stored");
+							trendResultList.remove(trendResult);
+							trendResult = null;
+						}
+					}
+					else
+					{
+						// Reset to null to collect next result as a trend
 						trendResult = null;
+						singleResult.setM_ReasonForDiscard("Should have been Stored as #2");
 					}
 				}
 				else
 				{
-					// Reset to null to collect next result as a trend
-					trendResult = null;
-					singleResult.setM_ReasonForDiscard("Should have been Stored as #2");
-				}
-			}
-			else
-			{
-				// We should really only store a trend result under the following circumstances:
-				//  1 First result is a hypo - we're interested in what happens for hypo management
-				//  2 First BG is within range - we're interested in excursions out of range
+					// We should really only store a trend result under the following circumstances:
+					//  1 First result is a hypo - we're interested in what happens for hypo management
+					//  2 First BG is within range - we're interested in excursions out of range
 
 
-				// Originally
-				//   1 First BG has no associated insulin or carbs
-				//   2 First BG has associated insulin AND carbs
-				//   3 BG is within range - we're interested in excursions out of range really.
+					// Originally
+					//   1 First BG has no associated insulin or carbs
+					//   2 First BG has associated insulin AND carbs
+					//   3 BG is within range - we're interested in excursions out of range really.
 
-				// Let's just store all of them!
+					// Let's just store all of them!
 
-				// David 20 Jul 2016
-				// Thought of another situation
-				//   We have a previous trend that looks like a skip meal
-				//   However, this single result is same meal period and includes carbs
-				//   Then we want to switch BG 2 out and replace with this and actually not create a new trend with this one
-				//   Makes sense???  Good.
-				//
-				// Leading to other possibilities here:
-				//   Revised Trend Detection Algorithm
-				//    Currently - Take result, look at next.  If less than threshold then restart from 2nd result.
-				//   Instead:
-				//    Look at result then next.  If next is less than threshold, add to an internal Trend skipped result list and get next
-				//    
+					// David 20 Jul 2016
+					// Thought of another situation
+					//   We have a previous trend that looks like a skip meal
+					//   However, this single result is same meal period and includes carbs
+					//   Then we want to switch BG 2 out and replace with this and actually not create a new trend with this one
+					//   Makes sense???  Good.
+					//
+					// Leading to other possibilities here:
+					//   Revised Trend Detection Algorithm
+					//    Currently - Take result, look at next.  If less than threshold then restart from 2nd result.
+					//   Instead:
+					//    Look at result then next.  If next is less than threshold, add to an internal Trend skipped result list and get next
+					//    
 
 
-				AnalyzerTrendResult prevAnalyzerTrendResult = trendResultList.size() > 1 ? trendResultList.get(trendResultList.size() - 1) : null;
-				boolean usedAsAlternate = false;
+					AnalyzerTrendResult prevAnalyzerTrendResult = trendResultList.size() > 1 ? trendResultList.get(trendResultList.size() - 1) : null;
+					boolean usedAsAlternate = false;
 
-				if (prevAnalyzerTrendResult != null)
-				{
-					usedAsAlternate = prevAnalyzerTrendResult.checkForAlternateEndResult(singleResult, minDiffMins, trendRatio);										
-				}
+					if (prevAnalyzerTrendResult != null)
+					{
+						usedAsAlternate = prevAnalyzerTrendResult.checkForAlternateEndResult(singleResult, minDiffMins, trendRatio);										
+					}
 
-				// However, only store bed results if between the start and end times configured.
-				if (usedAsAlternate == false && timeSlot == DBResult.TimeSlot.BedTime)
-				{
-					try {
-						if (CommonUtils.isTimeBetween(analyzerBedTrendStartStartTime, 
-								analyzerBedTrendStartEndTime,
-								singleResult.getM_DBResult().getM_Time()))
-						{
-							trendResult = new AnalyzerTrendResult(singleResult, AnalyzerTrendResultTypeEnum.overnightTrendType);
-							trendResultList.add(trendResult);
-							singleResult.setM_ReasonForDiscard("Should have been Stored as #1 - Overnight");
-						}
-
-						else
-						{
-							if (prevAnalyzerTrendResult != null)
+					// However, only store bed results if between the start and end times configured.
+					if (usedAsAlternate == false && timeSlot == DBResult.TimeSlot.BedTime)
+					{
+						try {
+							if (CommonUtils.isTimeBetween(analyzerBedTrendStartStartTime, 
+									analyzerBedTrendStartEndTime,
+									singleResult.getM_DBResult().getM_Time()))
 							{
-								prevAnalyzerTrendResult.addInterveningResult(singleResult);
-								singleResult.setM_ReasonForDiscard(singleResult.getM_ReasonForDiscard() 
-										+ " Overnight BG after overnight start time range");
+								trendResult = new AnalyzerTrendResult(singleResult, AnalyzerTrendResultTypeEnum.overnightTrendType);
+								trendResultList.add(trendResult);
+								singleResult.setM_ReasonForDiscard("Should have been Stored as #1 - Overnight");
 							}
+
 							else
 							{
-								singleResult.setM_ReasonForDiscard("No BG to start overnight trend.  This result is after overnight start time range");
+								if (prevAnalyzerTrendResult != null)
+								{
+									prevAnalyzerTrendResult.addInterveningResult(singleResult);
+									singleResult.setM_ReasonForDiscard(singleResult.getM_ReasonForDiscard() 
+											+ " Overnight BG after overnight start time range");
+								}
+								else
+								{
+									singleResult.setM_ReasonForDiscard("No BG to start overnight trend.  This result is after overnight start time range");
+								}
 							}
+
+							// Note that we can actually skip results here without keeping a record of them
+							// as we do once we've got the 1st result
+
+						} 
+						catch (ParseException e) 
+						{
+							m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + ". Exception checking date ranges. " + e.getMessage());
 						}
-
-						// Note that we can actually skip results here without keeping a record of them
-						// as we do once we've got the 1st result
-
-					} 
-					catch (ParseException e) 
+					}
+					else if (usedAsAlternate == false)
 					{
-						m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + ". Exception checking date ranges. " + e.getMessage());
+						singleResult.setM_ReasonForDiscard("Should have been Stored as #1 - Meal or hypo");
+						trendResult = new AnalyzerTrendResult(singleResult, 
+								bgResult < analyzerLowRangeThreshold ? AnalyzerTrendResultTypeEnum.hypoTrendType :
+									AnalyzerTrendResultTypeEnum.mealTrendType);
+						trendResultList.add(trendResult);
 					}
 				}
-				else if (usedAsAlternate == false)
-				{
-					singleResult.setM_ReasonForDiscard("Should have been Stored as #1 - Meal or hypo");
-					trendResult = new AnalyzerTrendResult(singleResult, 
-							bgResult < analyzerLowRangeThreshold ? AnalyzerTrendResultTypeEnum.hypoTrendType :
-								AnalyzerTrendResultTypeEnum.mealTrendType);
-					trendResultList.add(trendResult);
-				}
+
 			}
+
+
 		}
 
 		return trendResult;
@@ -4521,7 +4651,9 @@ public class Analyzer extends DataExportExcel
 
 
 		// Construct a AnalyzerSingleResult and add to appropriate list
-		Double  bgResult = res.getM_CP_Glucose();
+		Double  bgResult   = res.getM_CP_Glucose();
+		Double  carbResult = res.getM_CP_Carbs();
+		Double  insResult  = res.getM_CP_Insulin();
 
 		DBResult.TimeSlot timeSlot = res.getDBResultTimeSlot();  
 
@@ -4588,6 +4720,32 @@ public class Analyzer extends DataExportExcel
 			result.setM_RelevanceScore(relevance);
 			result.setM_ReasonForDiscard("Just Created");
 
+		}
+		
+		else 
+		{
+			L0AnalyzerSingleResultEnum singleResultEnum = L0AnalyzerSingleResultEnum.unknown;
+			long relevance   = 0;
+			
+			if (carbResult != null && insResult != null)
+			{
+				singleResultEnum = L0AnalyzerSingleResultEnum.carbAndInsulinValue;
+			}
+			else if (carbResult != null)
+			{
+				singleResultEnum = L0AnalyzerSingleResultEnum.carbValue;
+			}
+			else if (insResult != null)
+			{
+				singleResultEnum = L0AnalyzerSingleResultEnum.insulinValue;
+			}
+			
+			if (singleResultEnum != L0AnalyzerSingleResultEnum.unknown)
+			{
+				result = new AnalyzerSingleResult(singleResultEnum, res, timeSlot);
+				result.setM_RelevanceScore(relevance);
+				result.setM_ReasonForDiscard("Just Created");
+			}
 		}
 
 		return result;
