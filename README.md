@@ -99,9 +99,9 @@ It loads the Nightscout Treatment and CGM into memory for comparison with new da
 
 ### Installation Guide for Nightscout use
 
-1. Check your version of Java at this [link] (https://java.com/en/download/help/version_manual.xml)
+1. Check your version of Java at this [link](https://java.com/en/download/help/version_manual.xml)
 1. Download the application from the [Nightscout Loader](https://david50703.wixsite.com/nightscoutloader) page.  
-  1. Latest stable version always available [here] (https://david50703.wixsite.com/nightscoutloader). 
+  1. Latest stable version always available [here](https://david50703.wixsite.com/nightscoutloader). 
   1. Occassionally, an early beta version is made available with fixes on the stable version or access to upcoming features.
 2. Copy the NightScoutLoader.jar file to your desktop
 3. Launch the application by double-clicking the icon on your desktop.
@@ -122,9 +122,9 @@ To convert a previous installation for non-Nightscout to one for Nightscout use,
 
 ### Installation Guide for non-Nightscout use
 
-1. Check your version of Java at this [link] (https://java.com/en/download/help/version_manual.xml)
+1. Check your version of Java at this [link](https://java.com/en/download/help/version_manual.xml)
 1. Download the application from the [Nightscout Loader](https://david50703.wixsite.com/nightscoutloader) page.  
-  1. Latest stable version always available [here] (https://david50703.wixsite.com/nightscoutloader). 
+  1. Latest stable version always available [here](https://david50703.wixsite.com/nightscoutloader). 
   1. Occassionally, an early beta version is made available with fixes on the stable version or access to upcoming features.
 2. Copy the NightScoutLoader.jar file to your desktop
 3. Launch the application by double-clicking the icon on your desktop.
@@ -133,6 +133,6 @@ That's all there is to it!
 
 To convert a previous installation for Nightscout to one for non-Nightscout use, simply clear the Nightscout Server field in the Settings window, save the settings and re-launch the application.
 
-:couple: [Nightscout Loader Website] (https://david50703.wixsite.com/nightscoutloader)
-:couple: [Nightscout Loader Facebook Page] (https://www.facebook.com/NightscoutLoader)
+:couple: [Nightscout Loader Website](https://david50703.wixsite.com/nightscoutloader)
+:couple: [Nightscout Loader Facebook Page](https://www.facebook.com/NightscoutLoader)
 
