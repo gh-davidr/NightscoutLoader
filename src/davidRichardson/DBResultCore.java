@@ -164,7 +164,10 @@ public abstract class DBResultCore implements DBResultInterface
 	public synchronized void setM_ProximityPossibleDuplicate(boolean m_ProximityPossibleDuplicate) 
 	{
 		this.m_ProximityPossibleDuplicate = m_ProximityPossibleDuplicate;
-		setImpactOfProximity();	
+		
+		// David - 31 Jan 2018
+		// This caused java.lang.StackOverflowError
+//		setImpactOfProximity();	
 	}
 
 }

@@ -28,7 +28,7 @@ public class Version
 		m_ContactUs  = new String();
 		m_GoogleDriveHelpURI = new String();
 
-		m_Version    = "V3.0";
+		m_Version    = "V3.01";
 		m_Author     = "David Richardson";
 		m_ContactUs  = "NightscoutLoader@gmail.com";
 		//		m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_cEZMbmk4TTlZRUk";
@@ -119,6 +119,7 @@ public class Version
 		m_AboutText += "           Fixed connection issue for Autotune Server that broke in refactoring prior to V2.7\r\n";
 		m_AboutText += "           Added convenience function to drive an autotune run from a Diasend file (sets basal rates and dates)\r\n";
 		m_AboutText += "           Also some minor improvements to thread management\r\n";
+		m_AboutText += "3.01       Minor revision - bug fix to Analyzer which broke due to a change in 3.0\r\n";
 		m_AboutText += "\r\n\r\n";
 		m_AboutText += "Written by " + m_Author + " - January 2016 through January 2018\r\n";
 	}
