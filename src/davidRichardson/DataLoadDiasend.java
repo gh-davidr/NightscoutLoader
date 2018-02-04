@@ -935,17 +935,17 @@ public class DataLoadDiasend extends DataLoadBase
 
 			HSSFSheet glucoseSheet = wb.getSheet(m_GlucoseTabName);
 			HSSFSheet insulinSheet = wb.getSheet(m_InsulinTabName);
+			HSSFSheet cgmSheet = wb.getSheet(m_CGMTabName);
 
 			//			if ( (glucoseSheet != null && glucoseSheet.getPhysicalNumberOfRows() > 0) // Glucose tab is there with rows
 			//					&&   (insulinSheet != null && insulinSheet.getPhysicalNumberOfRows() > 0))// Insulin tab is also there with rows
 			if ( (glucoseSheet != null && glucoseSheet.getLastRowNum() > 0) // Glucose tab is there with rows
-					&&   (insulinSheet != null && insulinSheet.getLastRowNum() > 0))// Insulin tab is also there with rows
-
+					&&   ((insulinSheet != null && insulinSheet.getLastRowNum() > 0)// Insulin tab is also there with rows
+							|| (cgmSheet != null && cgmSheet.getLastRowNum() > 0))) // Or CGM tab is there with rows
 			{
 				result = true;
 			}
 			wb.close();
-
 		} 
 		catch(Exception ioe) 
 		{
