@@ -389,7 +389,9 @@ public class WinAutotuneProfile extends JFrame
 		{
 			String start   = (String)((JSONObject)elem).get("start");
 			//   		long   minutes = (long)((JSONObject)elem).get("minutes");
-			double rate    = (double)((JSONObject)elem).get("rate");
+			//Store rate as a string, then parse to double in case rate is an Integer
+			String rateStr = ((JSONObject)elem).get("rate").toString();
+			double rate = Double.parseDouble(rateStr);
 
 			int hour = Integer.parseInt(start.substring(0, 2));
 			if (hour < 24)
