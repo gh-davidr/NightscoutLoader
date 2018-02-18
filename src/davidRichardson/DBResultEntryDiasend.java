@@ -92,7 +92,10 @@ public class DBResultEntryDiasend extends DBResultEntry
 			d = DataLoadDiasend.parseFileDateTime(timeStr);
 			if (d.getTime() != 0)
 			{
-				Date utcD = new Date(CommonUtils.toUTC(d.getTime()));
+				//This isn't working, it's applying the offset twice, I suspect something to
+				//do with Date.getTime() always returning results for display in local TZ
+				//Date utcD = new Date(CommonUtils.toUTC(d.getTime()));
+				Date utcD = new Date(d.getTime());
 				this.setM_UTCDate(utcD);
 				
 				try {

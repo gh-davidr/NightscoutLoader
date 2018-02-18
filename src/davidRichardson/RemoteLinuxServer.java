@@ -723,12 +723,12 @@ public class RemoteLinuxServer
 	public int writeAutotuneOutputToExcel(HSSFWorkbook wb, Sheet sheet, int rowNum)
 	{
 		// Key words to look for:
-		String start   = "Parameter      | Current  | Autotune";
-		String ignored = "---------------------------------------\n";
+		String start   = "Parameter      | Pump     | Autotune";
+		String ignored = "--------------------------------------\n";
 
 		int result = 0;
 
-		int index = m_OutputStream.indexOf(start);
+		int index = m_OutputStream.lastIndexOf(start);
 		if (index >= 0)
 		{
 			// Create a string with rest of output
