@@ -141,6 +141,8 @@ public class WinSettings extends JDialog
 	private int m_Row_NS_Server_URL           = 0;
 	private int m_Row_BG_Units_DateForm_Test  = 1;
 	private int m_Row_SyncCGM                 = 2;
+	private int m_Row_SyncProfile             = 2;
+	
 	
 	private int m_Row_NS_DB_Coll_HB_Label     = 3;
 	private int m_Row_Mins_Bolus_Heartbeat_Sp = 4;
@@ -449,7 +451,7 @@ public class WinSettings extends JDialog
 
 		
 		
-		JRadioButton rdbtnSyncCGM = new JRadioButton("Sync CGM (Where Available)");
+		JRadioButton rdbtnSyncCGM = new JRadioButton("Sync Diasend CGM");
 		rdbtnSyncCGM.setToolTipText("<html>If CGM data is present in Diasend file, then attempt to load it into Nightscout  <br>This may be extended for Medtronic too eventually.</html>");
 		rdbtnSyncCGM.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent actionEvent) {
@@ -462,12 +464,33 @@ public class WinSettings extends JDialog
 		gbc_rdbtnSyncCGM.anchor = GridBagConstraints.EAST;
 		gbc_rdbtnSyncCGM.insets = new Insets(0, 0, 5, 5);
 		// gbc_rdbtnSyncCGM.gridwidth = 5;
-		gbc_rdbtnSyncCGM.gridx = 2;
+		gbc_rdbtnSyncCGM.gridx = 1;
 		gbc_rdbtnSyncCGM.gridy = m_Row_SyncCGM;
 		//		panel_1.add(rdbtnSyncCGM, gbc_rdbtnSyncCGM);
 		mongoPanel.add(rdbtnSyncCGM, gbc_rdbtnSyncCGM);
 		rdbtnSyncCGM.setSelected(PrefsNightScoutLoader.getInstance().isM_SyncCGM());
 
+		
+		JRadioButton rdbtnSyncProfile = new JRadioButton("Sync Diasend Profile");
+		rdbtnSyncProfile.setToolTipText("<html>If Profile data is present in Diasend file, then attempt to load it into Nightscout  <br>This may be extended for Medtronic too eventually.</html>");
+		rdbtnSyncProfile.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent actionEvent) {
+				AbstractButton aButton = (AbstractButton) actionEvent.getSource();
+				PrefsNightScoutLoader.getInstance().setM_SyncProfile(aButton.isSelected());
+			}
+		});
+		rdbtnSyncProfile.setBackground(Color.YELLOW);
+		GridBagConstraints gbc_rdbtnSyncProfile = new GridBagConstraints();
+		gbc_rdbtnSyncProfile.anchor = GridBagConstraints.EAST;
+		gbc_rdbtnSyncProfile.insets = new Insets(0, 0, 5, 5);
+		// gbc_rdbtnSyncProfile.gridwidth = 5;
+		gbc_rdbtnSyncProfile.gridx = 3;
+		gbc_rdbtnSyncProfile.gridy = m_Row_SyncProfile;
+		//		panel_1.add(rdbtnSyncProfile, gbc_rdbtnSyncProfile);
+		mongoPanel.add(rdbtnSyncProfile, gbc_rdbtnSyncProfile);
+		rdbtnSyncProfile.setSelected(PrefsNightScoutLoader.getInstance().isM_SyncProfile());
+		
+		
 		
 
 		JLabel lblMongoDBLabel = new JLabel("Nightscout DB");

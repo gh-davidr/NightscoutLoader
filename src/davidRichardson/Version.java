@@ -28,7 +28,7 @@ public class Version
 		m_ContactUs  = new String();
 		m_GoogleDriveHelpURI = new String();
 
-		m_Version    = "V3.01";
+		m_Version    = "V3.1";
 		m_Author     = "David Richardson";
 		m_ContactUs  = "NightscoutLoader@gmail.com";
 		//		m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_cEZMbmk4TTlZRUk";
@@ -120,6 +120,10 @@ public class Version
 		m_AboutText += "           Added convenience function to drive an autotune run from a Diasend file (sets basal rates and dates)\r\n";
 		m_AboutText += "           Also some minor improvements to thread management\r\n";
 		m_AboutText += "3.01       Minor revision - bug fix to Analyzer which broke due to a change in 3.0\r\n";
+		m_AboutText += "3.02       Couple of patch fixes by skuzzer (Adam Wale) - \r\n";
+		m_AboutText += "               Allow upload of Diasend file if any tab has data\r\n";
+		m_AboutText += "               Allow Diasend files with only CGM data present\r\n";
+		m_AboutText += "3.1        Addition of Profile upload from Diasend into Nightscout \r\n";
 		m_AboutText += "\r\n\r\n";
 		m_AboutText += "Written by " + m_Author + " - January 2016 through January 2018\r\n";
 	}

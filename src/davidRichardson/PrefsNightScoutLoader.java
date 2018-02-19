@@ -179,6 +179,7 @@ public class PrefsNightScoutLoader
 	final private String  def_M_AutoTuneLocalProfileFileLoaded     = "";
 	
 	final private boolean def_M_SyncCGM                            = true; 
+	final private boolean def_M_SyncProfile                        = true; 
 	
 	
 	private int     m_BGUnits;    // 0 ==> mmol/L 1 ==> mg/
@@ -296,6 +297,7 @@ public class PrefsNightScoutLoader
 	private String  m_AutoTuneLocalFolderForBackups;
 	private String  m_AutoTuneLocalProfileFileLoaded;
 	private boolean m_SyncCGM;
+	private boolean m_SyncProfile;
 
 
 	// Handles to retrieve preferences
@@ -404,6 +406,7 @@ public class PrefsNightScoutLoader
 	final private String  pref_AutoTuneLocalFolderForBackups        = "NSL_AutoTuneLocalFolderForBackups";
 	final private String  pref_AutoTuneLocalProfileFileLoaded       = "NSL_AutoTuneLocalProfileFileLoaded";
 	final private String  pref_SyncCGM                              = "NSL_SyncCGM";
+	final private String  pref_SyncProfile                          = "NSL_SyncProfile";
 		
 	static int getBGUnitMultiplier()
 	{
@@ -554,6 +557,7 @@ public class PrefsNightScoutLoader
 		m_AutoTuneLocalFolderForBackups        = def_M_AutoTuneLocalFolderForBackups;
 		m_AutoTuneLocalProfileFileLoaded       = def_M_AutoTuneLocalProfileFileLoaded;
 		m_SyncCGM                              = def_M_SyncCGM;
+		m_SyncProfile                          = def_M_SyncProfile;
 	}
 	
 	private void resetBGValues()
@@ -692,7 +696,7 @@ public class PrefsNightScoutLoader
 		prefs.put(pref_AutoTuneLocalFolderForBackups, m_AutoTuneLocalFolderForBackups);
 		prefs.put(pref_AutoTuneLocalProfileFileLoaded, m_AutoTuneLocalProfileFileLoaded);
 		prefs.putBoolean(pref_SyncCGM, m_SyncCGM);
-
+		prefs.putBoolean(pref_SyncProfile, m_SyncProfile);
 	}
 	
 	private void loadPreferences()
@@ -816,6 +820,7 @@ public class PrefsNightScoutLoader
 		m_AutoTuneLocalFolderForBackups     = prefs.get(pref_AutoTuneLocalFolderForBackups, def_M_AutoTuneLocalFolderForBackups);
 		m_AutoTuneLocalProfileFileLoaded    = prefs.get(pref_AutoTuneLocalProfileFileLoaded, def_M_AutoTuneLocalProfileFileLoaded);
 		m_SyncCGM                           = prefs.getBoolean(pref_SyncCGM, def_M_SyncCGM);
+		m_SyncProfile                       = prefs.getBoolean(pref_SyncProfile, def_M_SyncProfile);
 
 	//	prefs.nodeExists(arg0)
 	}
@@ -2197,6 +2202,20 @@ public class PrefsNightScoutLoader
 	 */
 	public synchronized void setM_SyncCGM(boolean m_SyncCGM) {
 		this.m_SyncCGM = m_SyncCGM;
+	}
+
+	/**
+	 * @return the m_SyncProfile
+	 */
+	public synchronized boolean isM_SyncProfile() {
+		return m_SyncProfile;
+	}
+
+	/**
+	 * @param m_SyncProfile the m_SyncProfile to set
+	 */
+	public synchronized void setM_SyncProfile(boolean m_SyncProfile) {
+		this.m_SyncProfile = m_SyncProfile;
 	}
 
 
