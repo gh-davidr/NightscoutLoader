@@ -128,6 +128,9 @@ public class WinNightScoutLoader extends JFrame {
 	// Hold the list of CGM Entries back from Nightscout
 	private ArrayList <DBResultEntry> m_MongoResultEntries;
 
+	// Hold the list of Profile Entries back from Nightscout
+	private ArrayList <DBResultNightScoutProfile> m_MongoResultProfiles;
+
 	/*    Set<String> set1 = new HashSet<String>();
     set1.addAll(ls1);
 
@@ -214,6 +217,9 @@ public class WinNightScoutLoader extends JFrame {
 
 		// Launch a separate thread to load the CGM entries - if configured
 		doThreadLoadNightScoutEntries(true);
+		
+		// Now also load the profiles ... again in a multi-threaded way
+		doThreadLoadNightScoutProfiles(true);
 
 		// Tested Fri 4 Mar
 		// Not sure this is working correctly.
@@ -1145,6 +1151,63 @@ public class WinNightScoutLoader extends JFrame {
 		}
 	}
 
+	private void doThreadLoadNightScoutProfiles(Boolean initialRun)
+	{
+		// We only attempt a CGM load if the preferences are enabled
+		if (PrefsNightScoutLoader.getInstance().isM_SyncProfile() == true)
+		{
+			try
+			{
+				Object obj = new Boolean(initialRun);
+				m_NightScoutLoaderCore.threadLoadNightScoutProfiles(
+						new ThreadDataLoad.DataLoadCompleteHandler(obj) 
+						{
+
+							//		@Override
+							public void exceptionRaised(String message) 
+							{
+								m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "doThreadLoadMeterPump: Just caught an exception" + message);
+							}
+
+							//		@Override
+							public void dataLoadComplete(Object obj, String message) 
+							{
+								m_MongoResultProfiles = m_NightScoutLoaderCore.getM_DataLoadNightScoutProfiles().getResultsFromDB();
+								//m_MongoResults = m_NightScoutLoaderCore.getM_ResultsMongoDB();
+
+								// Swing is not threadsafe, so add a request to update the grid onto the even queue
+								// Found this technique here:
+								// http://www.informit.com/articles/article.aspx?p=26326&seqNum=9
+								EventQueue.invokeLater(new 
+										Runnable()
+								{ 
+									public void run()
+									{ 
+//										m_CGMEntriesLoadedLbl.setText("CGM : " + NumberFormat.getIntegerInstance().format(m_MongoResultEntries.size()));
+//										m_CGMEntriesLoadedLbl.setVisible(true);
+//										m_CGMEntriesLoadedLbl.setForeground(m_MongoResultEntries.size() == 0 ? Color.RED : Color.BLUE); // setBackground(Color.YELLOW);										
+									}
+								});
+
+								EventQueue.invokeLater(new 
+										Runnable()
+								{ 
+									public void run()
+									{ 
+										//									addStatusLine();
+									}
+								});
+							}
+						});	
+			}
+
+			catch(Exception e)
+			{
+				m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + " doThreadLoadNightScout: just caught an error: " + e.getMessage() + "-" + e.getLocalizedMessage());		
+			}
+		}
+	}
+	
 	public void doLoadNightScout(Boolean initialRun)
 	{
 		reShapeWindowForNightScoutOnly();

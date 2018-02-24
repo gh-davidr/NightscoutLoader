@@ -17,6 +17,8 @@ import java.util.regex.Pattern;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 
+import com.mongodb.BasicDBList;
+
 //import javax.swing.JFormattedTextField.AbstractFormatter;
 
 import com.mongodb.DBObject;
@@ -501,6 +503,7 @@ public class CommonUtils
 	public static int getFieldInt(DBObject rs, String fieldName)
 	{
 		int result = 0;
+				
 		if (rs.containsField(fieldName) && rs.get(fieldName).toString().length() > 0)
 		{
 			result = (int)rs.get(fieldName);
@@ -514,6 +517,26 @@ public class CommonUtils
 		if (rs.containsField(fieldName) && rs.get(fieldName).toString().length() > 0)
 		{
 			result = (long)rs.get(fieldName);
+		}
+		return result;		
+	}
+	
+	public static DBObject getFieldDBObject(DBObject rs, String fieldName)
+	{
+		DBObject result = null;
+		if (rs.containsField(fieldName) && rs.get(fieldName).toString().length() > 0)
+		{
+			result = (DBObject)rs.get(fieldName);
+		}
+		return result;		
+	}
+
+	public static BasicDBList getFieldBasicDBList(DBObject rs, String fieldName)
+	{
+		BasicDBList result = null;
+		if (rs.containsField(fieldName) && rs.get(fieldName).toString().length() > 0)
+		{
+			result = (BasicDBList)rs.get(fieldName);
 		}
 		return result;		
 	}

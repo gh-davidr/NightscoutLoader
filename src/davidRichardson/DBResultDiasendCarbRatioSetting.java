@@ -2,12 +2,20 @@ package davidRichardson;
 
 import org.apache.poi.hssf.usermodel.HSSFRow;
 
+import com.mongodb.BasicDBObject;
+
 public class DBResultDiasendCarbRatioSetting extends DBResultDiasendPumpSetting
 {
 	DBResultDiasendCarbRatioSetting(HSSFRow row)
 	{
 		super(row);
 	}
+	
+	DBResultDiasendCarbRatioSetting(BasicDBObject rs)
+	{
+		super(rs);
+	}
+
 
 	/**
 	 * @return the m_CarbRatioValue

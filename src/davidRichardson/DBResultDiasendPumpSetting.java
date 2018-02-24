@@ -3,6 +3,8 @@ package davidRichardson;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 
+import com.mongodb.BasicDBObject;
+
 public class DBResultDiasendPumpSetting 
 {
 	private int    m_Index;
@@ -42,6 +44,21 @@ public class DBResultDiasendPumpSetting
 			m_TimeBoundValue = cell3;
 		}
 	}
+	
+	DBResultDiasendPumpSetting(BasicDBObject rs)
+	{
+		String time      = CommonUtils.getFieldStr(rs, "time");
+		String valuestr  = CommonUtils.getFieldStr(rs, "value");
+		Double value = Double.parseDouble(valuestr);
+				
+		
+		m_Time = time;
+		m_TimeBoundValue = value;
+		
+		int j = 0;
+		j++;
+	}
+
 	
 	public String toString()
 	{

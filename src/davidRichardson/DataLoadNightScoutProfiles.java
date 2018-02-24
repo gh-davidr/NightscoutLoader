@@ -7,6 +7,7 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
+import com.mongodb.QueryOperators;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -16,14 +17,14 @@ import java.util.logging.Logger;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 
-public class DataLoadNightScoutEntries extends DataLoadNightScout 
+public class DataLoadNightScoutProfiles extends DataLoadNightScout 
 {
 	private static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());
 //	private static final int m_FailedTestLimit = 2;
 
 //	private static Integer m_FailedTests = 0;
 
-	private ArrayList <DBResultEntry> resultsFromDB;
+	private ArrayList <DBResultNightScoutProfile> resultsFromDB;
 	private MongoDBServerStateEnum m_ServerState = MongoDBServerStateEnum.unknown;
 
 	enum MongoDBServerStateEnum
@@ -33,10 +34,10 @@ public class DataLoadNightScoutEntries extends DataLoadNightScout
 		not_accessible,
 	};
 	
-	public DataLoadNightScoutEntries()
+	public DataLoadNightScoutProfiles()
 	{
 		super();
-		resultsFromDB = new ArrayList<DBResultEntry>();
+		resultsFromDB = new ArrayList<DBResultNightScoutProfile>();
 	}
 
 	// Check DB connection for where we only have server name
@@ -109,12 +110,8 @@ public class DataLoadNightScoutEntries extends DataLoadNightScout
 	
 	static public Date getEntryLoadStartDate() 
 	{
-		int weeksBack = PrefsNightScoutLoader.getInstance().getM_WeeksBackToLoadEntries();
-		Date now = new Date();
-		long nowLong = now.getTime();
-		long thenLong = nowLong - ((long)weeksBack * 7 * 24 * 3600 * 1000); // Arrghh - need to cast this weeks back else get garbage future date!
-		Date result = new Date(thenLong);
-	
+		// We want to load all profiles, so construct a very early date
+		Date result = new Date(0);
 		return result;
 	}
 
@@ -146,7 +143,7 @@ public class DataLoadNightScoutEntries extends DataLoadNightScout
 			final String mongoHost      = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoServer();
 			//		final int    mongoPort      = NightLoaderPreferences.getInstance().getM_NightscoutMongoPort();
 			final String mongoDB        = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB();
-			final String mongoColl      = PrefsNightScoutLoader.getInstance().getM_NightscoutSensorMongoCollection();
+			final String mongoColl      = PrefsNightScoutLoader.getInstance().getM_NightscoutProfileMongoCollection();
 
 
 			MongoClient dbClient;
@@ -171,12 +168,12 @@ public class DataLoadNightScoutEntries extends DataLoadNightScout
 			String timeFld = new String();
 			String collFld = new String();
 
-			timeFld = "date";
-			collFld = mongoColl /*"treatments"*/;
+			timeFld = "this.mills";
+			collFld = mongoColl /*"profile"*/;
 
 			DB db = dbClient.getDB(mongoDB);
 
-			resultsFromDB = new ArrayList<DBResultEntry>();
+			resultsFromDB = new ArrayList<DBResultNightScoutProfile>();
 
 			// Get the players collection
 			DBCollection coll = db.getCollection(collFld);
@@ -184,12 +181,20 @@ public class DataLoadNightScoutEntries extends DataLoadNightScout
 
 			BasicDBObject query = new BasicDBObject();
 			// Load *all* results
-			query.put(timeFld, BasicDBObjectBuilder.start("$gte", startDate.getTime()).get());
-
+			
+			/*
+			// Use a regex since there's a mills field that holds milliseconds as a string
+			// But this doesnt work
+			// Instead, just get the lot
+			query.put(timeFld, BasicDBObjectBuilder.start("$regex", ">= " + startDate.getTime()).get()); 	
 			String queryStr = query.toString();
-			m_Logger.log(Level.FINE, "loadDBResults Mongo Query is now " + query.toString());
-
+			m_Logger.log(Level.FINE, "loadDBResults Mongo Query is now " + queryStr);
 			DBCursor cursor = coll.find(query);
+			The issue with profiles is that dates are held as strings and so can't be easily compared
+			Instead just pull the lot since there won't be *that* many profiles, right?!
+			*/
+
+			DBCursor cursor = coll.find();
 			// Sort by time
 			cursor.sort(new BasicDBObject(timeFld, 1));
 
@@ -199,7 +204,7 @@ public class DataLoadNightScoutEntries extends DataLoadNightScout
 				//ResultFromDB res = new ResultFromDB(rs);
 
 				// Switch to new object type
-				DBResultEntry res = new DBResultEntry(rs);
+				DBResultNightScoutProfile res = new DBResultNightScoutProfile(rs);
 
 				resultsFromDB.add(res);
 
@@ -211,7 +216,7 @@ public class DataLoadNightScoutEntries extends DataLoadNightScout
 
 	}
 
-	ArrayList <DBResultEntry> getResultsFromDB()
+	ArrayList <DBResultNightScoutProfile> getResultsFromDB()
 	{
 		return resultsFromDB;
 	}

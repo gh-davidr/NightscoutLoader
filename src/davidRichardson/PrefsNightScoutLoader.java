@@ -43,6 +43,7 @@ public class PrefsNightScoutLoader
 		m_NightscoutMongoDB = new String();
 		m_NightscoutMongoCollection = new String();
 		m_NightscoutSensorMongoCollection = new String();
+		m_NightscoutProfileMongoCollection = new String();
 		m_MongoMeterCollection = new String();
 		m_LogFile = new String();
 		m_InputDateFormat = new String();
@@ -88,6 +89,8 @@ public class PrefsNightScoutLoader
 	final private String  def_M_NightscoutMongoDB                 = "dexcom_db";
 	final private String  def_M_NightscoutMongoCollection         = "treatments";
 	final private String  def_M_NightscoutSensorMongoCollection   = "entries";
+	final private String  def_M_NightscoutProfileMongoCollection  = "profile";
+	
 	final private String  def_M_NightscoutAuditCollection         = "treatments_loads";
 	final private String  def_M_MongoMeterCollection              = "Roche_Results";
 	final private Boolean def_M_LoadNightscoutEntries            = true;
@@ -204,6 +207,7 @@ public class PrefsNightScoutLoader
 	private String  m_NightscoutMongoDB;
 	private String  m_NightscoutMongoCollection;
 	private String  m_NightscoutSensorMongoCollection;
+	private String  m_NightscoutProfileMongoCollection;
 	private String  m_NightscoutAuditCollection;
 	// Items below are for more advanced use only
 	private boolean m_AdvancedSettings;
@@ -324,6 +328,7 @@ public class PrefsNightScoutLoader
 	final private String pref_NightscoutMongoDB                 = "NSL_NightscoutMongoDB";
 	final private String pref_NightscoutMongoCollection         = "NSL_NightscoutMongoCollection";
 	final private String pref_NightscoutSensorMongoCollection   = "NSL_NightscoutSensorMongoCollection";
+	final private String pref_NightscoutProfileMongoCollection  = "NSL_NightscoutProfileMongoCollection";
 	final private String pref_NightscoutAuditCollection         = "NSL_NightscoutAuditCollection";
 	// Items below are for more advanced use only
 	final private String pref_AdvancedSettings                  = "NSL_AdvancedSettings";
@@ -447,6 +452,7 @@ public class PrefsNightScoutLoader
 		m_NightscoutMongoDB                 = def_M_NightscoutMongoDB;
 		m_NightscoutMongoCollection         = def_M_NightscoutMongoCollection;
 		m_NightscoutSensorMongoCollection   = def_M_NightscoutSensorMongoCollection;
+		m_NightscoutProfileMongoCollection  = def_M_NightscoutProfileMongoCollection;
 		m_NightscoutAuditCollection         = def_M_NightscoutAuditCollection;
 		m_MongoMeterCollection              = def_M_MongoMeterCollection;
 		m_LoadNightscoutEntries             = def_M_LoadNightscoutEntries;
@@ -612,6 +618,7 @@ public class PrefsNightScoutLoader
 	    prefs.put(pref_NightscoutMongoDB, m_NightscoutMongoDB);
 	    prefs.put(pref_NightscoutMongoCollection, m_NightscoutMongoCollection);
 	    prefs.put(pref_NightscoutSensorMongoCollection, m_NightscoutSensorMongoCollection);
+	    prefs.put(pref_NightscoutProfileMongoCollection, m_NightscoutProfileMongoCollection);
 	    prefs.put(pref_NightscoutAuditCollection, m_NightscoutAuditCollection);
 	    
 	    prefs.putBoolean(pref_AdvancedSettings, m_AdvancedSettings);
@@ -731,6 +738,7 @@ public class PrefsNightScoutLoader
 		m_NightscoutMongoDB                 = prefs.get(pref_NightscoutMongoDB, def_M_NightscoutMongoDB);
 		m_NightscoutMongoCollection         = prefs.get(pref_NightscoutMongoCollection, def_M_NightscoutMongoCollection);
 		m_NightscoutSensorMongoCollection   = prefs.get(pref_NightscoutSensorMongoCollection, def_M_NightscoutSensorMongoCollection);
+		m_NightscoutProfileMongoCollection  = prefs.get(pref_NightscoutProfileMongoCollection, def_M_NightscoutProfileMongoCollection);
 		m_NightscoutAuditCollection         = prefs.get(pref_NightscoutAuditCollection, def_M_NightscoutAuditCollection);
 		
 		m_AdvancedSettings                  = prefs.getBoolean(pref_AdvancedSettings, def_M_AdvancedSettings);
@@ -1156,6 +1164,20 @@ public class PrefsNightScoutLoader
 	 */
 	public void setM_NightscoutSensorMongoCollection(String m_NightscoutSensorMongoCollection) {
 		this.m_NightscoutSensorMongoCollection = m_NightscoutSensorMongoCollection;
+	}
+
+	/**
+	 * @return the m_NightscoutProfileMongoCollection
+	 */
+	public synchronized String getM_NightscoutProfileMongoCollection() {
+		return m_NightscoutProfileMongoCollection;
+	}
+
+	/**
+	 * @param m_NightscoutProfileMongoCollection the m_NightscoutProfileMongoCollection to set
+	 */
+	public synchronized void setM_NightscoutProfileMongoCollection(String m_NightscoutProfileMongoCollection) {
+		this.m_NightscoutProfileMongoCollection = m_NightscoutProfileMongoCollection;
 	}
 
 	/**

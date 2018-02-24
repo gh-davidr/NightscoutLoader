@@ -2,6 +2,8 @@ package davidRichardson;
 
 import org.apache.poi.hssf.usermodel.HSSFRow;
 
+import com.mongodb.BasicDBObject;
+
 public class DBResultDiasendBasalSetting extends DBResultDiasendPumpSetting
 {
 	private String m_BasalProfileName;
@@ -12,6 +14,11 @@ public class DBResultDiasendBasalSetting extends DBResultDiasendPumpSetting
 		m_BasalProfileName = new String(basalProfileName);
 	}
 
+	DBResultDiasendBasalSetting(BasicDBObject rs)
+	{
+		super(rs);
+	}
+	
 	public String toString()
 	{
 		return String.format("Profile Name: %s, Index: %d, Time: %s, Value: %g",

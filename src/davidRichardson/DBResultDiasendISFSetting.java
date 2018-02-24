@@ -2,6 +2,8 @@ package davidRichardson;
 
 import org.apache.poi.hssf.usermodel.HSSFRow;
 
+import com.mongodb.BasicDBObject;
+
 public class DBResultDiasendISFSetting extends DBResultDiasendPumpSetting
 {
 	private String m_BGUnits;
@@ -13,6 +15,11 @@ public class DBResultDiasendISFSetting extends DBResultDiasendPumpSetting
 		m_BGUnits = new String(bgUnits);
 	}
 
+	DBResultDiasendISFSetting(BasicDBObject rs, String bgUnits)
+	{
+		super(rs);
+	}
+	
 	/**
 	 * @return the m_ISFValue
 	 */

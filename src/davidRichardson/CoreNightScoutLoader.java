@@ -44,6 +44,7 @@ public class CoreNightScoutLoader
 	private DataLoadMedtronic           m_DataLoadMedtronic;
 	private DataLoadNightScoutTreatments          m_DataLoadNightScout;
 	private DataLoadNightScoutEntries   m_DataLoadNightScoutEntries;
+	private DataLoadNightScoutProfiles  m_DataLoadNightScoutProfiles;
 	private DataLoadDiasend             m_DataLoadDiasend;
 	private DataLoadOmniPod             m_DataLoadOmniPod;
 	private DataLoadTandem              m_DataLoadTandem;
@@ -53,12 +54,9 @@ public class CoreNightScoutLoader
 	private ArrayList <DBResultEntry> m_MeterArrayListDBResultEntries;
 	private ArrayList <DBResult>      m_NightScoutArrayListDBResults;
 	private ArrayList <DBResultEntry> m_NightScoutArrayListDBResultEntries;
+	private ArrayList <DBResultNightScoutProfile> m_NightScoutArrayListDBResultProfiles;
 	private Set<DBResult>             m_MeterArrayListDBResultsSet;
 	private Set<DBResult>             m_NightScoutArrayListDBResultsSet;
-
-	
-	
-	
 	
 	// Result Analyzer that requires more work :-)
 	// In this class so we can track messages back to core.
@@ -82,6 +80,7 @@ public class CoreNightScoutLoader
 	private ThreadDataLoad       m_ThreadDataLoadTandem;
 	private ThreadDataLoad       m_ThreadDataLoadNightScout;
 	private ThreadDataLoad       m_ThreadDataLoadNightScoutEntries;
+	private ThreadDataLoad       m_ThreadDataLoadNightScoutProfiles;
 	private ThreadDataLoad       m_ThreadDataMeterLoad; // Which thread is actually in use
 	private boolean              m_MeterPumpLoadOnly = false;
 	
@@ -93,6 +92,7 @@ public class CoreNightScoutLoader
 	private boolean              m_ThreadDataLoadTandemRunning = false;
 	private boolean              m_ThreadDataLoadNightScoutRunning = false;
 	private boolean              m_ThreadDataLoadNightScoutEntriesRunning = false;
+	private boolean              m_ThreadDataLoadNightScoutProfilesRunning = false;
 	private boolean              m_ThreadDataMeterLoadRunning = false;
 	private boolean              m_ThreadSaveDifferencesRunning = false;
 
@@ -117,6 +117,8 @@ public class CoreNightScoutLoader
 	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerTandem;
 	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerNightscout;
 	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerNightscoutEntries;
+	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerNightscoutProfiles;
+	
 	private ThreadDetermineSaveDifferences.DataLoadCompleteHander m_ThreadHandlerDetermineSaveDifferences;
 	private ThreadAnalyzer.AnalyzerCompleteHander m_ThreadHandlerAnalyzer;
 	private ThreadAnalyzer.AnalyzerCompleteHander m_FullHistoryThreadHandlerAnalyzer;
@@ -137,6 +139,7 @@ public class CoreNightScoutLoader
 		m_DataLoadMedtronic         = new DataLoadMedtronic();
 		m_DataLoadNightScout        = new DataLoadNightScoutTreatments();
 		m_DataLoadNightScoutEntries = new DataLoadNightScoutEntries();
+		m_DataLoadNightScoutProfiles = new DataLoadNightScoutProfiles();
 		m_DataLoadDiasend           = new DataLoadDiasend();   
 		m_DataLoadOmniPod           = new DataLoadOmniPod();
 		m_DataLoadTandem            = new DataLoadTandem();
@@ -144,7 +147,8 @@ public class CoreNightScoutLoader
 		m_MeterArrayListDBResults    = m_DataLoadRoche.getResultsTreatments();
 		m_NightScoutArrayListDBResults       = m_DataLoadNightScout.getResultsFromDB();
 		m_NightScoutArrayListDBResultEntries = m_DataLoadNightScoutEntries.getResultsFromDB();
-
+		m_NightScoutArrayListDBResultProfiles = m_DataLoadNightScoutProfiles.getResultsFromDB();
+		
 		m_MeterArrayListDBResultsSet = new HashSet<DBResult>();
 		m_NightScoutArrayListDBResultsSet   = new HashSet<DBResult>();
 
@@ -157,6 +161,7 @@ public class CoreNightScoutLoader
 		this.setM_ThreadDataLoadMedtronic(null);
 		this.setM_ThreadDataLoadNightScout(null);
 		this.setM_ThreadDataLoadNightScoutEntries(null);
+		this.setM_ThreadDataLoadNightScoutProfiles(null);
 		this.setM_ThreadDataMeterLoad(null);
 		this.setM_ThreadDataLoadRoche(null);
 		this.setM_ThreadDetermineSaveDifferences(null);
@@ -175,6 +180,7 @@ public class CoreNightScoutLoader
 		m_ThreadHandlerTandem     = null;
 		m_ThreadHandlerNightscout = null;
 		m_ThreadHandlerNightscoutEntries = null;
+		m_ThreadHandlerNightscoutProfiles = null;
 		m_ThreadHandlerDetermineSaveDifferences = null;
 		m_ThreadHandlerAnalyzer   = null;
 		m_FullHistoryThreadHandlerAnalyzer = null;
@@ -232,6 +238,7 @@ public class CoreNightScoutLoader
 							m_NightScoutArrayListDBResults,
 							m_MeterArrayListDBResultEntries,
 							m_NightScoutArrayListDBResultEntries,
+							m_NightScoutArrayListDBResultProfiles,
 							m_ThreadDataLoadNightScout,
 							m_ThreadDataMeterLoad,
 							m_DeviceUsed,
@@ -550,6 +557,7 @@ public class CoreNightScoutLoader
 		result = m_ThreadDataLoadTandemRunning == true ? true : result;
 		result = m_ThreadDataLoadNightScoutRunning == true ? true : result;
 		result = m_ThreadDataLoadNightScoutEntriesRunning == true ? true : result;
+		result = m_ThreadDataLoadNightScoutProfilesRunning == true ? true : result;
 		result = m_ThreadDataMeterLoadRunning == true ? true : result;
 		
 		return result;
@@ -1060,6 +1068,85 @@ public class CoreNightScoutLoader
 	}
 
 	// Multi-threaded Nightscout Loader
+	public synchronized void threadLoadNightScoutProfiles(ThreadDataLoad.DataLoadCompleteHandler handler)
+	{
+		if (m_ThreadDataLoadNightScoutProfilesRunning != false)
+		//if (this.getM_ThreadDataLoadNightScoutProfiles() != null)
+		{
+			// Need better way than this!
+			addErrorText("threadLoadNightScoutProfiles Thread Already Running!!");
+		}
+		else
+		{
+			m_ThreadDataLoadNightScoutProfilesRunning = true;
+			
+			// Add some detail on the current timezone
+			addStatusText("Current Local Timezone is: " + CommonUtils.locTZ.getDisplayName());
+
+			this.setM_ThreadDataLoadNightScoutProfiles(new ThreadDataLoad(m_DataLoadNightScoutProfiles));
+
+			// Store supplied handler
+			m_ThreadHandlerNightscoutProfiles = handler;
+
+			// Install our own
+			// m_ThreadDataLoadNightScout.loadDBResults(handler);
+
+			m_ThreadDataLoadNightScoutProfiles.loadDBResults(
+					new ThreadDataLoad.DataLoadCompleteHandler(handler.getM_Object()) 
+					{
+						//		@Override
+						public void exceptionRaised(String message) 
+						{
+							setM_ThreadDataLoadNightScout(null);
+						}
+
+						//		@Override
+						public void dataLoadComplete(Object obj, String message) 
+						{
+							m_NightScoutArrayListDBResultProfiles = m_DataLoadNightScoutProfiles.getResultsFromDB();
+
+							//							synchronized(m_Lock)
+							//							{
+							//								// Tell the Analyzer this is done
+							//								m_ThreadAnalyzer.getM_Analyzer().initialize(m_NightScoutArrayListDBResultProfiles);
+							//							}
+
+							// Sort the Mongo Results
+							// We're only really going to be interested in the latest profile
+							// so sort in descending order so we can later index [0] to get it
+							Collections.sort(m_NightScoutArrayListDBResultProfiles, new ResultFromDBComparator(true));
+
+							String statusText = new String("");
+							statusText = String.format("Load Profiles\n%7d entries read. ", 
+									m_NightScoutArrayListDBResultProfiles.size());
+
+							// We want to do this UI change in the main thread, and not the DB worker thread that's just
+							// notified back
+							EventQueue.invokeLater(new 
+									Runnable()
+							{ 
+								public void run()
+								{ 
+									// Add some commentary to the text pane
+									//									addStatusText("Loaded " + m_NightScoutArrayListDBResults.size() + " entries from Night Scout.");
+								}
+							});
+
+							// Invoke our stored handler
+							m_ThreadHandlerNightscoutProfiles.dataLoadComplete(obj, statusText);
+
+							// Now clear the thread
+							m_ThreadDataLoadNightScoutProfilesRunning = false;
+
+							//setM_ThreadDataLoadNightScoutEntries(null);
+						}
+					});	
+
+		}
+	}
+	
+	
+	// Multi-threaded Nightscout Loader
 	public synchronized void threadLoadNightScoutEntries(ThreadDataLoad.DataLoadCompleteHandler handler)
 	{
 		if (m_ThreadDataLoadNightScoutEntriesRunning != false)
@@ -1134,6 +1221,8 @@ public class CoreNightScoutLoader
 
 		}
 	}
+		
+	
 
 	public void loadNightScout(/*Date startDate, Date endDate*/)
 	{
@@ -1844,6 +1933,20 @@ public class CoreNightScoutLoader
 	}
 
 	/**
+	 * @return the m_DataLoadNightScoutProfiles
+	 */
+	public synchronized DataLoadNightScoutProfiles getM_DataLoadNightScoutProfiles() {
+		return m_DataLoadNightScoutProfiles;
+	}
+
+	/**
+	 * @param m_DataLoadNightScoutProfiles the m_DataLoadNightScoutProfiles to set
+	 */
+	public synchronized void setM_DataLoadNightScoutProfiles(DataLoadNightScoutProfiles m_DataLoadNightScoutProfiles) {
+		this.m_DataLoadNightScoutProfiles = m_DataLoadNightScoutProfiles;
+	}
+
+	/**
 	 * @return the m_DataLoadMedtronic
 	 */
 	public DataLoadMedtronic getM_DataLoadMedtronic() {
@@ -2028,6 +2131,20 @@ public class CoreNightScoutLoader
 	 */
 	public synchronized void setM_ThreadDataLoadNightScoutEntries(ThreadDataLoad m_ThreadDataLoadNightScoutEntries) {
 		this.m_ThreadDataLoadNightScoutEntries = m_ThreadDataLoadNightScoutEntries;
+	}
+
+	/**
+	 * @return the m_ThreadDataLoadNightScoutProfiles
+	 */
+	public synchronized ThreadDataLoad getM_ThreadDataLoadNightScoutProfiles() {
+		return m_ThreadDataLoadNightScoutProfiles;
+	}
+
+	/**
+	 * @param m_ThreadDataLoadNightScoutProfiles the m_ThreadDataLoadNightScoutProfiles to set
+	 */
+	public synchronized void setM_ThreadDataLoadNightScoutProfiles(ThreadDataLoad m_ThreadDataLoadNightScoutProfiles) {
+		this.m_ThreadDataLoadNightScoutProfiles = m_ThreadDataLoadNightScoutProfiles;
 	}
 
 	/**

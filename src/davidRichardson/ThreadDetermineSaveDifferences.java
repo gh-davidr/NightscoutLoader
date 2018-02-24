@@ -46,6 +46,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 	private ArrayList <DBResult>      m_NightScoutArrayListDBResults;
 	private ArrayList <DBResultEntry> m_MeterArrayListDBResultEntries;
 	private ArrayList <DBResultEntry> m_NightScoutArrayListDBResultEntries;
+	private ArrayList <DBResultNightScoutProfile> m_NightScoutArrayListDBResultProfiles;
 	
 	private Set<DBResult>             m_MeterArrayListDBResultsSet;
 	private Set<DBResult>             m_MeterArrayListProximityDBResultsSet;
@@ -55,8 +56,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 	private Set<DBResultEntry>        m_MeterArrayListDBResultEntriesSet;
 	private Set<DBResultEntry>        m_MeterArrayListProximityDBResultEntriesSet;
 	private Set<DBResultEntry>        m_ExistingNightScoutProximityDBResultEntriesSet;
-	private Set<DBResultEntry>        m_NightScoutArrayListDBResultEntriesSet;
-	
+	private Set<DBResultEntry>        m_NightScoutArrayListDBResultEntriesSet;	
 	
 
 //	private MyLogger               m_LoggerClass;
@@ -358,6 +358,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 			ArrayList <DBResult> nightScoutArrayListDBResults,
 			ArrayList <DBResultEntry> meterArrayListDBResultEntries,
 			ArrayList <DBResultEntry> nightScoutArrayListDBResultEntries,
+			ArrayList <DBResultNightScoutProfile> nightScoutArrayListDBResultProfiles,
 			ThreadDataLoad nightscoutLoadThread,
 			ThreadDataLoad meterLoadThread,
 			String deviceUsed,
@@ -371,6 +372,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 		m_NightScoutArrayListDBResults       = nightScoutArrayListDBResults;
 		m_MeterArrayListDBResultEntries      = meterArrayListDBResultEntries;
 		m_NightScoutArrayListDBResultEntries = nightScoutArrayListDBResultEntries;
+		m_NightScoutArrayListDBResultProfiles = nightScoutArrayListDBResultProfiles;
 
 		m_MeterArrayListDBResultsSet                    = new HashSet<DBResult>();
 		m_MeterArrayListProximityDBResultsSet           = new HashSet<DBResult>();
