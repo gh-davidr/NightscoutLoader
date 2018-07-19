@@ -56,7 +56,7 @@ public class DBResultDiasend extends DBResult
 	static private int m_InsulinBolusTypeIndex = 0;
 	static private int m_InsulinBolusVolumeIndex = 0;
 	static private int m_InsulinImmediateVolumeIndex = 0;
-	//	static private int m_InsulinExtendedVolumeIndex = 0;
+	static private int m_InsulinExtendedVolumeIndex = 0;
 	static private int m_InsulinDurationIndex = 0;
 	static private int m_InsulinCarbsIndex = 0;
 	//	static private int m_InsulinNotesIndex = 0;
@@ -258,7 +258,7 @@ public class DBResultDiasend extends DBResult
 		String bolTypeStr   = getStringCellValue(row, m_InsulinBolusTypeIndex);
 		Double bolAmtDbl    = getDoubleCellValue(row, m_InsulinBolusVolumeIndex);
 		Double bolImmAmtDbl = getDoubleCellValue(row, m_InsulinImmediateVolumeIndex);
-		//		Double bolExtAmtDbl = getDoubleCellValue(row, m_InsulinExtendedVolumeIndex);
+		Double bolExtAmtDbl = getDoubleCellValue(row, m_InsulinExtendedVolumeIndex);
 		Double bolDurDbl    = getDoubleCellValue(row, m_InsulinDurationIndex);
 		Double carbAmtDbl   = getDoubleCellValue(row, m_InsulinCarbsIndex);
 		//		String notesStr     = getStringCellValue(row, m_InsulinNotesIndex);
@@ -302,13 +302,24 @@ public class DBResultDiasend extends DBResult
 					if (bolImmAmtDbl != null)
 					{
 						this.m_Notes += "Immediate Volume = " + bolImmAmtDbl.toString();
+						this.m_Result = bolImmAmtDbl.toString();//CP sets insulin to Combo's "immediate"
+					}
+					// Add the amount of extended bolus to notes
+					if (bolExtAmtDbl != null)
+					{
+						this.m_ExtendedAmount = bolExtAmtDbl.toString();
+						this.m_Notes += (this.m_Notes.length() > 0 ? " " : "") + "Extended Volume = " + bolExtAmtDbl.toString();
 					}
 				}
 			}
 			// If bolus type specified, have to assume that value even if null can be used.
 			if (bolAmtDbl != null)
 			{
-				this.m_Result = bolAmtDbl.toString();
+				if (this.m_ResultType.equals("MultiWave")) {
+					this.m_Enteredinsulin = bolAmtDbl.toString();//CP sets enteredinsulin to to Combo's "bolus"
+				}
+				else
+					this.m_Result = bolAmtDbl.toString();
 			}
 		}
 		else if (carbAmtDbl != null && !carbAmtDbl.equals(0.0))
@@ -319,7 +330,7 @@ public class DBResultDiasend extends DBResult
 
 		// Now store the Basals and allow the controlling loader to decide whether it's of interest or not
 		//		else if (basAmtDbl != null)
-		else if (basAmtDbl != null && !basAmtDbl.equals(0.0))// David 28 Jan 2017.  Diagnosing issues with odd temp basals
+		else if (basAmtDbl != null)//KS Basals can be 0!   && !basAmtDbl.equals(0.0))// David 28 Jan 2017.  Diagnosing issues with odd temp basals
 		{
 			this.m_ResultType = "Basal";
 			this.m_Result     = basAmtDbl.toString();
@@ -401,7 +412,7 @@ public class DBResultDiasend extends DBResult
 						case 2 : m_InsulinBolusTypeIndex       = c; break;
 						case 3 : m_InsulinBolusVolumeIndex     = c; break;
 						case 4 : m_InsulinImmediateVolumeIndex = c; break;
-						//						case 5 : m_InsulinExtendedVolumeIndex  = c; break;
+						case 5 : m_InsulinExtendedVolumeIndex  = c; break;
 						case 6 : m_InsulinDurationIndex        = c; break;
 						case 7 : m_InsulinCarbsIndex           = c; break;
 						//						case 8 : m_InsulinNotesIndex           = c; break;

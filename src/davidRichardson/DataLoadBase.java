@@ -192,7 +192,7 @@ public abstract class DataLoadBase
 				{
 					if (pendingRes.pending())
 					{
-						DBResult.MergeResult merged = pendingRes.merge(res);
+						DBResult.MergeResult merged = pendingRes.merge(res, getDevice());
 						
 						// Is the merge complete?
 						if (merged == DBResult.MergeResult.Merged && !pendingRes.pending())

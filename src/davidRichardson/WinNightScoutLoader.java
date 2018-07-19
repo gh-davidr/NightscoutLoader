@@ -316,7 +316,7 @@ public class WinNightScoutLoader extends JFrame {
 	{		
 		m_RowUpdated = -1;
 
-		setBounds(100, 50, 1000, 650);
+		setBounds(100, 50, 1500, 650);//increase width for 4 addl fields of 250 each
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		// http://stackoverflow.com/questions/15258877/how-to-have-flowlayout-reposition-components-upon-resizing

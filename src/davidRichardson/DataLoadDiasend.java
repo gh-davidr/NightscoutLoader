@@ -7,10 +7,7 @@ import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Locale;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -771,7 +768,7 @@ public class DataLoadDiasend extends DataLoadBase
 				}
 			}
 
-			for(int r = 0; r < rows; r++) 
+			for(int r = 0; r <= rows; r++)
 			{
 				row = sheet.getRow(r);
 
@@ -839,7 +836,7 @@ public class DataLoadDiasend extends DataLoadBase
 		return result;
 	}
 
-	private void locateTempBasals_orig()
+	protected void locateTempBasals()
 	{
 		// Iterate over the raw results looking for basal rates that have changed.
 		// Assume the list is ordered in time.
@@ -867,47 +864,67 @@ public class DataLoadDiasend extends DataLoadBase
 					{
 						lastHourChange = res;
 						lastHourChangeRate = Double.parseDouble(lastHourChange.getM_Result());
+						if (tempBasalStart != null)
+						{
+							Date tempBasalEndTime = new Date(tempBasalStart.getM_EpochMillies());
+							Double mins = (double)CommonUtils.timeDiffInMinutes(basalTime, tempBasalEndTime);
+							if (mins > 0) {
+								tempBasalStart.setM_CP_Duration(mins);
+								resultTreatments.add(tempBasalStart);
+							}
+							tempBasalStart = null;
+						}
 					}
 					else
 					{
 						// If there's a last hour change and we're not in the middle of a temp basal,
 						// and the last hour change basal rate was not 0, and the rate is not 100% then start one
-						if (lastHourChange != null && tempBasalStart == null && 
-								lastHourChangeRate != null && lastHourChangeRate != 0.0)
+						if (lastHourChange != null && tempBasalStart == null)
 						{
 							m_Logger.log(Level.FINE, 
 									"Creating Temp Basal from : " + res.rawToString());
-
-							Double resRate = Double.parseDouble(res.getM_Result());
-							Double basRate = lastHourChangeRate;
-							Double percent = Math.round((resRate / basRate) * 100.0) * 1.0;
-							
-							if (java.lang.Math.abs(percent - 100.0) > 0.1)
-							{
-								tempBasalStart = new DBResult(res, getDevice());
-								tempBasalStart.setM_CP_Percent(percent);
-							}
+							tempBasalStart = new DBResult(res, getDevice());
 						}
 
 						// If there's a last hour change and we're  in the middle of a temp basal,
 						// Then end one
 						else if (lastHourChange != null && tempBasalStart != null)
 						{
-							// Merge the basal rate change
-//							tempBasalStart.merge(res);
-							
 							Date tempBasalEndTime = new Date(tempBasalStart.getM_EpochMillies());			
 							Double mins = (double)CommonUtils.timeDiffInMinutes(basalTime, tempBasalEndTime);
-							tempBasalStart.setM_CP_Duration(mins);
+							if (mins > 0) {
+								tempBasalStart.setM_CP_Duration(mins);
+								resultTreatments.add(tempBasalStart);
+							}
 
-							resultTreatments.add(tempBasalStart);
-
-							tempBasalStart = null;
+							tempBasalStart = new DBResult(res, getDevice());
 						}
 					}
 					
 				}
 
+			}
+			if (tempBasalStart != null)
+			{
+				Date tempBasalEndTime = new Date(tempBasalStart.getM_EpochMillies());
+				Calendar c = new GregorianCalendar();
+				c.setTime(tempBasalEndTime);
+				if (isToday(tempBasalEndTime)) {
+					c = Calendar.getInstance();
+				}
+				else {
+					c.set(Calendar.HOUR_OF_DAY, 23); //anything 0 - 23
+					c.set(Calendar.MINUTE, 59);
+					c.set(Calendar.SECOND, 59);
+					c.set(Calendar.MILLISECOND, 999);
+				}
+				Date basalTime = c.getTime(); //the midnight, that's the last second of the day.
+
+				Double mins = (double)CommonUtils.timeDiffInMinutes(basalTime, tempBasalEndTime);
+				if (mins > 0) {
+					tempBasalStart.setM_CP_Duration(mins);
+					resultTreatments.add(tempBasalStart);
+				}
 			}
 		}
 
@@ -955,7 +972,51 @@ public class DataLoadDiasend extends DataLoadBase
 		return result;
 	}
 
-	
+	/**
+	 * <p>Checks if two dates are on the same day ignoring time.</p>
+	 * @param date1  the first date, not altered, not null
+	 * @param date2  the second date, not altered, not null
+	 * @return true if they represent the same day
+	 * @throws IllegalArgumentException if either date is <code>null</code>
+	 * From http://www.java2s.com/Code/Java/Data-Type/Checksifacalendardateistoday.htm
+	 */
+	public static boolean isSameDay(Date date1, Date date2) {
+		if (date1 == null || date2 == null) {
+			throw new IllegalArgumentException("The dates must not be null");
+		}
+		Calendar cal1 = Calendar.getInstance();
+		cal1.setTime(date1);
+		Calendar cal2 = Calendar.getInstance();
+		cal2.setTime(date2);
+		return isSameDay(cal1, cal2);
+	}
+
+	/**
+	 * <p>Checks if two calendars represent the same day ignoring time.</p>
+	 * @param cal1  the first calendar, not altered, not null
+	 * @param cal2  the second calendar, not altered, not null
+	 * @return true if they represent the same day
+	 * @throws IllegalArgumentException if either calendar is <code>null</code>
+	 */
+	public static boolean isSameDay(Calendar cal1, Calendar cal2) {
+		if (cal1 == null || cal2 == null) {
+			throw new IllegalArgumentException("The dates must not be null");
+		}
+		return (cal1.get(Calendar.ERA) == cal2.get(Calendar.ERA) &&
+				cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+				cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR));
+	}
+
+	/**
+	 * <p>Checks if a date is today.</p>
+	 * @param date the date, not altered, not null.
+	 * @return true if the date is today.
+	 * @throws IllegalArgumentException if the date is <code>null</code>
+	 */
+	public static boolean isToday(Date date) {
+		return isSameDay(date, Calendar.getInstance().getTime());
+	}
+
 	static public Date parseFileDateTime(String date)
 	{
 		Date result = new Date(0);
