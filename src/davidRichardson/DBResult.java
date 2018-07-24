@@ -944,10 +944,12 @@ public class DBResult extends DBResultCore
 					{
 						m_CP_Enteredinsulin = new Double(Double.parseDouble(res.getM_Enteredinsulin()));
 						if (extendedinsulin != 0.0 && m_CP_Enteredinsulin > 0.0) {
-							m_CP_SplitExt = new Double(extendedinsulin / m_CP_Enteredinsulin) * 100;
+							m_CP_SplitExt = new Double(extendedinsulin / m_CP_Enteredinsulin) * 100.0;
+							m_CP_SplitExt = Math.round(m_CP_SplitExt*100.0)/100.0;
 						}
 						if (immediateinsulin != 0.0) {
-							m_CP_SplitNow = new Double(immediateinsulin / m_CP_Enteredinsulin) * 100;
+							m_CP_SplitNow = new Double(immediateinsulin / m_CP_Enteredinsulin) * 100.0;
+							m_CP_SplitNow = Math.round(m_CP_SplitNow*100.0)/100.0;
 						}
 					}
 				}
@@ -1150,10 +1152,12 @@ public class DBResult extends DBResultCore
 						{
 							m_CP_Enteredinsulin = new Double(Double.parseDouble(res.getM_Enteredinsulin()));
 							if (extendedinsulin != 0.0 && m_CP_Enteredinsulin > 0.0) {
-								m_CP_SplitExt = new Double(extendedinsulin / m_CP_Enteredinsulin) * 100;
+								m_CP_SplitExt = new Double(extendedinsulin / m_CP_Enteredinsulin) * 100.0;
+								m_CP_SplitExt = Math.round(m_CP_SplitExt*100.0)/100.0;
 							}
 							if (immediateinsulin != 0.0) {
-								m_CP_SplitNow = new Double(immediateinsulin / m_CP_Enteredinsulin) * 100;
+								m_CP_SplitNow = new Double(immediateinsulin / m_CP_Enteredinsulin) * 100.0;
+								m_CP_SplitNow = Math.round(m_CP_SplitNow*100.0)/100.0;
 							}
 						}
 					}

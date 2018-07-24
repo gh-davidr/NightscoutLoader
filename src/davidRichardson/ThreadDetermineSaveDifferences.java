@@ -344,7 +344,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 		{
 			m_Object = obj;
 		}
-		public abstract void operationComplete(Object obj, String message, int reload);
+		public abstract void operationComplete(Object obj, String message);
 		public abstract void exceptionRaised(String message);
 
 		public Object getM_Object()
@@ -460,7 +460,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 
 		//			Thread.sleep(5000);
 		m_LoadRunning = false;
-		m_CompleteHandler.operationComplete(m_CompleteHandler.getM_Object(), "", m_ExistingNightScoutProximityDBResultsSet.size());
+		m_CompleteHandler.operationComplete(m_CompleteHandler.getM_Object(), "");
 	}
 	
 	private void checkForDuplicates()

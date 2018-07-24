@@ -252,6 +252,11 @@ public abstract class DataLoadBase
 		// Store last result
 		if (pendingRes != null && pendingResAdded == false)
 		{
+			// BG & Insulin is a correction!
+			if (pendingRes.m_CP_EventType.equals("BG Check") && pendingRes.m_CP_Insulin != null && pendingRes.m_CP_Insulin > 0.0)
+			{
+				pendingRes.m_CP_EventType = "Correction Bolus";
+			}
 			resultTreatments.add(pendingRes);
 		}
 

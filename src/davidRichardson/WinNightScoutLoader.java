@@ -1682,7 +1682,7 @@ public class WinNightScoutLoader extends JFrame {
 						}
 
 						//		@Override
-						public void operationComplete(Object obj, String message, int reload)
+						public void operationComplete(Object obj, String message)
 						{
 							//							Boolean initialRun = (Boolean)obj;
 							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadNightScout().getResultsFromDB();
@@ -1698,19 +1698,7 @@ public class WinNightScoutLoader extends JFrame {
 							{ 
 								public void run()
 								{
-									if (reload > 0){
-										int response = JOptionPane.showConfirmDialog(null, m_SaveDiffMessage, "Confirm",
-												JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-										if (response == JOptionPane.YES_OPTION)
-										{
-											// Hide the edit form if displayed since it will become invalid with the delete ... potentially :-)
-											mongoForm.setVisible(false);
-											//deleteLoadedTreatments(); //KS performed already by saveDifferences()
-											doThreadLoadNightScout(false);
-										}
-									}
-									else
-										JOptionPane.showMessageDialog(null, m_SaveDiffMessage);
+									JOptionPane.showMessageDialog(null, m_SaveDiffMessage);
 
 									updateGrid();
 
@@ -2369,7 +2357,7 @@ public class WinNightScoutLoader extends JFrame {
 	synchronized private void updateGrid()
 	{
 		// For the thread.
-		//		m_MongoResults = m_NightScoutLoaderCore.getM_ResultsMongoDB();//KS Uncomment this - caused isRowProximity to crash
+		//		m_MongoResults = m_NightScoutLoaderCore.getM_ResultsMongoDB();
 		changeStatusText(m_NightScoutLoaderCore.getM_StatusText());
 
 		DefaultTableModel model = (DefaultTableModel) m_NightScoutTable.getModel();
