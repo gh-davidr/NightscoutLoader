@@ -768,7 +768,7 @@ public class DataLoadDiasend extends DataLoadBase
 				}
 			}
 
-			for(int r = 0; r <= rows; r++)
+			for(int r = 0; r < rows; r++)
 			{
 				row = sheet.getRow(r);
 
@@ -906,7 +906,9 @@ public class DataLoadDiasend extends DataLoadBase
 			}
 			if (tempBasalStart != null)
 			{
-				Date tempBasalEndTime = new Date(tempBasalStart.getM_EpochMillies());
+				m_Logger.log(Level.FINE,
+						"Ignoring last Temp Basal from since duration cannot be calcuated : " + tempBasalStart.rawToString());
+				/*Date tempBasalEndTime = new Date(tempBasalStart.getM_EpochMillies());
 				Calendar c = new GregorianCalendar();
 				c.setTime(tempBasalEndTime);
 				if (isToday(tempBasalEndTime)) {
@@ -924,7 +926,7 @@ public class DataLoadDiasend extends DataLoadBase
 				if (mins > 0) {
 					tempBasalStart.setM_CP_Duration(mins);
 					resultTreatments.add(tempBasalStart);
-				}
+				}*/
 			}
 		}
 

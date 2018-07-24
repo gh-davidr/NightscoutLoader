@@ -266,7 +266,7 @@ public class CoreNightScoutLoader
 						}
 
 						//		@Override
-						public void operationComplete(Object obj, String message) 
+						public void operationComplete(Object obj, String message, int reload)
 						{
 							entriesLoaded      = m_ThreadDetermineSaveDifferences.getM_CountMeterEntriesLoaded();
 							entriesAdded       = m_ThreadDetermineSaveDifferences.getM_CountMeterEntriesAdded();
@@ -316,7 +316,7 @@ public class CoreNightScoutLoader
 								statusText += "\n\n";
 								statusText += String.format("Note that %d possible duplicate " 
 										+ (nsProximityEntries == 1 ? "entry was found already loaded. This is marked orange" 
-												: "entries were found already loaded. These are marked orange"), nsProximityEntries);
+												: "entries were found already loaded. These are marked orange.\nDo you want to refresh the grid now to remove the duplicates?"), nsProximityEntries);
 							}
 
 							// We want to do this UI change in the main thread, and not the DB worker thread that's just
@@ -339,7 +339,7 @@ public class CoreNightScoutLoader
 							});
 
 							// Invoke our stored handler
-							m_ThreadHandlerDetermineSaveDifferences.operationComplete(obj, statusText);
+							m_ThreadHandlerDetermineSaveDifferences.operationComplete(obj, statusText, nsProximityEntries);
 
 							// Now clear the threads
 							m_ThreadSaveDifferencesRunning = false;

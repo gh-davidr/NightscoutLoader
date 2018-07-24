@@ -605,6 +605,7 @@ public abstract class DataLoadNightScout extends DataLoadBase
 
 				DBObject newObject =  coll.find(dbObject).toArray().get(0);
 
+				x.setImpactOfProximity();
 				newObject.put("enteredBy", x.getM_CP_EnteredBy());
 				coll.findAndModify(dbObject, newObject);
 

@@ -1682,7 +1682,7 @@ public class WinNightScoutLoader extends JFrame {
 						}
 
 						//		@Override
-						public void operationComplete(Object obj, String message) 
+						public void operationComplete(Object obj, String message, int reload)
 						{
 							//							Boolean initialRun = (Boolean)obj;
 							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadNightScout().getResultsFromDB();
@@ -1697,10 +1697,22 @@ public class WinNightScoutLoader extends JFrame {
 									Runnable()
 							{ 
 								public void run()
-								{ 
-									JOptionPane.showMessageDialog(null, m_SaveDiffMessage);
+								{
+									if (reload > 0){
+										int response = JOptionPane.showConfirmDialog(null, m_SaveDiffMessage, "Confirm",
+												JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+										if (response == JOptionPane.YES_OPTION)
+										{
+											// Hide the edit form if displayed since it will become invalid with the delete ... potentially :-)
+											mongoForm.setVisible(false);
+											//deleteLoadedTreatments(); //KS performed already by saveDifferences()
+											doThreadLoadNightScout(false);
+										}
+									}
+									else
+										JOptionPane.showMessageDialog(null, m_SaveDiffMessage);
 
-									updateGrid();		
+									updateGrid();
 
 									// Update the Audit History Grid too
 									auditHistory.updateGrid();
@@ -2357,7 +2369,7 @@ public class WinNightScoutLoader extends JFrame {
 	synchronized private void updateGrid()
 	{
 		// For the thread.
-		//		m_MongoResults = m_NightScoutLoaderCore.getM_ResultsMongoDB();
+		//		m_MongoResults = m_NightScoutLoaderCore.getM_ResultsMongoDB();//KS Uncomment this - caused isRowProximity to crash
 		changeStatusText(m_NightScoutLoaderCore.getM_StatusText());
 
 		DefaultTableModel model = (DefaultTableModel) m_NightScoutTable.getModel();
@@ -2591,7 +2603,7 @@ public class WinNightScoutLoader extends JFrame {
 	{
 		boolean result = false;
 
-		if (m_MongoResults != null && 
+		if (m_MongoResults != null && m_MongoResults.size() > 0 &&
 				m_MongoResults.get(rowNum).getM_DataSource() != null && 
 				m_MongoResults.get(rowNum).getM_CP_EnteredBy().contains("PROXIMITY"))
 		{
@@ -2606,7 +2618,7 @@ public class WinNightScoutLoader extends JFrame {
 	{
 		boolean result = false;
 
-		if (m_MongoResults != null && 
+		if (m_MongoResults != null && m_MongoResults.size() > 0 &&
 				m_MongoResults.get(rowNum).getM_DataSource() != null && 
 				m_MongoResults.get(rowNum).getM_DataSource().equals("Meter"))
 		{

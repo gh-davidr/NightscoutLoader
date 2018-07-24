@@ -344,7 +344,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 		{
 			m_Object = obj;
 		}
-		public abstract void operationComplete(Object obj, String message);
+		public abstract void operationComplete(Object obj, String message, int reload);
 		public abstract void exceptionRaised(String message);
 
 		public Object getM_Object()
@@ -460,7 +460,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 
 		//			Thread.sleep(5000);
 		m_LoadRunning = false;
-		m_CompleteHandler.operationComplete(m_CompleteHandler.getM_Object(), "");
+		m_CompleteHandler.operationComplete(m_CompleteHandler.getM_Object(), "", m_ExistingNightScoutProximityDBResultsSet.size());
 	}
 	
 	private void checkForDuplicates()
@@ -758,7 +758,8 @@ public class ThreadDetermineSaveDifferences implements Runnable
 			try
 			{
 				// DAVID CHECK THIS .. MIGHT NEED A DIFFERENT CALL TO MONGO DB TO DO AN UPDATE
-				m_DataLoadNightScout.storeResultEntriesFromDB(m_ExistingNightScoutProximityDBResultEntriesSet);
+				//m_DataLoadNightScout.storeResultEntriesFromDB(m_ExistingNightScoutProximityDBResultEntriesSet);//KS Crashes
+				m_DataLoadNightScout.updateExistingResultsFromDB(m_ExistingNightScoutProximityDBResultsSet);
 			}
 			catch(Exception e)
 			{

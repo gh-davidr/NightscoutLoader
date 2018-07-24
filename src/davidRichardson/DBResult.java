@@ -1190,7 +1190,7 @@ public class DBResult extends DBResultCore
 				else if ((resType.equals("BG") && m_BG && m_CP_Glucose.equals(Double.parseDouble(res.m_Result)) ||
 						(resType.equals("Carbs") && m_Carb && m_CP_Carbs.equals(Double.parseDouble(res.m_Result))) ||
 						(resType.equals("Standard Bolus") || resType.equals("Pen Units") ||
-								resType.equals("Combo Bolus") || resType.equals("MultiWave") || resType.equals("Extended Bolus Start") ) && m_Ins && m_CP_Insulin.equals(Double.parseDouble(res.m_Result)))
+								resType.equals("MultiWave") || resType.equals("Extended Bolus Start") ) && m_Ins && m_CP_Insulin.equals(Double.parseDouble(res.m_Result)))
 						)
 				{
 					result = MergeResult.Duplicate;
@@ -2015,7 +2015,7 @@ public class DBResult extends DBResultCore
 	
 	public void setImpactOfProximity()
 	{
-		if (isM_ProximityPossibleDuplicate() == true)
+		if (getM_ProximityPossibleDuplicate() == true) //isM_ProximityPossibleDuplicate()
 		{
 			if (m_CP_EnteredBy.length() > 0 &&
 					!m_CP_EnteredBy.contains("-PROXIMITY"))
