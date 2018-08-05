@@ -872,8 +872,9 @@ public class DataLoadDiasend extends DataLoadBase
 								tempBasalStart.setM_CP_Duration(mins);
 								resultTreatments.add(tempBasalStart);
 							}
-							tempBasalStart = null;
+							//tempBasalStart = null;
 						}
+						tempBasalStart = new DBResult(res, getDevice());
 					}
 					else
 					{
