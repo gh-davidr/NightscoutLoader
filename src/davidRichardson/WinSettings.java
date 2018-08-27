@@ -85,7 +85,7 @@ public class WinSettings extends JDialog
 				"GMT -13",
 		};
 
-	private String[] m_InputDateFormatList = {"Default", "dd/MM/yy hh:mm", "MM/dd/yy hh:mm", "dd/MM/yy", "MM/dd/yy"};
+	private String[] m_InputDateFormatList = {"Default", "dd/MM/yy hh:mm", "MM/dd/yy hh:mm", "dd/MM/yy", "MM/dd/yy", "MM/dd/yyyy HH:mm"};
 
 	private WinNightScoutLoader m_WinMain;
 	private JTextField tf_RocheSQLFile;

@@ -169,7 +169,7 @@ public class WinMongoForm extends JFrame
 		panel_3.add(lblSrchResultType, gbc_lblSrchResultType);
 
 		tfSrchCP_EventType = new JComboBox<String>();
-		tfSrchCP_EventType.setModel(new DefaultComboBoxModel(new String[] {"", "BG Check", "Correction Bolus", "Meal Bolus", "Temp Basal"}));
+		tfSrchCP_EventType.setModel(new DefaultComboBoxModel(new String[] {"", "BG Check", "Correction Bolus", "Combo Bolus", "Exercise", "Meal Bolus", "Sensor Start", "Temp Basal"}));
 		tfSrchCP_EventType.setEditable(false);
 		tfSrchCP_EventType.setBackground(Color.WHITE);
 		GridBagConstraints gbc_tfSrch_ResultType = new GridBagConstraints();

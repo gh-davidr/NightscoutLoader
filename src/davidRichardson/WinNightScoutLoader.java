@@ -316,7 +316,7 @@ public class WinNightScoutLoader extends JFrame {
 	{		
 		m_RowUpdated = -1;
 
-		setBounds(100, 50, 1000, 650);
+		setBounds(100, 50, 1500, 650);//increase width for 4 addl fields of 250 each
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		// http://stackoverflow.com/questions/15258877/how-to-have-flowlayout-reposition-components-upon-resizing
@@ -1682,7 +1682,7 @@ public class WinNightScoutLoader extends JFrame {
 						}
 
 						//		@Override
-						public void operationComplete(Object obj, String message) 
+						public void operationComplete(Object obj, String message)
 						{
 							//							Boolean initialRun = (Boolean)obj;
 							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadNightScout().getResultsFromDB();
@@ -1697,10 +1697,10 @@ public class WinNightScoutLoader extends JFrame {
 									Runnable()
 							{ 
 								public void run()
-								{ 
+								{
 									JOptionPane.showMessageDialog(null, m_SaveDiffMessage);
 
-									updateGrid();		
+									updateGrid();
 
 									// Update the Audit History Grid too
 									auditHistory.updateGrid();
@@ -2591,7 +2591,7 @@ public class WinNightScoutLoader extends JFrame {
 	{
 		boolean result = false;
 
-		if (m_MongoResults != null && 
+		if (m_MongoResults != null && m_MongoResults.size() > 0 &&
 				m_MongoResults.get(rowNum).getM_DataSource() != null && 
 				m_MongoResults.get(rowNum).getM_CP_EnteredBy().contains("PROXIMITY"))
 		{
@@ -2606,7 +2606,7 @@ public class WinNightScoutLoader extends JFrame {
 	{
 		boolean result = false;
 
-		if (m_MongoResults != null && 
+		if (m_MongoResults != null && m_MongoResults.size() > 0 &&
 				m_MongoResults.get(rowNum).getM_DataSource() != null && 
 				m_MongoResults.get(rowNum).getM_DataSource().equals("Meter"))
 		{

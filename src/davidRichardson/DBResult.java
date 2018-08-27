@@ -222,6 +222,7 @@ public class DBResult extends DBResultCore
 	protected String m_MealType;
 	protected String m_Duration;
 	protected String m_Notes;   // Any underlying notes or notes generated from raw data processing
+	protected String m_Enteredinsulin;	//Diasend Combo Bolue - Careportal
 
 	// Treatment Data for Care Portal
 	protected String m_ID;
@@ -236,6 +237,10 @@ public class DBResult extends DBResultCore
 	protected String m_CP_Notes;
 	protected String m_CP_EnteredBy;
 	protected String m_CP_EventTime;
+	protected Double m_CP_SplitNow;	//Diasend Combo Bolue - Careportal
+	protected Double m_CP_SplitExt;	//Diasend Combo Bolue - Careportal
+	protected Double m_CP_Enteredinsulin;	//Diasend Combo Bolue - Careportal
+	protected Double m_CP_Relative;	//Diasend Combo Bolue - Careportal
 	// Useful value for comparator
 	protected long   m_EpochMillies = 0;
 	protected String m_DataSource;
@@ -329,7 +334,11 @@ public class DBResult extends DBResultCore
 			"Percent", 
 			"Notes", 
 			"Basal Value", 
-			"Entered By", 
+			"Entered By",
+			"Now %",
+			"Ext %",
+			"EnteredInsulin",
+			"Relative",
 	};
 	private static String[] colNamesWithID = {
 			//			 "Event Time",
@@ -346,15 +355,21 @@ public class DBResult extends DBResultCore
 			"Percent", 
 			"Notes", 
 			"Basal Value", 
-			"Entered By", 
+			"Entered By",
+			"Now %",
+			"Ext %",
+			"EnteredInsulin",
+			"Relative",
 	};
 
 	static int[] colWidths = {250, 250, 250, 250, 250, 400, 700,
-			450, 250, 700, 500, 250, 
+			450, 250, 700, 500, 250,
+			250, 250, 250, 250,
 			250, };
 
 	static Object[][] initializer = {{"","","","","",
 		"","","","","",
+		"","","","",
 		"", }};
 
 	static String getCP_EventTimeFormat()
@@ -379,7 +394,7 @@ public class DBResult extends DBResultCore
 		}
 		else
 		{
-			arrSize = 17;
+			arrSize = 21;
 		}
 
 		String[] res = new String[arrSize];
@@ -438,6 +453,11 @@ public class DBResult extends DBResultCore
 			res[i++] = m_CP_Notes;
 			res[i++] = m_CP_BasalValue == null ? "" : getDoubleValue(m_CP_BasalValue); //String.valueOf(m_CP_BasalValue);
 			res[i++] = m_CP_EnteredBy;
+			//Diasend Combo Bolus:
+			res[i++] = m_CP_SplitNow == null ? "" : getDoubleValue(m_CP_SplitNow);
+			res[i++] = m_CP_SplitExt == null ? "" : getDoubleValue(m_CP_SplitExt);
+			res[i++] = m_CP_Enteredinsulin == null ? "" : getDoubleValue(m_CP_Enteredinsulin);
+			res[i++] = m_CP_Relative == null ? "" : getDoubleValue(m_CP_Relative);
 		}
 
 		return res;
@@ -493,6 +513,8 @@ public class DBResult extends DBResultCore
 		m_MealType       = new String();
 		m_Duration       = new String();
 		m_Notes          = new String();
+		m_Enteredinsulin = new String();//Diasend Combo Bolus
+
 
 		// Treatment Data
 		m_ID             = new String();
@@ -500,6 +522,10 @@ public class DBResult extends DBResultCore
 		m_CP_Notes       = new String();;
 		m_CP_EnteredBy   = new String();
 		m_CP_EventTime   = new String();
+		m_CP_Enteredinsulin = null;
+		m_CP_SplitNow = null;
+		m_CP_SplitExt = null;
+		m_CP_Relative = null;
 
 		m_TreatmentDayName = new String();	
 		m_TreatmentTime    = new String();
@@ -894,6 +920,39 @@ public class DBResult extends DBResultCore
 					m_CP_Duration = new Double(Double.parseDouble(res.getM_Duration()));
 				}
 				m_CP_Notes += "PumpMultiWave";
+				if (device.equals("Diasend")) {
+					m_CP_EventType = "Combo Bolus";
+					Double extendedinsulin = 0.0;
+					try {
+						extendedinsulin = new Double(Double.parseDouble(res.getM_ExtendedAmount()));
+					}
+					catch (Exception e)
+					{
+						m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+"> DBResult " +
+								" Exception caught merging DBResult for Care Portal from Raw data: " + res.toString()
+								+ res.rawToString() + " extendedinsulin is " + res.getM_ExtendedAmount());
+					}
+					Double immediateinsulin = m_CP_Insulin;
+					if (res.getM_Duration() != null && !res.getM_Duration().equals(""))
+					{
+						if (extendedinsulin != 0.0 && m_CP_Duration > 0.0) {
+							m_CP_Relative = new Double(extendedinsulin / m_CP_Duration * 60);
+							m_CP_Relative = Math.round(m_CP_Relative*1000.0)/1000.0;
+						}
+					}
+					if (res.getM_Enteredinsulin() != null && !res.getM_Enteredinsulin().equals(""))
+					{
+						m_CP_Enteredinsulin = new Double(Double.parseDouble(res.getM_Enteredinsulin()));
+						if (extendedinsulin != 0.0 && m_CP_Enteredinsulin > 0.0) {
+							m_CP_SplitExt = new Double(extendedinsulin / m_CP_Enteredinsulin) * 100.0;
+							m_CP_SplitExt = Math.round(m_CP_SplitExt*100.0)/100.0;
+						}
+						if (immediateinsulin != 0.0) {
+							m_CP_SplitNow = new Double(immediateinsulin / m_CP_Enteredinsulin) * 100.0;
+							m_CP_SplitNow = Math.round(m_CP_SplitNow*100.0)/100.0;
+						}
+					}
+				}
 			}
 
 			else if (resType.equals("rewind.piston.rod"))
@@ -928,7 +987,12 @@ public class DBResult extends DBResultCore
 			{
 				m_CP_EventType = "Temp Basal";
 				m_CP_Duration = new Double(0);
-				m_CP_Percent  = new Double(0);
+				if (device.equals("Diasend")) {
+					m_CP_BasalValue = new Double(Double.parseDouble(res.getM_Result()));// Diasend Temp Basal Absolute value used in CP
+				}
+				else {
+					m_CP_Percent = new Double(0);
+				}
 				m_TmpBasal = true;
 			}
 
@@ -988,7 +1052,7 @@ public class DBResult extends DBResultCore
 	}
 
 
-	public MergeResult merge(DBResult res)
+	public MergeResult merge(DBResult res, String device)
 	{
 		MergeResult result = MergeResult.Merged;  // Assume that the result cannot be merged
 
@@ -1054,7 +1118,7 @@ public class DBResult extends DBResultCore
 					m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + "PenBolus";
 				}
 
-				else if (resType.equals("MultiWave") && !m_Ins)
+				else if ((resType.equals("MultiWave")) && !m_Ins)
 				{
 					m_Ins = true;
 					if (!m_Carb && m_BG)
@@ -1063,6 +1127,40 @@ public class DBResult extends DBResultCore
 					}
 					m_CP_Insulin = Double.parseDouble(res.m_Result);
 					m_CP_Notes += (m_CP_Notes.length() > 0 ? " : " : "") + "PumpMultiWave";
+					if (device.equals("Diasend")) {
+						m_CP_EventType = "Combo Bolus";
+						Double extendedinsulin = 0.0;
+						try {
+							extendedinsulin = new Double(Double.parseDouble(res.getM_ExtendedAmount()));
+						}
+						catch (Exception e)
+						{
+							m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+"> DBResult " +
+									" Exception caught merging DBResult for Care Portal from Raw data: " + res.toString()
+									+ res.rawToString() + " extendedinsulin is " + res.getM_ExtendedAmount());
+						}
+						Double immediateinsulin = m_CP_Insulin;
+						if (res.getM_Duration() != null && !res.getM_Duration().equals(""))
+						{
+							m_CP_Duration = new Double(Double.parseDouble(res.getM_Duration()));
+							if (extendedinsulin != 0.0 && m_CP_Duration > 0.0) {
+								m_CP_Relative = new Double(extendedinsulin / m_CP_Duration * 60);
+								m_CP_Relative = Math.round(m_CP_Relative*1000.0)/1000.0;
+							}
+						}
+						if (res.getM_Enteredinsulin() != null && !res.getM_Enteredinsulin().equals(""))
+						{
+							m_CP_Enteredinsulin = new Double(Double.parseDouble(res.getM_Enteredinsulin()));
+							if (extendedinsulin != 0.0 && m_CP_Enteredinsulin > 0.0) {
+								m_CP_SplitExt = new Double(extendedinsulin / m_CP_Enteredinsulin) * 100.0;
+								m_CP_SplitExt = Math.round(m_CP_SplitExt*100.0)/100.0;
+							}
+							if (immediateinsulin != 0.0) {
+								m_CP_SplitNow = new Double(immediateinsulin / m_CP_Enteredinsulin) * 100.0;
+								m_CP_SplitNow = Math.round(m_CP_SplitNow*100.0)/100.0;
+							}
+						}
+					}
 				}
 				/*
 				 * Looks like extended is not supported
@@ -1095,7 +1193,7 @@ public class DBResult extends DBResultCore
 				// Check for duplicate.  Sometimes see this with Medtronic results
 				else if ((resType.equals("BG") && m_BG && m_CP_Glucose.equals(Double.parseDouble(res.m_Result)) ||
 						(resType.equals("Carbs") && m_Carb && m_CP_Carbs.equals(Double.parseDouble(res.m_Result))) ||
-						(resType.equals("Standard Bolus") || resType.equals("Pen Units") || 
+						(resType.equals("Standard Bolus") || resType.equals("Pen Units") ||
 								resType.equals("MultiWave") || resType.equals("Extended Bolus Start") ) && m_Ins && m_CP_Insulin.equals(Double.parseDouble(res.m_Result)))
 						)
 				{
@@ -1322,6 +1420,12 @@ public class DBResult extends DBResultCore
 	{
 		BasicDBObject result = new BasicDBObject("eventType", m_CP_EventType);
 
+		if (m_CP_EventType.equals("Combo Bolus")) { //Diasend
+			appendToDoc(result, "splitNow", m_CP_SplitNow);
+			appendToDoc(result, "splitExt", m_CP_SplitExt);
+			appendToDoc(result, "enteredinsulin", m_CP_Enteredinsulin);
+			appendToDoc(result, "relative", m_CP_Relative);
+		}
 		appendToDoc(result, "glucose", m_CP_Glucose);
 		if (m_CP_Glucose != null)
 		{
@@ -1334,8 +1438,12 @@ public class DBResult extends DBResultCore
 		appendToDoc(result, "preBolus", m_CP_CarbsTime);
 		appendToDoc(result, "duration", m_CP_Duration);
 		appendToDoc(result, "percent", m_CP_Percent);
-		appendToDoc(result, "profile", m_CP_BasalValue);
+		//appendToDoc(result, "profile", m_CP_BasalValue);//AndroidAPS appears to use this field for Profile Name, not BasalValue
 		appendToDoc(result, "notes", m_CP_Notes);
+
+		if (m_CP_EventType.equals("Temp Basal")) {
+			appendToDoc(result, "absolute", m_CP_BasalValue);
+		}
 
 		appendToDoc(result, m_determinantField, m_CP_EnteredBy);
 		//		appendToDoc(result, "enteredBy", m_CP_EnteredBy);
@@ -1555,6 +1663,26 @@ public class DBResult extends DBResultCore
 		this.m_Notes = m_Notes;
 	}
 
+	/**
+	 * @return the m_Result
+	 */
+	public String getM_ExtendedAmount() {
+		return m_ExtendedAmount;
+	}
+
+	/**
+	 * @return the m_Enteredinsulin
+	 */
+	public synchronized String getM_Enteredinsulin() {
+		return m_Enteredinsulin;
+	}
+
+	/**
+	 * @param m_Enteredinsulin the m_Enteredinsulin to set
+	 */
+	public void setM_Enteredinsulin(String m_Enteredinsulin) {
+		this.m_Enteredinsulin = m_Enteredinsulin;
+	}
 
 	/**
 	 * @return the m_ID
@@ -1891,7 +2019,7 @@ public class DBResult extends DBResultCore
 	
 	public void setImpactOfProximity()
 	{
-		if (isM_ProximityPossibleDuplicate() == true)
+		if (getM_ProximityPossibleDuplicate() == true) //isM_ProximityPossibleDuplicate()
 		{
 			if (m_CP_EnteredBy.length() > 0 &&
 					!m_CP_EnteredBy.contains("-PROXIMITY"))

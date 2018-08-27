@@ -7,10 +7,7 @@ import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Locale;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -771,7 +768,7 @@ public class DataLoadDiasend extends DataLoadBase
 				}
 			}
 
-			for(int r = 0; r < rows; r++) 
+			for(int r = 0; r < rows; r++)
 			{
 				row = sheet.getRow(r);
 
@@ -839,7 +836,7 @@ public class DataLoadDiasend extends DataLoadBase
 		return result;
 	}
 
-	private void locateTempBasals_orig()
+	protected void locateTempBasals()
 	{
 		// Iterate over the raw results looking for basal rates that have changed.
 		// Assume the list is ordered in time.
@@ -867,47 +864,51 @@ public class DataLoadDiasend extends DataLoadBase
 					{
 						lastHourChange = res;
 						lastHourChangeRate = Double.parseDouble(lastHourChange.getM_Result());
+						if (tempBasalStart != null)
+						{
+							Date tempBasalEndTime = new Date(tempBasalStart.getM_EpochMillies());
+							Double mins = (double)CommonUtils.timeDiffInMinutes(basalTime, tempBasalEndTime);
+							if (mins > 0) {
+								tempBasalStart.setM_CP_Duration(mins);
+								resultTreatments.add(tempBasalStart);
+							}
+							//tempBasalStart = null;
+						}
+						tempBasalStart = new DBResult(res, getDevice());
 					}
 					else
 					{
 						// If there's a last hour change and we're not in the middle of a temp basal,
 						// and the last hour change basal rate was not 0, and the rate is not 100% then start one
-						if (lastHourChange != null && tempBasalStart == null && 
-								lastHourChangeRate != null && lastHourChangeRate != 0.0)
+						if (lastHourChange != null && tempBasalStart == null)
 						{
 							m_Logger.log(Level.FINE, 
 									"Creating Temp Basal from : " + res.rawToString());
-
-							Double resRate = Double.parseDouble(res.getM_Result());
-							Double basRate = lastHourChangeRate;
-							Double percent = Math.round((resRate / basRate) * 100.0) * 1.0;
-							
-							if (java.lang.Math.abs(percent - 100.0) > 0.1)
-							{
-								tempBasalStart = new DBResult(res, getDevice());
-								tempBasalStart.setM_CP_Percent(percent);
-							}
+							tempBasalStart = new DBResult(res, getDevice());
 						}
 
 						// If there's a last hour change and we're  in the middle of a temp basal,
 						// Then end one
 						else if (lastHourChange != null && tempBasalStart != null)
 						{
-							// Merge the basal rate change
-//							tempBasalStart.merge(res);
-							
 							Date tempBasalEndTime = new Date(tempBasalStart.getM_EpochMillies());			
 							Double mins = (double)CommonUtils.timeDiffInMinutes(basalTime, tempBasalEndTime);
-							tempBasalStart.setM_CP_Duration(mins);
+							if (mins > 0) {
+								tempBasalStart.setM_CP_Duration(mins);
+								resultTreatments.add(tempBasalStart);
+							}
 
-							resultTreatments.add(tempBasalStart);
-
-							tempBasalStart = null;
+							tempBasalStart = new DBResult(res, getDevice());
 						}
 					}
 					
 				}
 
+			}
+			if (tempBasalStart != null)
+			{
+				m_Logger.log(Level.FINE,
+						"Ignoring last Temp Basal from since duration cannot be calcuated : " + tempBasalStart.rawToString());
 			}
 		}
 
@@ -955,7 +956,7 @@ public class DataLoadDiasend extends DataLoadBase
 		return result;
 	}
 
-	
+
 	static public Date parseFileDateTime(String date)
 	{
 		Date result = new Date(0);

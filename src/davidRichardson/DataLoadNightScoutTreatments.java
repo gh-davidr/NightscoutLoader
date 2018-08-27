@@ -157,6 +157,11 @@ public class DataLoadNightScoutTreatments extends DataLoadNightScout
 
 	public void loadDBResults() throws UnknownHostException
 	{
+		loadDBResults(DataLoadNightScoutEntries.getEntryLoadStartDate());
+	}
+
+	public void loadDBResults(Date startDate) throws UnknownHostException
+	{
 		testMongo();
 
 		if (m_ServerState == MongoDBServerStateEnum.accessible)
@@ -203,6 +208,9 @@ public class DataLoadNightScoutTreatments extends DataLoadNightScout
 			BasicDBObject query = new BasicDBObject();
 			// Load *all* results
 			//		query.put(timeFld, BasicDBObjectBuilder.start("$gte", startString).add("$lte", endString).get());
+			final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
+			String startString = new String(df.format(startDate));
+			query.put(timeFld, BasicDBObjectBuilder.start("$gte", startString).get());
 
 			m_Logger.log(Level.FINE, "loadDBResults Mongo Query is now " + query.toString());
 
@@ -687,6 +695,7 @@ public class DataLoadNightScoutTreatments extends DataLoadNightScout
 
 				DBObject newObject =  coll.find(dbObject).toArray().get(0);
 
+				x.setImpactOfProximity();
 				newObject.put("enteredBy", x.getM_CP_EnteredBy());
 				coll.findAndModify(dbObject, newObject);
 

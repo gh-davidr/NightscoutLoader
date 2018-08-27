@@ -170,4 +170,13 @@ public abstract class DBResultCore implements DBResultInterface
 //		setImpactOfProximity();	
 	}
 
+	/**
+	 * @param m_ProximityPossibleDuplicate the m_ProximityPossibleDuplicate to set
+	 */
+
+	public synchronized boolean getM_ProximityPossibleDuplicate()
+	{
+		return this.m_ProximityPossibleDuplicate;
+	}
+
 }

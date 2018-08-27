@@ -758,7 +758,8 @@ public class ThreadDetermineSaveDifferences implements Runnable
 			try
 			{
 				// DAVID CHECK THIS .. MIGHT NEED A DIFFERENT CALL TO MONGO DB TO DO AN UPDATE
-				m_DataLoadNightScout.storeResultEntriesFromDB(m_ExistingNightScoutProximityDBResultEntriesSet);
+				//m_DataLoadNightScout.storeResultEntriesFromDB(m_ExistingNightScoutProximityDBResultEntriesSet);//KS Crashes
+				m_DataLoadNightScout.updateExistingResultsFromDB(m_ExistingNightScoutProximityDBResultsSet);
 			}
 			catch(Exception e)
 			{

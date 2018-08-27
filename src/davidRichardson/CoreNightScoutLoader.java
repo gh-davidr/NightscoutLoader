@@ -266,7 +266,7 @@ public class CoreNightScoutLoader
 						}
 
 						//		@Override
-						public void operationComplete(Object obj, String message) 
+						public void operationComplete(Object obj, String message)
 						{
 							entriesLoaded      = m_ThreadDetermineSaveDifferences.getM_CountMeterEntriesLoaded();
 							entriesAdded       = m_ThreadDetermineSaveDifferences.getM_CountMeterEntriesAdded();

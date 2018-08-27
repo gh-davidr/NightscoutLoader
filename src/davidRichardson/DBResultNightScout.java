@@ -177,9 +177,27 @@ public class DBResultNightScout extends DBResult
 				m_CP_CarbsTime  = CommonUtils.getFieldDouble(rs, "preBolus");
 				m_CP_Duration   = CommonUtils.getFieldDouble(rs, "duration");    // Temp Basal
 				m_CP_Percent    = CommonUtils.getFieldDouble(rs, "percent");     // Temp Basal
-				m_CP_BasalValue = CommonUtils.getFieldDouble(rs, "profile");  // Temp Basal
+				m_CP_BasalValue = CommonUtils.getFieldDouble(rs, "profile");  // Temp Basal //AndroidAPS appears to use this field for Profile Name, not BasalValue
+				if (m_CP_EventType.equals("Temp Basal")) {
+					Double absolute = CommonUtils.getFieldDouble(rs, "absolute");
+					if (absolute != null)
+						m_CP_BasalValue = CommonUtils.getFieldDouble(rs, "absolute");
+				}
 				m_CP_Notes      = CommonUtils.getFieldStr(rs, "notes");
 				m_CP_EnteredBy  = CommonUtils.getFieldStr(rs, "enteredBy");
+				if (m_CP_EventType.equals("Combo Bolus")) {
+					if (m_CP_EnteredBy.equals("")) {//CP uses strings for these values
+						m_CP_Enteredinsulin = new Double(Double.parseDouble(CommonUtils.getFieldStr(rs, "enteredinsulin")));//Combo Bolusv
+						m_CP_SplitNow = new Double(Double.parseDouble(CommonUtils.getFieldStr(rs, "splitNow")));//Combo Bolus
+						m_CP_SplitExt = new Double(Double.parseDouble(CommonUtils.getFieldStr(rs, "splitExt")));//Combo Bolus
+						m_CP_Relative = CommonUtils.getFieldDouble(rs, "relative");//Combo Bolus
+					} else { //NSCLIENT_ID (AndroidAPS), NS Loader uses Double
+						m_CP_Enteredinsulin = CommonUtils.getFieldDouble(rs, "enteredinsulin");//Combo Bolus
+						m_CP_SplitNow = CommonUtils.getFieldDouble(rs, "splitNow");//Combo Bolus
+						m_CP_SplitExt = CommonUtils.getFieldDouble(rs, "splitExt");//Combo Bolus
+						m_CP_Relative = CommonUtils.getFieldDouble(rs, "relative");//Combo Bolus
+					}
+				}
 
 				// Nightscout times are in UTC.
 				// Need to convert them to local time.
