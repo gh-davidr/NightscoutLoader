@@ -224,6 +224,20 @@ public class DBResultDiasend extends DBResult
 		return result;
 	}
 
+	boolean isCellEmpty(HSSFRow row, int index)
+	{
+
+		HSSFCell cell = row.getCell(index);
+		if (cell != null && (cell.getCellType() != HSSFCell.CELL_TYPE_BLANK))
+		{
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	}
+
 	private void loadRawGlucose(HSSFRow row)
 	{
 		String timeStr  = getStringCellValue(row, m_GlucoseTimeIndex);
@@ -342,7 +356,7 @@ public class DBResultDiasend extends DBResult
 
 		// Now store the Basals and allow the controlling loader to decide whether it's of interest or not
 		//		else if (basAmtDbl != null)
-		else if (basAmtDbl != null)//KS Basals can be 0!   && !basAmtDbl.equals(0.0))// David 28 Jan 2017.  Diagnosing issues with odd temp basals
+		else if (basAmtDbl != null && !isCellEmpty(row, m_InsulinBasalAmountIndex))//KS Basals can be 0!   && !basAmtDbl.equals(0.0))// David 28 Jan 2017.  Diagnosing issues with odd temp basals
 		{
 			this.m_ResultType = "Basal";
 			this.m_Result     = basAmtDbl.toString();
