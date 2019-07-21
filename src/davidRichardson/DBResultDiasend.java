@@ -50,6 +50,8 @@ public class DBResultDiasend extends DBResult
 				"Duration (min)",
 				"Carbs(g)",
 				"Notes",
+				"Total daily dose",
+				"Total daily basal",
 		};
 	static private int m_InsulinTimeIndex = 0;
 	static private int m_InsulinBasalAmountIndex = 0;
@@ -60,6 +62,8 @@ public class DBResultDiasend extends DBResult
 	static private int m_InsulinDurationIndex = 0;
 	static private int m_InsulinCarbsIndex = 0;
 	//	static private int m_InsulinNotesIndex = 0;
+	//	static private int m_InsulinTotalDailyDoseIndex = 0;
+	//	static private int m_InsulinTotalDailyBasalIndex = 0;
 
 
 	public boolean isValid()
@@ -220,6 +224,20 @@ public class DBResultDiasend extends DBResult
 		return result;
 	}
 
+	boolean isCellEmpty(HSSFRow row, int index)
+	{
+
+		HSSFCell cell = row.getCell(index);
+		if (cell != null && (cell.getCellType() != HSSFCell.CELL_TYPE_BLANK))
+		{
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	}
+
 	private void loadRawGlucose(HSSFRow row)
 	{
 		String timeStr  = getStringCellValue(row, m_GlucoseTimeIndex);
@@ -262,6 +280,8 @@ public class DBResultDiasend extends DBResult
 		Double bolDurDbl    = getDoubleCellValue(row, m_InsulinDurationIndex);
 		Double carbAmtDbl   = getDoubleCellValue(row, m_InsulinCarbsIndex);
 		//		String notesStr     = getStringCellValue(row, m_InsulinNotesIndex);
+		//		Double totalDailyDoseAmtDbl     = getStringCellValue(row, m_InsulinTotalDailyDoseIndex);
+		//		Double m_totalDailyBasalAmtDbl     = getStringCellValue(row, m_InsulinTotalDailyBasalIndex);
 
 		// Not sure how data looks for square waves as yet ...
 
@@ -274,6 +294,7 @@ public class DBResultDiasend extends DBResult
 			if (d.getTime() == 0)
 			{
 				m_Valid=false;
+				return;
 			}
 			else
 			{
@@ -282,6 +303,11 @@ public class DBResultDiasend extends DBResult
 				m_Valid = true;
 				setDateFields();
 			}
+		}
+		else
+		{
+			m_Valid=false;//time must be set on each row
+			return;
 		}
 
 		// Bolus?
@@ -330,7 +356,7 @@ public class DBResultDiasend extends DBResult
 
 		// Now store the Basals and allow the controlling loader to decide whether it's of interest or not
 		//		else if (basAmtDbl != null)
-		else if (basAmtDbl != null)//KS Basals can be 0!   && !basAmtDbl.equals(0.0))// David 28 Jan 2017.  Diagnosing issues with odd temp basals
+		else if (basAmtDbl != null && !isCellEmpty(row, m_InsulinBasalAmountIndex))//KS Basals can be 0!   && !basAmtDbl.equals(0.0))// David 28 Jan 2017.  Diagnosing issues with odd temp basals
 		{
 			this.m_ResultType = "Basal";
 			this.m_Result     = basAmtDbl.toString();
@@ -416,6 +442,8 @@ public class DBResultDiasend extends DBResult
 						case 6 : m_InsulinDurationIndex        = c; break;
 						case 7 : m_InsulinCarbsIndex           = c; break;
 						//						case 8 : m_InsulinNotesIndex           = c; break;
+							// 						case 9 : m_InsulinTotalDailyDoseIndex           = c; break;
+							//						case 10 : m_InsulinTotalDailyBasalIndex           = c; break;
 						default :                                  break;
 						}
 					}

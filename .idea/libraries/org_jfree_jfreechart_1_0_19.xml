@@ -4,7 +4,6 @@
     <CLASSES>
       <root url="jar://$MAVEN_REPOSITORY$/org/jfree/jfreechart/1.0.19/jfreechart-1.0.19.jar!/" />
       <root url="jar://$MAVEN_REPOSITORY$/org/jfree/jcommon/1.0.23/jcommon-1.0.23.jar!/" />
-      <root url="jar://$MAVEN_REPOSITORY$/javax/servlet/servlet-api/2.5/servlet-api-2.5.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
