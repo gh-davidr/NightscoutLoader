@@ -77,6 +77,7 @@ public class PrefsNightScoutLoader
 	final private String  def_M_OmniPodMeterPumpResultFilePath    = "";
 	final private String  def_M_RocheExtractMeterPumpResultFilePath    = "";
 	final private String  def_M_TandemMeterPumpResultFilePath     = "";
+	final private String  def_M_CellNovoMeterPumpResultFilePath   = "";
 	final private String  def_M_ExportFilePath                    = "";
 	final private String  def_M_DownloadTreatmentFilePath         = "";
 	final private String  def_M_DownloadSensorFilePath            = "";
@@ -194,6 +195,7 @@ public class PrefsNightScoutLoader
 	private String  m_OmniPodMeterPumpResultFilePath;
 	private String  m_RocheExtractMeterPumpResultFilePath;
 	private String  m_TandemMeterPumpResultFilePath;
+	private String  m_CellNovoMeterPumpResultFilePath;
 	private String  m_ExportFilePath;
 	private String  m_DownloadTreatmentFilePath;
 	private String  m_DownloadSensorFilePath;
@@ -312,6 +314,7 @@ public class PrefsNightScoutLoader
 	final private String pref_OmniPodMeterPumpResultFilePath    = "NSL_OmniPodMeterPumpResultFilePath";
 	final private String pref_RocheExtractMeterPumpResultFilePath    = "NSL_RocheExtractMeterPumpResultFilePath";
 	final private String pref_TandemMeterPumpResultFilePath     = "NSL_TandemMeterPumpResultFilePath";
+	final private String pref_CellNovoMeterPumpResultFilePath   = "NSL_TandemCellNovoPumpResultFilePath";
 	final private String pref_ExportFilePath                    = "NSL_ExportFilePath";
 	final private String pref_DownloadTreatmentFilePath         = "NSL_DownloadTreatmentFilePath";
 	final private String pref_DownloadSensorFilePath            = "NSL_DownloadSensorFilePath";
@@ -433,6 +436,7 @@ public class PrefsNightScoutLoader
 		m_OmniPodMeterPumpResultFilePath    = def_M_OmniPodMeterPumpResultFilePath;
 		m_RocheExtractMeterPumpResultFilePath    = def_M_RocheExtractMeterPumpResultFilePath;
 		m_TandemMeterPumpResultFilePath     = def_M_TandemMeterPumpResultFilePath;
+		m_CellNovoMeterPumpResultFilePath   = def_M_CellNovoMeterPumpResultFilePath;
 		
 		m_ExportFilePath                    = def_M_ExportFilePath;
 		m_DownloadTreatmentFilePath         = def_M_DownloadTreatmentFilePath;
@@ -598,6 +602,7 @@ public class PrefsNightScoutLoader
 	    prefs.put(pref_OmniPodMeterPumpResultFilePath, m_OmniPodMeterPumpResultFilePath);
 	    prefs.put(pref_RocheExtractMeterPumpResultFilePath, m_RocheExtractMeterPumpResultFilePath);
 	    prefs.put(pref_TandemMeterPumpResultFilePath, m_TandemMeterPumpResultFilePath);
+	    prefs.put(pref_CellNovoMeterPumpResultFilePath, m_CellNovoMeterPumpResultFilePath);
 	    prefs.put(pref_ExportFilePath,          m_ExportFilePath);
 	    prefs.put(pref_DownloadTreatmentFilePath, m_DownloadTreatmentFilePath);
 	    prefs.put(pref_DownloadSensorFilePath, m_DownloadSensorFilePath);
@@ -717,6 +722,7 @@ public class PrefsNightScoutLoader
 		m_OmniPodMeterPumpResultFilePath    = prefs.get(pref_OmniPodMeterPumpResultFilePath, def_M_OmniPodMeterPumpResultFilePath);
 		m_RocheExtractMeterPumpResultFilePath    = prefs.get(pref_RocheExtractMeterPumpResultFilePath, def_M_RocheExtractMeterPumpResultFilePath);
 		m_TandemMeterPumpResultFilePath     = prefs.get(pref_TandemMeterPumpResultFilePath, def_M_TandemMeterPumpResultFilePath);
+		m_CellNovoMeterPumpResultFilePath   = prefs.get(pref_CellNovoMeterPumpResultFilePath, def_M_CellNovoMeterPumpResultFilePath);
 		m_ExportFilePath                    = prefs.get(pref_ExportFilePath, def_M_ExportFilePath);
 		m_DownloadTreatmentFilePath         = prefs.get(pref_DownloadTreatmentFilePath, def_M_DownloadTreatmentFilePath);
 		m_DownloadSensorFilePath            = prefs.get(pref_DownloadSensorFilePath, def_M_DownloadSensorFilePath);
@@ -1027,6 +1033,20 @@ public class PrefsNightScoutLoader
 	}
 
 	
+	/**
+	 * @return the m_CellNovoMeterPumpResultFilePath
+	 */
+	public synchronized String getM_CellNovoMeterPumpResultFilePath() {
+		return m_CellNovoMeterPumpResultFilePath;
+	}
+
+	/**
+	 * @param m_CellNovoMeterPumpResultFilePath the m_CellNovoMeterPumpResultFilePath to set
+	 */
+	public synchronized void setM_CellNovoMeterPumpResultFilePath(String m_CellNovoMeterPumpResultFilePath) {
+		this.m_CellNovoMeterPumpResultFilePath = m_CellNovoMeterPumpResultFilePath;
+	}
+
 	/**
 	 * @return the m_ExportFilePath
 	 */

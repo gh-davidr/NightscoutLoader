@@ -47,6 +47,7 @@ public class CoreNightScoutLoader
 	private DataLoadDiasend             m_DataLoadDiasend;
 	private DataLoadOmniPod             m_DataLoadOmniPod;
 	private DataLoadTandem              m_DataLoadTandem;
+	private DataLoadCellNovo            m_DataLoadCellNovo;
 
 	// Hold the list of objects back from SQL Server
 	private ArrayList <DBResult>      m_MeterArrayListDBResults;
@@ -80,6 +81,7 @@ public class CoreNightScoutLoader
 	private ThreadDataLoad       m_ThreadDataLoadDiasend;
 	private ThreadDataLoad       m_ThreadDataLoadOmniPod;
 	private ThreadDataLoad       m_ThreadDataLoadTandem;
+	private ThreadDataLoad       m_ThreadDataLoadCellNovo;
 	private ThreadDataLoad       m_ThreadDataLoadNightScout;
 	private ThreadDataLoad       m_ThreadDataLoadNightScoutEntries;
 	private ThreadDataLoad       m_ThreadDataMeterLoad; // Which thread is actually in use
@@ -91,6 +93,7 @@ public class CoreNightScoutLoader
 	private boolean              m_ThreadDataLoadDiasendRunning = false;
 	private boolean              m_ThreadDataLoadOmniPodRunning = false;
 	private boolean              m_ThreadDataLoadTandemRunning = false;
+	private boolean              m_ThreadDataLoadCellNovoRunning = false;
 	private boolean              m_ThreadDataLoadNightScoutRunning = false;
 	private boolean              m_ThreadDataLoadNightScoutEntriesRunning = false;
 	private boolean              m_ThreadDataMeterLoadRunning = false;
@@ -115,6 +118,7 @@ public class CoreNightScoutLoader
 	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerDiasend;
 	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerOmniPod;
 	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerTandem;
+	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerCellNovo;
 	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerNightscout;
 	private ThreadDataLoad.DataLoadCompleteHandler m_ThreadHandlerNightscoutEntries;
 	private ThreadDetermineSaveDifferences.DataLoadCompleteHander m_ThreadHandlerDetermineSaveDifferences;
@@ -140,6 +144,7 @@ public class CoreNightScoutLoader
 		m_DataLoadDiasend           = new DataLoadDiasend();   
 		m_DataLoadOmniPod           = new DataLoadOmniPod();
 		m_DataLoadTandem            = new DataLoadTandem();
+		m_DataLoadCellNovo          = new DataLoadCellNovo();
 
 		m_MeterArrayListDBResults    = m_DataLoadRoche.getResultsTreatments();
 		m_NightScoutArrayListDBResults       = m_DataLoadNightScout.getResultsFromDB();
@@ -173,6 +178,7 @@ public class CoreNightScoutLoader
 		m_ThreadHandlerDiasend    = null;
 		m_ThreadHandlerOmniPod    = null;
 		m_ThreadHandlerTandem     = null;
+		m_ThreadHandlerCellNovo   = null;
 		m_ThreadHandlerNightscout = null;
 		m_ThreadHandlerNightscoutEntries = null;
 		m_ThreadHandlerDetermineSaveDifferences = null;
@@ -266,7 +272,7 @@ public class CoreNightScoutLoader
 						}
 
 						//		@Override
-						public void operationComplete(Object obj, String message)
+						public void operationComplete(Object obj, String message) 
 						{
 							entriesLoaded      = m_ThreadDetermineSaveDifferences.getM_CountMeterEntriesLoaded();
 							entriesAdded       = m_ThreadDetermineSaveDifferences.getM_CountMeterEntriesAdded();
@@ -548,6 +554,7 @@ public class CoreNightScoutLoader
 		result = m_ThreadDataLoadDiasendRunning == true ? true : result;
 		result = m_ThreadDataLoadOmniPodRunning == true ? true : result;
 		result = m_ThreadDataLoadTandemRunning == true ? true : result;
+		result = m_ThreadDataLoadCellNovoRunning == true ? true : result;
 		result = m_ThreadDataLoadNightScoutRunning == true ? true : result;
 		result = m_ThreadDataLoadNightScoutEntriesRunning == true ? true : result;
 		result = m_ThreadDataMeterLoadRunning == true ? true : result;
@@ -905,6 +912,86 @@ public class CoreNightScoutLoader
 		}
 	}
 
+	// Multi-threaded CellNovo Loader
+	public synchronized void threadLoadCellNovoMeterPump(String filename,
+			ThreadDataLoad.DataLoadCompleteHandler handler)
+	{
+		if (m_ThreadDataMeterLoadRunning != false)
+//		if (this.getM_ThreadDataMeterLoad() != null)
+		{
+			// Need better way than this!
+			addErrorText("threadLoadCellNovoMeterPump Thread Already Running!!");
+		}
+		else
+		{
+			m_ThreadDataMeterLoadRunning = true;
+
+			m_DeviceUsed   = "CellNovo Download File";
+			m_FileName     = filename;
+			m_DateRange    = "";
+
+			// Initialize the CellNovo loader with supplied dates
+			m_DataLoadCellNovo.initialize(filename);
+
+			this.setM_ThreadDataLoadCellNovo(new ThreadDataLoad(m_DataLoadCellNovo));
+			this.setM_ThreadDataMeterLoad(this.getM_ThreadDataLoadCellNovo());
+
+			// Store supplied handler
+			m_ThreadHandlerCellNovo = handler;
+
+			// Install our own
+			// m_ThreadDataLoadNightScout.loadDBResults(handler);
+
+			m_ThreadDataLoadCellNovo.loadDBResults(
+					new ThreadDataLoad.DataLoadCompleteHandler(handler.getM_Object()) 
+					{
+						//		@Override
+						public void exceptionRaised(String message) 
+						{
+							setM_ThreadDataLoadCellNovo(null);
+							setM_ThreadDataMeterLoad(null);
+						}
+
+						//		@Override
+						public void dataLoadComplete(Object obj, String message) 
+						{
+							m_MeterArrayListDBResults = new ArrayList<DBResult>(m_DataLoadCellNovo.getResultsTreatments());
+
+							// Sort the Mongo Results
+							Collections.sort(m_MeterArrayListDBResults, new ResultFromDBComparator());
+
+							String statusText = new String("");
+							statusText = String.format("Load %s\n%5d meter/pump entries read. ", 
+									m_DeviceUsed, m_MeterArrayListDBResults.size());
+
+							// We want to do this UI change in the main thread, and not the DB worker thread that's just
+							// notified back
+							EventQueue.invokeLater(new 
+									Runnable()
+							{ 
+								public void run()
+								{ 
+									// Add some commentary to the text pane
+									//									addStatusText("Loaded " + m_MeterArrayListDBResults.size() + " entries from Meter.");
+								}
+							});
+
+							// Check whether this meter/pump load does not include Nightscout load too
+							checkMeterPumpOnlyLoad();
+
+							// Invoke our stored handler
+							m_ThreadHandlerCellNovo.dataLoadComplete(obj, statusText);
+
+							// Now clear the thread
+							m_ThreadDataMeterLoadRunning = false;
+
+							//setM_ThreadDataLoadCellNovo(null);
+							//setM_ThreadDataMeterLoad(null);
+						}
+					});	
+		}
+	}
+
 
 	public void loadRocheMeterPump(Date startDate, Date endDate)
 	{
@@ -1134,6 +1221,8 @@ public class CoreNightScoutLoader
 
 		}
 	}
+		
+	
 
 	public void loadNightScout(/*Date startDate, Date endDate*/)
 	{
@@ -1992,6 +2081,20 @@ public class CoreNightScoutLoader
 	 */
 	public synchronized void setM_ThreadDataLoadTandem(ThreadDataLoad m_ThreadDataLoadTandem) {
 		this.m_ThreadDataLoadTandem = m_ThreadDataLoadTandem;
+	}
+
+	/**
+	 * @return the m_ThreadDataLoadCellNovo
+	 */
+	public synchronized ThreadDataLoad getM_ThreadDataLoadCellNovo() {
+		return m_ThreadDataLoadCellNovo;
+	}
+
+	/**
+	 * @param m_ThreadDataLoadCellNovo the m_ThreadDataLoadCellNovo to set
+	 */
+	public synchronized void setM_ThreadDataLoadCellNovo(ThreadDataLoad m_ThreadDataLoadCellNovo) {
+		this.m_ThreadDataLoadCellNovo = m_ThreadDataLoadCellNovo;
 	}
 
 	/**

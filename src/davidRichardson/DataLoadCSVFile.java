@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,7 +24,20 @@ public abstract class DataLoadCSVFile extends DataLoadBase
 	// Base class that must know how to create a DBResult derived instance
 	// with String array
 	protected abstract DBResult makeDBResult(String[] res);    
+
+	// Optional alternative for CellNovo - a single line can result in multiple DBResults
+	protected ArrayList<DBResult> makeDBResultList(String[] res)
+	{
+		return null;
+	}
+	
+	// Optional function to order raw results - necessary for CellNovo
+	protected void orderRawResults()
+	{
 		
+	}
+
+
 	// Similarly, base class must know what types it creates for logging
 	protected abstract String loadStringName();
 	
@@ -60,11 +74,12 @@ public abstract class DataLoadCSVFile extends DataLoadBase
 		loadDBRawResults(fileName);
 		try
 		{
+			orderRawResults();
 			convertDBResultsToTreatments();
 		}
 		catch (Exception e) 
 		{
-   	    	m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "loadDBResults - Unexpected error Converting raw data to Treatments ");
+			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "loadDBResults - Unexpected error Converting raw data to Treatments ");
 		}
 	
 	}
@@ -87,19 +102,40 @@ public abstract class DataLoadCSVFile extends DataLoadBase
 			br = new BufferedReader(new FileReader(fileName));
 			while ((line = br.readLine()) != null) 
 			{
-				// use comma as separator
-				String[] rs = line.split(cvsSplitBy);
+				// Allow derived classes to determine how we split (could be regex)
+				// Also, to ensure we get trailing empty strings use 2nd form with large limit val
+				String[] rs = line.split(cvsSplitBy, 1000);
 
 				// DBResultMedtronic res = new DBResultMedtronic(rs);
 				DBResult res = makeDBResult(rs);
-				if (res.isValid())
+				if (res != null)
 				{
-					rawResultsFromDB.add(res);
-	       	    	m_Logger.log(Level.FINEST, "Result added for " + loadStringName() + " " + res.toString());
+					if (res.isValid())
+					{
+						rawResultsFromDB.add(res);
+						m_Logger.log(Level.FINEST, "Result added for " + loadStringName() + " " + res.toString());
+					}
+					else if (res.isReportRange())
+					{
+						m_ReportDateRange = res;
+					}
 				}
-				else if (res.isReportRange())
+
+				ArrayList<DBResult> resList = makeDBResultList(rs);
+				if (resList != null)
 				{
-					m_ReportDateRange = res;
+					for (DBResult r : resList)
+					{
+						if (r.isValid())
+						{
+							rawResultsFromDB.add(r);
+							m_Logger.log(Level.FINEST, "Result added for " + loadStringName() + " " + r.toString());
+						}
+						else if (r.isReportRange())
+						{
+							m_ReportDateRange = r;
+						}
+					}
 				}
 			}
 

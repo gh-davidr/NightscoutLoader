@@ -9,72 +9,34 @@ import java.util.Calendar;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
-public class DBResultMedtronic extends DBResult 
+public abstract class DBResultMedtronic extends DBResult 
 {
 	private static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());	
 	
-	private String[] m_RecordSet;
-	private boolean  m_Valid;
-	private boolean  m_ReportDateRange;
-	private Date     m_StartDate;
-	private Date     m_EndDate;
+	protected String[] m_RecordSet;
+	protected boolean  m_Valid;
+	protected boolean  m_ReportDateRange;
+	protected Date     m_StartDate;
+	protected Date     m_EndDate;
 	
-	static private String m_ReportRange = "Report Range";
+		
+	protected abstract int getDateIndex();
+	protected abstract int getTimeIndex();
+	protected abstract int getBolusTypeIndex();
+	protected abstract int getBGIndex();
+	protected abstract int getTempBasalAmountIndex();
+	protected abstract int getTempBasalDurationIndex();
+	protected abstract int getCarbAmountIndex();
+	protected abstract int getStandardBolusIndex();
+	protected abstract int getBolusDurationIndex();
+	protected abstract int getPrimeIndex();
 	
-	static private String[] m_FieldNames =
-		{
-			"Index",
-			"Date",
-			"Time",
-			"Timestamp",
-			"New Device Time",
-			"BG Reading (mmol/L)",
-			"Linked BG Meter ID",
-			"Temp Basal Amount (U/h)",
-			"Temp Basal Type",
-			"Temp Basal Duration (hh:mm:ss)",
-			"Bolus Type",
-			"Bolus Volume Selected (U)",
-			"Bolus Volume Delivered (U)",
-			"Bolus Duration (hh:mm:ss)",
-			"Prime Type",
-			"Prime Volume Delivered (U)",
-			"Suspend",
-			"Rewind",
-			"BWZ Estimate (U)",
-			"BWZ Target High BG (mmol/L)",
-			"BWZ Target Low BG (mmol/L)",
-			"BWZ Carb Ratio (grams)",
-			"BWZ Insulin Sensitivity (mmol/L)",
-			"BWZ Carb Input (grams)",
-			"BWZ BG Input (mmol/L)",
-			"BWZ Correction Estimate (U)",
-			"BWZ Food Estimate (U)",
-			"BWZ Active Insulin (U)",
-			"Alarm",
-			"Sensor Calibration BG (mmol/L)",
-			"Sensor Glucose (mmol/L)",
-			"ISIG Value",
-			"Daily Insulin Total (U)",
-			"Raw-Type",
-			"Raw-Values",
-			"Raw-ID",
-			"Raw-Upload ID",
-			"Raw-Seq Num",
-			"Raw-Device Type",
-		};
+	protected abstract void initialize();
+	protected abstract void getDateRangeFromRecordSet(String[] recordSet);
+	protected abstract String getDateFormat();
+	protected abstract String getTimeFormat();
 	
-	static private boolean m_indexesInitialized = false; 
-	static private int m_DateIndex = 0;
-	static private int m_TimeIndex = 0;
-	static private int m_BolusTypeIndex = 0;
-	static private int m_BGIndex = 0;
-	static private int m_TempBasalAmountIndex = 0;
-	static private int m_TempBasalDurationIndex = 0;
-	static private int m_CarbAmountIndex = 0;
-	static private int m_StandardBolusIndex = 0;
-	static private int m_BolusDurationIndex = 0;
-	static private int m_PrimeIndex = 0;
+	
 
 	@Override
 	public boolean isValid()
@@ -96,44 +58,7 @@ public class DBResultMedtronic extends DBResult
 	{
 		return m_EndDate;	
 	}
-	
-/*	private Date parseFileDate(String date)
-	{
-		Date result = new Date(0);
-		// One of a couple of formats
 		
-		// 15 Jun 2016
-		// Bug found by Melanie Cragg in Australia 14 Jun 2016
-		// Medtronic dates were all being stored as January
-		// Andy's original file masked this issue as his data was all January!!!
-//		DateFormat dashformat  = new SimpleDateFormat("dd-mm-yyyy", Locale.ENGLISH);
-//		DateFormat slashformat = new SimpleDateFormat("dd/mm/yyyy", Locale.ENGLISH);
-		
-		final String defDashFormat  = new String("dd-MM-yy");
-		final String defSlashFormat = new String("dd/MM/yy");
-		String prefDateFormat       = PrefsNightScoutLoader.getInstance().getM_InputDateFormat();
-		DateFormat dashformat       = new SimpleDateFormat((prefDateFormat.contains("-")  ?  prefDateFormat : defDashFormat), Locale.ENGLISH);
-		DateFormat slashformat      = new SimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat), Locale.ENGLISH);
-		
-		try
-		{
-			if (date.contains("/"))
-			{
-				result = slashformat.parse(date);
-			}
-			else if (date.contains("-"))
-			{
-				result = dashformat.parse(date);
-			}
-		}
-		catch (ParseException e) 
-		{
-   	    	m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "parseFileDate - Unexpected error parsing date: " + date);
-		}
-
-		return result;
-	}
-*/	
 	public DBResultMedtronic(String[] recordSet) 
 	{
 		super();
@@ -153,14 +78,7 @@ public class DBResultMedtronic extends DBResult
 		if (m_Valid == false)
 		{
 			// Check for date range
-	    	m_Logger.log(Level.FINE, "DBResultMedtronic Comparing:<" + recordSet[0] + "> and <" + m_ReportRange + ">");
-			if (recordSet[0].equals(m_ReportRange))
-			{
-				m_ReportDateRange = true;
-				
-				m_StartDate = parseFileDate(recordSet[1]);
-				m_EndDate   = parseFileDate(recordSet[3]);		
-			}
+			getDateRangeFromRecordSet(recordSet);
 		}
 
 		if (m_Valid == true)
@@ -172,24 +90,11 @@ public class DBResultMedtronic extends DBResult
 			}
 			
 			Date d = new Date(0);
-			d = parseFileDate(m_RecordSet[m_DateIndex]);
+			d = parseFileDate(m_RecordSet[getDateIndex()]);
 			if (d.getTime() == 0)
 			{
 				m_Valid=false;
 			}
-			
-/*			// Now assign the base values
-			DateFormat format = new SimpleDateFormat("dd-mm-yy", Locale.ENGLISH);
-			Date d = new Date();
-			
-			try
-			{
-				d = format.parse(m_RecordSet[m_DateIndex]);
-			}
-	        catch (ParseException e) 
-			{
-	        	m_Valid=false;
-	        }*/
 			
 			if (m_Valid == true)
 			{
@@ -219,19 +124,21 @@ public class DBResultMedtronic extends DBResult
 			    // David 15-Jun-2016
 			    // BUg from Australia!
 //			    DateFormat df = new SimpleDateFormat("dd/mm/yy");
-			    DateFormat df = new SimpleDateFormat("dd/MM/yy");
+//			    DateFormat df = new SimpleDateFormat("dd/MM/yy");
+			    DateFormat df = new SimpleDateFormat(getDateFormat());
 			    String ds;
 			    ds = df.format(d);
 			    
 			    // David 15-Jun-2016
 			    // BUg from Australia!
 //			    DateFormat tf = new SimpleDateFormat("dd/mm/yy H:m:s");
-			    DateFormat tf = new SimpleDateFormat("dd/MM/yy H:m:s");
+//			    DateFormat tf = new SimpleDateFormat("dd/MM/yy H:m:s");
+			    DateFormat tf = new SimpleDateFormat(getTimeFormat());
 			    Date l_time = new Date(0);
 			    
 			    try
 			    {
-			    	l_time = tf.parse(ds + " " + m_RecordSet[m_TimeIndex]);
+			    	l_time = tf.parse(ds + " " + m_RecordSet[getTimeIndex()]);
 				    this.m_Time = l_time;
 			    }
 			    catch(Exception e) 
@@ -244,43 +151,48 @@ public class DBResultMedtronic extends DBResult
 			    try
 			    {
 			    	// BG?
-			        if (m_RecordSet[m_BGIndex].length() > 0)
+			        if (m_RecordSet[getBGIndex()].length() > 0)
 			    	{
-			    		this.m_Result = m_RecordSet[m_BGIndex];
+			    		this.m_Result = m_RecordSet[getBGIndex()];
 			    		this.m_ResultType = "BG";
 			    	}
 
 			    	// It's some sort of insulin dose ...
-			        else if (m_RecordSet[m_BolusTypeIndex].length() > 0)
+			        else if (m_RecordSet[getBolusTypeIndex()].length() > 0)
 			    	{
 			    		// Now get the values
-			    		if (m_RecordSet[m_StandardBolusIndex].length() > 0)
+			    		if (m_RecordSet[getStandardBolusIndex()].length() > 0)
 			    		{
-			    			this.m_Result = m_RecordSet[m_StandardBolusIndex];
+			    			this.m_Result = m_RecordSet[getStandardBolusIndex()];
 			    		}
 
 			    		// Standard Bolus types
-			    		if (m_RecordSet[m_BolusTypeIndex].equals("Normal") ||
+			    		if (m_RecordSet[getBolusTypeIndex()].equals("Normal") ||
 			    				// Can only see one example of this and seems to be a standard delivery
-			    				m_RecordSet[m_BolusTypeIndex].equals("Dual/Normal"))
+			    				m_RecordSet[getBolusTypeIndex()].equals("Dual/Normal"))
 			    		{
 			    			this.m_ResultType = "Standard Bolus";
+			    			
+			    			// We need a bolus amount.  Have seen for New Medtronic it's (presumably)
+			    			// possible to dial up a bolus through wizard but not actually give it
+			    			// In that case, the bolus amount is non-zero but the delivered is blank
+			    			m_Valid = this.m_Result.isEmpty() == true ? false : m_Valid;
 			    		}
 
 			    		// Extended Bolus types
-			    		else if (m_RecordSet[m_BolusTypeIndex].equals("Square") ||
-			    			     m_RecordSet[m_BolusTypeIndex].equals("Dual/Square"))
+			    		else if (m_RecordSet[getBolusTypeIndex()].equals("Square") ||
+			    			     m_RecordSet[getBolusTypeIndex()].equals("Dual/Square"))
 			    		{
 			    			this.m_ResultType = "Extended Bolus Start";
 			    			// Store the insulin amount in extended - this is needed for Medtronic which has separate rows for NOW and EXTENDED amoutns
-			    			this.m_ExtendedAmount = m_RecordSet[m_StandardBolusIndex];
+			    			this.m_ExtendedAmount = m_RecordSet[getStandardBolusIndex()];
 			    			
-			    			if (m_RecordSet[m_BolusDurationIndex].length() > 0)
+			    			if (m_RecordSet[getBolusDurationIndex()].length() > 0)
 			    			{			    				
 				    			// Need to convert hh:mm:ss into minutes ...
 				    			// field is in the form 2dd/mm/yyyy to dd/mm/yyyy"
 				    			Pattern durationPattern = Pattern.compile("([0-9]*):([0-9][0-9]):([0-9][0-9])");
-				    			Matcher durationMatcher = durationPattern.matcher(m_RecordSet[m_BolusDurationIndex]);
+				    			Matcher durationMatcher = durationPattern.matcher(m_RecordSet[getBolusDurationIndex()]);
 
 				    			if (durationMatcher.find())
 				    			{
@@ -291,30 +203,35 @@ public class DBResultMedtronic extends DBResult
 				    			}
 				    			else
 				    			{
-				    	   	    	m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "DBResultMedtronic - DIDN'T PATTERN MATCH " + m_RecordSet[m_BolusDurationIndex]);
+				    	   	    	m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+">" + "DBResultMedtronic - DIDN'T PATTERN MATCH " + m_RecordSet[getBolusDurationIndex()]);
 				    			}
 			    			}
+			    			
+			    			// We need a bolus amount.  Have seen for New Medtronic it's (presumably)
+			    			// possible to dial up a bolus through wizard but not actually give it
+			    			// In that case, the bolus amount is non-zero but the delivered is blank
+			    			m_Valid = this.m_Result.isEmpty() == true ? false : m_Valid;
 			    		}
 			    	}
 			        
 			        // Temp Basal
-			    	else if (m_RecordSet[m_TempBasalAmountIndex].length() > 0)
+			    	else if (m_RecordSet[getTempBasalAmountIndex()].length() > 0)
 			    	{
-			    		this.m_Result = m_RecordSet[m_TempBasalAmountIndex];
-			    		this.m_Duration = m_RecordSet[m_TempBasalDurationIndex];
+			    		this.m_Result = m_RecordSet[getTempBasalAmountIndex()];
+			    		this.m_Duration = m_RecordSet[getTempBasalDurationIndex()];
 			    		this.m_ResultType = "Temp Basal";
 			    	}
 			    		
 			    	// Carbs
-			    	else if (m_RecordSet[m_CarbAmountIndex].length() > 0)
+			    	else if (m_RecordSet[getCarbAmountIndex()].length() > 0)
 			    	{
-			    		this.m_Result = m_RecordSet[m_CarbAmountIndex];
+			    		this.m_Result = m_RecordSet[getCarbAmountIndex()];
 			    		this.m_ResultType = "Carbs";
  			    	}
 				
 				
 			    	// Site Change
-			    	else if ((m_RecordSet[m_PrimeIndex].length() > 0) && (m_RecordSet[m_PrimeIndex].equals("Fill Cannula")))
+			    	else if ((m_RecordSet[getPrimeIndex()].length() > 0) && (m_RecordSet[getPrimeIndex()].equals("Fill Cannula")))
 			    	{
 			    		this.m_ResultType = "Site Change";
 			    	}
@@ -333,35 +250,13 @@ public class DBResultMedtronic extends DBResult
 		}
 	}
 	
-	private void initialize()
-	{
-		m_RecordSet = new String[m_FieldNames.length];
-		
-		// Set values in underdlying ResultFromDB from record set
-		if (m_indexesInitialized == false)
-		{	
-			m_DateIndex = fieldLocation("Date");
-			m_TimeIndex = fieldLocation("Time");
-			m_BolusTypeIndex = fieldLocation("Bolus Type");
-			m_BGIndex = fieldLocation("BG Reading (mmol/L)");
-			m_TempBasalAmountIndex = fieldLocation("Temp Basal Amount (U/h)");
-			m_TempBasalDurationIndex = fieldLocation("Temp Basal Duration (hh:mm:ss)");
-			m_CarbAmountIndex = fieldLocation("BWZ Carb Input (grams)");
-			m_StandardBolusIndex = fieldLocation("Bolus Volume Delivered (U)");
-			m_BolusDurationIndex = fieldLocation("Bolus Duration (hh:mm:ss)");
-//			m_Time = fieldLocation("Timestamp");
-			m_PrimeIndex = fieldLocation("Prime Type");
-						
-			m_indexesInitialized = true;
-		}
-	}
 	
-	private int fieldLocation(String f)
+	protected int fieldLocation(String f, String[] fieldNames)
 	{
 		int result=-1;
-		for (int i=0; result < 0 && i < m_FieldNames.length; i++)
+		for (int i=0; result < 0 && i < fieldNames.length; i++)
 		{
-			if (m_FieldNames[i] == f)
+			if (fieldNames[i] == f)
 			{
 				result=i;
 			}
@@ -369,15 +264,4 @@ public class DBResultMedtronic extends DBResult
 		return result;
 	}
 	
-	public boolean validRecord()
-	{
-		boolean result=true;
-		
-		// There are 39 rows in this file
-		if (m_RecordSet.length < 39)
-		{
-			result=false;
-		}
-		return result;
-	}
 }

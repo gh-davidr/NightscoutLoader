@@ -19,12 +19,12 @@ public class DBResult extends DBResultCore
 
 	protected static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());
 
-//	// Sep 2016
-//	// Proximity checks are for where we have a new Meter/Pump entry coming into an
-//	// existing NightScout Care Portal data set, and there's a possible duplicate
-//	// among them.
-//	private static boolean m_ProximityCheck           = false;
-//	private static boolean m_ProximityCheckSecondPass = false;
+	//	// Sep 2016
+	//	// Proximity checks are for where we have a new Meter/Pump entry coming into an
+	//	// existing NightScout Care Portal data set, and there's a possible duplicate
+	//	// among them.
+	//	private static boolean m_ProximityCheck           = false;
+	//	private static boolean m_ProximityCheckSecondPass = false;
 
 
 	// Enumerator for Analysis
@@ -45,7 +45,7 @@ public class DBResult extends DBResultCore
 		Duplicate,
 		CantMerge   // Raw result is completely different
 	};
-	
+
 	// Since the file already groups this together, we need to read each section separately
 	// to utilize the grouping logic already established for other data sources.
 	// So when reading the pump values, tell the constructor what to look out for.
@@ -257,8 +257,8 @@ public class DBResult extends DBResultCore
 	private boolean m_Corr = false; // A correction will be a BG then Ins in that order :-)
 	private boolean m_TmpBasal = false;
 
-//	// Proximity match with an existing record
-//	private boolean m_ProximityPossibleDuplicate = false;
+	//	// Proximity match with an existing record
+	//	private boolean m_ProximityPossibleDuplicate = false;
 
 	// For knowing how we store results in MongoDB
 	protected static String  m_determinantField = "enteredBy";
@@ -573,9 +573,9 @@ public class DBResult extends DBResultCore
 		if (m_ProximityCheck == true)
 		{
 			time = getProximityAdjustedTime(time);
-			
-//			// How many minutes apart two entries can be before being considered proximity/duplicate
-//			int     proximityMinutes    = PrefsNightScoutLoader.getInstance().getM_ProximityMinutes();
+
+			//			// How many minutes apart two entries can be before being considered proximity/duplicate
+			//			int     proximityMinutes    = PrefsNightScoutLoader.getInstance().getM_ProximityMinutes();
 
 			int     checkType           = PrefsNightScoutLoader.getInstance().getM_ProximityCheckType();
 
@@ -589,30 +589,30 @@ public class DBResult extends DBResultCore
 			int     checkCarbValueDP    = PrefsNightScoutLoader.getInstance().getM_CarbDecPlacesProximityCheck();
 			int     checkInsulinValueDP = PrefsNightScoutLoader.getInstance().getM_InsulinDecPlacesProximityCheck();
 
-//			// Since we may have 2 adjacent readings either side of the mid point of proximityMinutes, we do a second
-//			// pass looking for proximity matches but this time slide the time forward by half the proximityMinutes
-//			if (m_ProximityCheckSecondPass == true)
-//			{
-//				long halfProximityMinutesMillis = proximityMinutes * 60 * 1000 / 2;
-//
-//				time += halfProximityMinutesMillis;
-//			}
-//
-//			long roundPeriodMins = proximityMinutes * 60 * 1000;
-//			// Adjust time by rounding up or down to nearest proximity minutes approximately.
-//
-//			long timeUp   = time - (time % roundPeriodMins) + roundPeriodMins;
-//			long timeDown = time - (time % roundPeriodMins);
-//
-//			// Are we closer to Up time or Down
-//			if ( (timeUp - time) > (time - timeDown) )
-//			{
-//				time = timeDown;
-//			}
-//			else
-//			{
-//				time = timeUp;
-//			}
+			//			// Since we may have 2 adjacent readings either side of the mid point of proximityMinutes, we do a second
+			//			// pass looking for proximity matches but this time slide the time forward by half the proximityMinutes
+			//			if (m_ProximityCheckSecondPass == true)
+			//			{
+			//				long halfProximityMinutesMillis = proximityMinutes * 60 * 1000 / 2;
+			//
+			//				time += halfProximityMinutesMillis;
+			//			}
+			//
+			//			long roundPeriodMins = proximityMinutes * 60 * 1000;
+			//			// Adjust time by rounding up or down to nearest proximity minutes approximately.
+			//
+			//			long timeUp   = time - (time % roundPeriodMins) + roundPeriodMins;
+			//			long timeDown = time - (time % roundPeriodMins);
+			//
+			//			// Are we closer to Up time or Down
+			//			if ( (timeUp - time) > (time - timeDown) )
+			//			{
+			//				time = timeDown;
+			//			}
+			//			else
+			//			{
+			//				time = timeUp;
+			//			}
 
 			// Based on preferences, include the BG, Carb and Insulin formatted
 			// again to preference decimal places for each parameter
@@ -707,10 +707,14 @@ public class DBResult extends DBResultCore
 		final String defDashFormat    = new String("dd-MM-yy");
 		final String defSlashFormat   = new String("dd/MM/yy");
 		final String defISODashFormat = new String("yyyy-MM-dd'T'HH:mm:ss");
+		final String defFYDashFormat  = new String("yyyy-MM-dd");
+		final String defFYSlashFormat = new String("yyyy/MM/dd");
 		String prefDateFormat       = PrefsNightScoutLoader.getInstance().getM_InputDateFormat();
 		DateFormat dashformat       = new SimpleDateFormat((prefDateFormat.contains("-")  ?  prefDateFormat : defDashFormat), Locale.ENGLISH);
 		DateFormat slashformat      = new SimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat), Locale.ENGLISH);
 		DateFormat defISODashformat = new SimpleDateFormat(defISODashFormat);
+		DateFormat defFYDashformat  = new SimpleDateFormat(defFYDashFormat);
+		DateFormat defFYSlashformat = new SimpleDateFormat(defFYSlashFormat);
 
 		try
 		{
@@ -720,11 +724,25 @@ public class DBResult extends DBResultCore
 			}
 			else if (date.contains("/"))
 			{
-				result = slashformat.parse(date);
+				if (date.length() == 10)
+				{
+					result = defFYSlashformat.parse(date);
+				}
+				else
+				{
+					result = slashformat.parse(date);
+				}
 			}
 			else if (date.contains("-"))
 			{
-				result = dashformat.parse(date);
+				if (date.length() == 10)
+				{
+					result = defFYDashformat.parse(date);
+				}
+				else
+				{
+					result = dashformat.parse(date);
+				}
 			}
 		}
 		catch (ParseException e) 
@@ -749,16 +767,16 @@ public class DBResult extends DBResultCore
 				m_ResultType, m_Result, m_ExtendedAmount, m_Year, m_Month, m_Day, m_EpochMillies);		
 	}
 
-//	static public boolean doubleIsInteger(double val)
-//	{
-//		boolean result = false;  // Assume not initially
-//
-//		if (val == Math.floor(val))
-//		{
-//			result = true;
-//		}
-//		return result;
-//	}
+	//	static public boolean doubleIsInteger(double val)
+	//	{
+	//		boolean result = false;  // Assume not initially
+	//
+	//		if (val == Math.floor(val))
+	//		{
+	//			result = true;
+	//		}
+	//		return result;
+	//	}
 
 	private	String getDoubleValue(Double val)
 	{	
@@ -808,6 +826,10 @@ public class DBResult extends DBResultCore
 	{
 		super();
 
+//		String davidDiagnostics = "(* Starting Text is blank *)";
+		String resType = null;
+		Date   resTime = null;
+
 		// 17 Apr 
 		// Try one big ... try
 
@@ -838,8 +860,8 @@ public class DBResult extends DBResultCore
 			m_DataSource    = new String("Meter");
 
 			// push these variables into the class here
-			String resType = res.getM_ResultType();
-			Date   resTime = res.getM_Time();
+			resType = res.getM_ResultType();
+			resTime = res.getM_Time();
 
 			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.S'Z'", Locale.ENGLISH);
 			final DateFormat dateformat = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
@@ -874,17 +896,20 @@ public class DBResult extends DBResultCore
 
 			if (resType.equals("BG"))
 			{
+//				davidDiagnostics = "Setting m_CP_Glucose";
+
 				m_BG = true;
 				if (!m_Carb && m_Ins)
 				{
 					m_Corr = true; // Allow an Ins first then a BG
 				}
 				m_CP_EventType = "BG Check";
-
 				m_CP_Glucose = new Double(Double.parseDouble(res.getM_Result()));
 			}
 			else if (resType.equals("Carbs"))
 			{
+//				davidDiagnostics = "Setting m_CP_Carbs";
+
 				if (m_Corr)
 				{
 					m_Corr = false; // Can't be a correction with Carbs
@@ -895,12 +920,16 @@ public class DBResult extends DBResultCore
 			}
 			else if (resType.equals("Standard Bolus"))
 			{
+//				davidDiagnostics = "Setting m_CP_Insulin";
+
 				m_Ins = true;
 				m_CP_EventType = "Correction Bolus";
 				m_CP_Insulin = new Double(Double.parseDouble(res.getM_Result()));
 			}
 			else if (resType.equals("Pen Units"))
 			{
+//				davidDiagnostics = "Setting m_CP_Insulin Pen Units";
+
 				m_Ins = true;
 				m_CP_EventType = "Correction Bolus";
 				m_CP_Insulin = new Double(Double.parseDouble(res.getM_Result()));
@@ -908,6 +937,8 @@ public class DBResult extends DBResultCore
 			}
 			else if (resType.equals("MultiWave") || resType.equals("Extended Bolus Start"))
 			{
+//				davidDiagnostics = "Setting m_CP_Insulin - MultiWave";
+
 				m_Ins = true;
 				m_CP_EventType = "Meal Bolus";
 				m_CP_Insulin  = new Double(Double.parseDouble(res.getM_Result()));
@@ -917,6 +948,7 @@ public class DBResult extends DBResultCore
 				// Less important to me now that Dawn's on an omnipod
 				if (res.getM_Duration() != null && !res.getM_Duration().equals(""))
 				{
+//					davidDiagnostics = "Setting m_CP_Duration - MultiWave";
 					m_CP_Duration = new Double(Double.parseDouble(res.getM_Duration()));
 				}
 				m_CP_Notes += "PumpMultiWave";
@@ -924,6 +956,7 @@ public class DBResult extends DBResultCore
 					m_CP_EventType = "Combo Bolus";
 					Double extendedinsulin = 0.0;
 					try {
+//						davidDiagnostics = "Setting extendedinsulin - MultiWave";
 						extendedinsulin = new Double(Double.parseDouble(res.getM_ExtendedAmount()));
 					}
 					catch (Exception e)
@@ -936,18 +969,23 @@ public class DBResult extends DBResultCore
 					if (res.getM_Duration() != null && !res.getM_Duration().equals(""))
 					{
 						if (extendedinsulin != 0.0 && m_CP_Duration > 0.0) {
+//							davidDiagnostics = "Setting m_CP_Relative - MultiWave";
+
 							m_CP_Relative = new Double(extendedinsulin / m_CP_Duration * 60);
 							m_CP_Relative = Math.round(m_CP_Relative*1000.0)/1000.0;
 						}
 					}
 					if (res.getM_Enteredinsulin() != null && !res.getM_Enteredinsulin().equals(""))
 					{
+//						davidDiagnostics = "Setting m_CP_Enteredinsulin - MultiWave";
 						m_CP_Enteredinsulin = new Double(Double.parseDouble(res.getM_Enteredinsulin()));
 						if (extendedinsulin != 0.0 && m_CP_Enteredinsulin > 0.0) {
+//							davidDiagnostics = "Setting m_CP_SplitExt - MultiWave";
 							m_CP_SplitExt = new Double(extendedinsulin / m_CP_Enteredinsulin) * 100.0;
 							m_CP_SplitExt = Math.round(m_CP_SplitExt*100.0)/100.0;
 						}
 						if (immediateinsulin != 0.0) {
+//							davidDiagnostics = "Setting m_CP_SplitNow - MultiWave";
 							m_CP_SplitNow = new Double(immediateinsulin / m_CP_Enteredinsulin) * 100.0;
 							m_CP_SplitNow = Math.round(m_CP_SplitNow*100.0)/100.0;
 						}
@@ -970,7 +1008,9 @@ public class DBResult extends DBResultCore
 			else if (resType.equals("Tmp Basal Start"))
 			{
 				m_CP_EventType = "Temp Basal";
+//				davidDiagnostics = "Setting m_CP_Duration - Tmp Basal Start";
 				m_CP_Duration = new Double(Double.parseDouble(res.getM_Duration()));
+//				davidDiagnostics = "Setting m_CP_Percent - Tmp Basal Start";
 				m_CP_Percent  = new Double(Double.parseDouble(res.getM_Result()));     // Temp Basal
 			}
 			else if (resType.equals("Tmp Basal Stop"))
@@ -988,6 +1028,7 @@ public class DBResult extends DBResultCore
 				m_CP_EventType = "Temp Basal";
 				m_CP_Duration = new Double(0);
 				if (device.equals("Diasend")) {
+//					davidDiagnostics = "Setting m_CP_BasalValue - Basal";
 					m_CP_BasalValue = new Double(Double.parseDouble(res.getM_Result()));// Diasend Temp Basal Absolute value used in CP
 				}
 				else {
@@ -998,13 +1039,20 @@ public class DBResult extends DBResultCore
 
 
 			// Getting an error as resType is blank for Medtronic now :-(
-			else if (resType.substring(0,5).equals("alarm") ||
-					resType.substring(0,5).equals("error"))
+			else if (resType.length() >= 5 && (resType.substring(0,5).equals("alarm") ||
+					resType.substring(0,5).equals("error")))
 			{
 				// Just store all the other types
 				m_CP_EventType = "Announcement";
 
 				m_CP_Notes += resType;
+			}
+			
+			else
+			{
+				// So we can find out what comes here
+				int i = 0;
+				i++;
 			}
 
 			// Finally, append any notes from Raw data
@@ -1013,7 +1061,10 @@ public class DBResult extends DBResultCore
 		catch (Exception e) 
 		{
 			m_Logger.log(Level.SEVERE, "<"+this.getClass().getName()+"> DBResult " +
-					" Exception caught creating DBResult for Care Portal from Raw data: " + res.toString());
+					" Exception caught creating DBResult for Care Portal from Raw data: " 
+//					+ davidDiagnostics + "  " 
+					+ resType + " "
+					+ res.toString());
 		}
 		finally
 		{
@@ -1455,47 +1506,47 @@ public class DBResult extends DBResultCore
 		return result;
 	}
 
-//	static public void appendToDoc(BasicDBObject doc, String label, String value)
-//	{
-//		if (value.length() > 0)
-//		{
-//			doc.append(label, value);
-//		}
-//	}
-//
-//	static public void appendToDoc(BasicDBObject doc, String label, Double value)
-//	{
-//		if (value != null)
-//		{
-//			doc.append(label, doubleIsInteger(value) ? value.longValue() : value.doubleValue());
-//		}
-//	}
-//
-//	static public void appendToDoc(BasicDBObject doc, String label, int value)
-//	{
-//		doc.append(label, value);
-//	}
-//
-//	static public void appendToDoc(BasicDBObject doc, String label, Date value)
-//	{
-//		if (value != null)
-//		{
-//			// 16 Jun 2016
-//			// Feedback from Mel in Australia that times are shifted
-//			// Realise that I need to convert from local to UTC times!
-//			//			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.S'Z'", Locale.ENGLISH);
-//			//			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH); // Try something different
-//
-//			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-//			//			Date utcValue = new Date(CommonUtils.toUTC(value.getTime(), CommonUtils.locTZ)); 
-//			//			String dVal = format.format(utcValue);
-//
-//			String dVal = format.format(value);
-//
-//			doc.append(label, dVal);
-//		}
-//
-//	}
+	//	static public void appendToDoc(BasicDBObject doc, String label, String value)
+	//	{
+	//		if (value.length() > 0)
+	//		{
+	//			doc.append(label, value);
+	//		}
+	//	}
+	//
+	//	static public void appendToDoc(BasicDBObject doc, String label, Double value)
+	//	{
+	//		if (value != null)
+	//		{
+	//			doc.append(label, doubleIsInteger(value) ? value.longValue() : value.doubleValue());
+	//		}
+	//	}
+	//
+	//	static public void appendToDoc(BasicDBObject doc, String label, int value)
+	//	{
+	//		doc.append(label, value);
+	//	}
+	//
+	//	static public void appendToDoc(BasicDBObject doc, String label, Date value)
+	//	{
+	//		if (value != null)
+	//		{
+	//			// 16 Jun 2016
+	//			// Feedback from Mel in Australia that times are shifted
+	//			// Realise that I need to convert from local to UTC times!
+	//			//			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.S'Z'", Locale.ENGLISH);
+	//			//			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH); // Try something different
+	//
+	//			final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+	//			//			Date utcValue = new Date(CommonUtils.toUTC(value.getTime(), CommonUtils.locTZ)); 
+	//			//			String dVal = format.format(utcValue);
+	//
+	//			String dVal = format.format(value);
+	//
+	//			doc.append(label, dVal);
+	//		}
+	//
+	//	}
 
 	public boolean isValid()
 	{
@@ -1993,30 +2044,30 @@ public class DBResult extends DBResultCore
 		this.m_CP_BasalValue = m_CP_BasalValue;
 	}
 
-//	/**
-//	 * @return the m_ProximityPossibleDuplicate
-//	 */
-//	public synchronized boolean isM_ProximityPossibleDuplicate() 
-//	{
-//		m_ProximityPossibleDuplicate = m_CP_EnteredBy.length() > 0 && m_CP_EnteredBy.contains("-PROXIMITY") ?
-//				true : false;
-//		return m_ProximityPossibleDuplicate;
-//	}
-//
-//	/**
-//	 * @param m_ProximityPossibleDuplicate the m_ProximityPossibleDuplicate to set
-//	 */
-//	public synchronized void setM_ProximityPossibleDuplicate(boolean m_ProximityMatch) {
-//		this.m_ProximityPossibleDuplicate = m_ProximityMatch;
-//
-//		if (m_CP_EnteredBy.length() > 0 &&
-//				!m_CP_EnteredBy.contains("-PROXIMITY"))
-//		{
-//			m_CP_EnteredBy += "-PROXIMITY";
-//		}
-//	}
-//	
-	
+	//	/**
+	//	 * @return the m_ProximityPossibleDuplicate
+	//	 */
+	//	public synchronized boolean isM_ProximityPossibleDuplicate() 
+	//	{
+	//		m_ProximityPossibleDuplicate = m_CP_EnteredBy.length() > 0 && m_CP_EnteredBy.contains("-PROXIMITY") ?
+	//				true : false;
+	//		return m_ProximityPossibleDuplicate;
+	//	}
+	//
+	//	/**
+	//	 * @param m_ProximityPossibleDuplicate the m_ProximityPossibleDuplicate to set
+	//	 */
+	//	public synchronized void setM_ProximityPossibleDuplicate(boolean m_ProximityMatch) {
+	//		this.m_ProximityPossibleDuplicate = m_ProximityMatch;
+	//
+	//		if (m_CP_EnteredBy.length() > 0 &&
+	//				!m_CP_EnteredBy.contains("-PROXIMITY"))
+	//		{
+	//			m_CP_EnteredBy += "-PROXIMITY";
+	//		}
+	//	}
+	//	
+
 	public void setImpactOfProximity()
 	{
 		if (getM_ProximityPossibleDuplicate() == true) //isM_ProximityPossibleDuplicate()
@@ -2036,7 +2087,7 @@ public class DBResult extends DBResultCore
 			}
 		}
 	}
-	
+
 	public void determineWhetherInProximity()
 	{
 		setM_ProximityPossibleDuplicate(m_CP_EnteredBy.length() > 0 && m_CP_EnteredBy.contains("-PROXIMITY") ?
