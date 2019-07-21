@@ -708,6 +708,12 @@ public class CommonUtils
 		}
 		return result;
 	}
+	
+	public static String stripDoubleQuotes(String str)
+	{
+		String result = str.replace("\"", "");
+		return result;
+	}
 
 
 

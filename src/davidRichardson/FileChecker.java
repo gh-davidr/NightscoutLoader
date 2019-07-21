@@ -13,6 +13,7 @@ public class FileChecker
 		OmniPod,
 		RocheSQLExtract,
 		Tandem,
+		CellNovo
 	}
 
 	public static String getFileTypeStr(FileCheckType fct)
@@ -27,6 +28,7 @@ public class FileChecker
 		case OmniPod : result = "OmniPod"; break;
 		case RocheSQLExtract : result = "Roche SQL Extract"; break;
 		case Tandem : result = "Tandem"; break;
+		case CellNovo : result = "CellNovo"; break;
 
 		default : result = "UNKNOWN"; break;
 		}
@@ -60,6 +62,10 @@ public class FileChecker
 			{
 				result = FileChecker.FileCheckType.Tandem;
 			}
+			else if (isCellNovo(filename))
+			{
+				result = FileChecker.FileCheckType.CellNovo;
+			}
 		}
 		else if (filename.contains(".ibf") && isOmniPod(filename))
 		{
@@ -88,6 +94,10 @@ public class FileChecker
 		else if (isTandem(filename))
 		{
 			result = FileChecker.FileCheckType.Tandem;
+		}
+		else if (isCellNovo(filename))
+		{
+			result = FileChecker.FileCheckType.CellNovo;
 		}
 
 		return result;
@@ -120,6 +130,12 @@ public class FileChecker
 	private static boolean isTandem(String fileName)
 	{
 		boolean result = DataLoadTandem.isTandem(fileName);
+		return result;
+	}
+	
+	private static boolean isCellNovo(String fileName)
+	{
+		boolean result = DataLoadCellNovo.isCellNovo(fileName);
 		return result;
 	}
 	

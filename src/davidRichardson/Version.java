@@ -28,8 +28,8 @@ public class Version
 		m_ContactUs  = new String();
 		m_GoogleDriveHelpURI = new String();
 
-		m_Version    = "V3.01";
-		m_Author     = "David Richardson";
+		m_Version    = "V3.3";
+		m_Author     = "David Richardson (+ other contributors)";
 		m_ContactUs  = "NightscoutLoader@gmail.com";
 		//		m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_cEZMbmk4TTlZRUk";
 		
@@ -38,7 +38,9 @@ public class Version
 		// m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_RnZUTmxleFkyWlU"; // V2.6
 		// m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_d0tpQmtGZXptT28"; // V2.7
 		// m_GoogleDriveHelpURI = "https://drive.google.com/open?id=1FjCzKM4G8xWrChXico9uvblHQhAft4G-"; // V3.0
-		m_GoogleDriveHelpURI = "https://1drv.ms/b/s!At9qWUeNOZ5nbs-PYVnZ8ziZ8ew";  // V3.0 OneDrive
+		// m_GoogleDriveHelpURI = "https://1drv.ms/b/s!At9qWUeNOZ5nbs-PYVnZ8ziZ8ew";  // V3.0 OneDrive
+
+		m_GoogleDriveHelpURI = "https://1drv.ms/b/s!At9qWUeNOZ5nedye6_g5eSSAqlE";  // V3.3 OneDrive logged as Dyyyd@kxxxxxxe.org
 		
 		m_AboutText += "Nightscout Loader Version" + m_Version + "\r\n\r\n";
 		m_AboutText += "Nightscout Loader\r\n\r\nThree main functions offered:\r\n\r\n";
@@ -119,9 +121,20 @@ public class Version
 		m_AboutText += "           Fixed connection issue for Autotune Server that broke in refactoring prior to V2.7\r\n";
 		m_AboutText += "           Added convenience function to drive an autotune run from a Diasend file (sets basal rates and dates)\r\n";
 		m_AboutText += "           Also some minor improvements to thread management\r\n";
-		m_AboutText += "3.01       Minor revision - bug fix to Analyzer which broke due to a change in 3.0\r\n";
+		m_AboutText += " 3.01      Minor revision - bug fix to Analyzer which broke due to a change in 3.0\r\n";
+		m_AboutText += " 3.02      Couple of patch fixes by skuzzer (Adam Wale) - \r\n";
+		m_AboutText += "               Allow upload of Diasend file if any tab has data\r\n";
+		m_AboutText += "               Allow Diasend files with only CGM data present\r\n";
+		m_AboutText += " 3.1       Major Pull Request (PR10) contribution by kskandispersonal - \r\n";
+		m_AboutText += "               Correct interpretation of combo boluses from Diasend\r\n";
+		m_AboutText += "               Improved temporary basal inferrence from Diasend\r\n";
+		m_AboutText += " 3.2       Included support for CellNovo (previously added as custom patch to 3.02 for one user) - \r\n";
+		m_AboutText += " 3.3       Major Pull Request (PR10) contribution by kskandispersonal - \r\n";
+		m_AboutText += "               Address Diasend change to export file\r\n";
+		m_AboutText += "               Now support alternate Medtronic Carelink file format as reported May 2019\r\n";
+		
 		m_AboutText += "\r\n\r\n";
-		m_AboutText += "Written by " + m_Author + " - January 2016 through January 2018\r\n";
+		m_AboutText += "Written by " + m_Author + " - January 2016 through July 2019\r\n";
 	}
 
 	/**

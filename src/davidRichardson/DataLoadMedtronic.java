@@ -10,12 +10,20 @@ import java.util.logging.Logger;
 public class DataLoadMedtronic extends DataLoadCSVFile
 {
 	private static final Logger m_Logger = Logger.getLogger(MyLogger.class.getName());
-	private static final String m_MedtronicSplitBy = ",";
+	private static final String m_MedtronicSplitBy = "[,;]";
+	
+	private static Boolean      m_OldFileFormat = false;
+	private static Boolean      m_NewFileFormat = false;
+	
 
 	@Override
 	protected DBResult makeDBResult(String[] res) 
 	{
-		DBResultMedtronic result = new DBResultMedtronic(res);
+		DBResultMedtronic result = null;
+		
+		if (m_OldFileFormat == true) result = result == null ? new DBResultMedtronicOld(res) : result;
+		if (m_NewFileFormat == true) result = result == null ? new DBResultMedtronicNew(res) : result;
+		
 		return result;
 	}
 
@@ -34,9 +42,20 @@ public class DataLoadMedtronic extends DataLoadCSVFile
 	public static boolean isMedtronic(String fileName)
 	{
 		boolean result = false;
+		
+		result = (result == true ? result : isMedtronicOld(fileName));
+		result = (result == true ? result : isMedtronicNew(fileName));
+		
+		return result;
+	}
+
+	
+	public static boolean isMedtronicOld(String fileName)
+	{
+		boolean result = false;
 		BufferedReader br = null;
 		String line = "";
-		String cvsSplitBy = ",";
+		String cvsSplitBy = "[,;]";
 
 		// Expected Format
 		boolean ln2Col1PatientInfo = false;
@@ -136,9 +155,80 @@ public class DataLoadMedtronic extends DataLoadCSVFile
 			}
 		}
 
+		m_OldFileFormat = result;
 		return result;
 	}
 
+
+	public static boolean isMedtronicNew(String fileName)
+	{
+		boolean result = false;
+		BufferedReader br = null;
+		String line = "";
+		String cvsSplitBy = "[,;]";
+
+		// Expected Format
+		boolean ln1Col1PatientInfo = false;
+		boolean ln6Col1Device      = false;
+		boolean ln7Index           = false;
+		
+		int ln = 0;
+		int maxLines   = 10;
+		int index      = 10;  // for 640 & +2 for Veo
+		int meterpump1 = 6;   // Increment index if both meter and pump seen
+		int meterpump2 = 7;   // Increment for each line that Meter is listed
+
+		try 
+		{
+			br = new BufferedReader(new FileReader(fileName));
+			while ((ln <= maxLines) && (line = br.readLine()) != null) 
+			{
+				ln++;
+				// use comma as separator
+				String[] rs = line.split(cvsSplitBy);
+
+				if (ln == 1)
+					ln1Col1PatientInfo  = (rs.length > 0 && rs[0].equals("Last Name")) ? true : false;
+				if (ln == 6)
+					ln6Col1Device       = (rs.length > 0 && rs[0].equals("-------"))  ? true : false;
+				if (ln == 7)
+					ln7Index            = (rs.length > 0 && rs[0].equals("Index"))  ? true : false;
+
+			}
+
+			result = (ln1Col1PatientInfo == true && ln6Col1Device == true && ln7Index == true ) ? true : false;
+
+		} 
+		catch (FileNotFoundException e) 
+		{
+			m_Logger.log(Level.SEVERE, "<DataLoadMedtronic>" + "isMedtronic: FileNotFoundException. File " + fileName + " Error " + e.getMessage());
+
+			e.printStackTrace();
+		} 
+		catch (IOException e) 
+		{
+			m_Logger.log(Level.SEVERE, "<DataLoadMedtronic>" + "isMedtronic: IOException. File " + fileName + " Error " + e.getMessage());
+			e.printStackTrace();
+		} 
+		finally 
+		{
+			if (br != null) 
+			{
+				try 
+				{
+					br.close();
+				} 
+				catch (IOException e) 
+				{
+					m_Logger.log(Level.SEVERE, "<DataLoadMedtronic>" + "isMedtronic: IOException closing file. File " + fileName + " Error " + e.getMessage());
+					e.printStackTrace();
+				}
+			}
+		}
+
+		m_NewFileFormat = result;
+		return result;
+	}
 
 }
 

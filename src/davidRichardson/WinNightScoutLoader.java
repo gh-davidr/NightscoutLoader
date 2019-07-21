@@ -147,9 +147,10 @@ public class WinNightScoutLoader extends JFrame {
 		OmniPod,
 		RocheSQLExtract,
 		Tandem,
+		CellNovo,
 	};
 
-	private String[] m_SupportedMeters = {"Roche Combo", "Medtronic", "Diasend", "OmniPod", "Roche SQL Extract", "Tandem"};
+	private String[] m_SupportedMeters = {"Roche Combo", "Medtronic", "Diasend", "OmniPod", "Roche SQL Extract", "Tandem", "Cell Novo"};
 	//private String[] m_SupportedMeters = {"Roche Combo", "Medtronic", "Diasend", "OmniPod", "Roche SQL Extract", };
 	//	private String[] m_SupportedMeters = {"Roche Combo", "Medtronic"};
 	private JComboBox<String> m_ComboBox;
@@ -247,6 +248,10 @@ public class WinNightScoutLoader extends JFrame {
 		else if (meter.equals("Tandem"))
 		{
 			result = SupportedMeters.Tandem;
+		}
+		else if (meter.equals("Cell Novo"))
+		{
+			result = SupportedMeters.CellNovo;
 		}
 
 		return result;
@@ -415,7 +420,8 @@ public class WinNightScoutLoader extends JFrame {
 				{
 					filter = new FileNameExtensionFilter("XLS Files", "xls");
 				}
-				else if (meter == SupportedMeters.Medtronic || meter == SupportedMeters.Tandem || meter == SupportedMeters.RocheSQLExtract)
+				else if (meter == SupportedMeters.Medtronic || meter == SupportedMeters.Tandem 
+						|| meter == SupportedMeters.RocheSQLExtract || meter == SupportedMeters.CellNovo)
 				{
 					filter = new FileNameExtensionFilter("CSV Files", "csv");
 				}
@@ -472,6 +478,10 @@ public class WinNightScoutLoader extends JFrame {
 					else if (meter == SupportedMeters.Tandem)
 					{
 						PrefsNightScoutLoader.getInstance().setM_TandemMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
+					}
+					else if (meter == SupportedMeters.CellNovo)
+					{
+						PrefsNightScoutLoader.getInstance().setM_CellNovoMeterPumpResultFilePath(chooser.getSelectedFile().getAbsolutePath());
 					}
 
 					//					// Also set it in preferences too
@@ -1484,6 +1494,41 @@ public class WinNightScoutLoader extends JFrame {
 				});	
 			}
 
+			else if (fileType == FileChecker.FileCheckType.CellNovo)
+			{
+				m_NightScoutLoaderCore.threadLoadCellNovoMeterPump(m_FileNameTxtFld.getText(),
+						new ThreadDataLoad.DataLoadCompleteHandler(null) 
+				{
+					public void exceptionRaised(String message) { }
+					public void dataLoadComplete(Object obj, String message) 
+					{
+						// Refresh grid if meter/pump load only
+						if (m_NightScoutLoaderCore.isM_MeterPumpLoadOnly() == true)
+						{
+							m_MongoResults = m_NightScoutLoaderCore.getM_DataLoadNightScout().getResultsFromDB();
+							m_SaveDiffMessage = message;
+
+							EventQueue.invokeLater(new 
+									Runnable()
+							{ 
+								public void run()
+								{ 
+									// 1 kick off background analysis check
+									// 2 refresh grid
+									// 3 Generate a message
+									// Do in this order since grid refresh resets the m_MeterPumpLoadOnly flag
+									doBackgroundAnalysis();										
+									updateGrid();
+									JOptionPane.showMessageDialog(null, m_SaveDiffMessage);									
+								}
+							});
+						}
+
+					}
+				});	
+			}
+
+			
 		}
 		catch (Exception e)
 		{
@@ -1552,7 +1597,9 @@ public class WinNightScoutLoader extends JFrame {
 					(fileType == FileChecker.FileCheckType.RocheSQLExtract &&
 					desiredFileType == FileChecker.FileCheckType.RocheSQLExtract) ||
 					(fileType == FileChecker.FileCheckType.Tandem &&
-					desiredFileType == FileChecker.FileCheckType.Tandem) )
+					desiredFileType == FileChecker.FileCheckType.Tandem) ||
+					(fileType == FileChecker.FileCheckType.CellNovo &&
+					desiredFileType == FileChecker.FileCheckType.CellNovo) )
 			{
 				doThreadLoadFile(file, fileType);
 			}
@@ -1632,6 +1679,10 @@ public class WinNightScoutLoader extends JFrame {
 		else if (meter == SupportedMeters.Tandem)
 		{
 			result = offerToLoadCorrectFileFormat(m_FileNameTxtFld.getText(), FileChecker.FileCheckType.Tandem);
+		}
+		else if (meter == SupportedMeters.CellNovo)
+		{
+			result = offerToLoadCorrectFileFormat(m_FileNameTxtFld.getText(), FileChecker.FileCheckType.CellNovo);
 		}
 		else if (meter == SupportedMeters.RocheSQLExtract)
 		{
@@ -2739,6 +2790,12 @@ public class WinNightScoutLoader extends JFrame {
 				// Set the text filename if Tandem is used.
 				// Initialise text field from preferences
 				m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_TandemMeterPumpResultFilePath());			
+			}
+			else if (meter == SupportedMeters.CellNovo)
+			{
+				// Set the text filename if Tandem is used.
+				// Initialise text field from preferences
+				m_FileNameTxtFld.setText(PrefsNightScoutLoader.getInstance().getM_CellNovoMeterPumpResultFilePath());			
 			}
 
 			// If any of the file based loads are selected, then disable the date ranges & enable the file fields
