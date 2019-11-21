@@ -48,7 +48,7 @@ public class DBResultEntryDiasend extends DBResultEntry
 		if (m_CGMIndexesInitialized == false)
 		{
 			int maxColumns = row.getPhysicalNumberOfCells();
-			if (maxColumns == m_CGMFieldNames.length)
+			if (maxColumns >= m_CGMFieldNames.length)
 			{
 				int c = 0;
 
