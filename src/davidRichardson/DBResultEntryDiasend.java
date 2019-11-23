@@ -43,32 +43,34 @@ public class DBResultEntryDiasend extends DBResultEntry
 		loadRawCGM(row);
 	}
 	
-	public static void initializeCGMHeaders(HSSFRow row)
+	// Checks whether row contains CGM headers. Returns true if it does, and fills variables with the index
+	public static boolean initializeCGMHeaders(HSSFRow row)
 	{
-		if (m_CGMIndexesInitialized == false)
+		m_CGMTimeIndex = -1;
+		m_CGMBGIndex = -1;
+		int maxColumns = row.getPhysicalNumberOfCells();
+		if(maxColumns >= m_CGMFieldNames.length)
 		{
-			int maxColumns = row.getPhysicalNumberOfCells();
-			if (maxColumns == m_CGMFieldNames.length)
+			int c;
+			for (c=0; c<m_CGMFieldNames.length; c++) // iterate on column headers
 			{
-				int c = 0;
-
-				for (c=0; c<m_CGMFieldNames.length; c++)
+				String cell = row.getCell(c).getStringCellValue();
+				if (m_CGMFieldNames[c].contains(cell)) // match cells against expected column header strings
 				{
-					String cell = row.getCell(c).getStringCellValue();
-					if (m_CGMFieldNames[c].contains(cell))
-						//					if (cell.equals(m_CGMFieldNames[c]))
+					switch (c)
 					{
-						switch (c)
-						{
-						case 0 : m_CGMTimeIndex           = c; break;
-						case 1 : m_CGMBGIndex             = c; break;
-						default :                                  break;
-						}
+					case 0 : m_CGMTimeIndex = c; break;
+					case 1 : m_CGMBGIndex = c; break;
 					}
 				}
-				m_CGMIndexesInitialized = true;
 			}
 		}
+		if((m_CGMTimeIndex != -1) && (m_CGMBGIndex != -1))
+		{
+			m_Logger.log(Level.FINE, "<DBResultEntryDiasend> " + "Identified columns: CGM Time=" + (m_CGMTimeIndex+1) + ", CGM BG=" + (m_CGMBGIndex+1));
+			return true;
+		}
+		return false;
 	}
 
 	private void loadRawCGM(HSSFRow row)

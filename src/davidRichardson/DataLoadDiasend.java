@@ -43,6 +43,8 @@ public class DataLoadDiasend extends DataLoadBase
 	
 	final static int m_CGMRowDataHeaders = 2;
 	final static int m_CGMRowDataStart   = 3;
+	// final static int m_CGMRowDataHeaders = 5;
+	// final static int m_CGMRowDataStart   = 6;
 		
 	final static String m_SettingsBasalStartString      = "Basal profiles";
 	final static String m_SettingsIntervalString        = "Interval";
@@ -537,6 +539,7 @@ public class DataLoadDiasend extends DataLoadBase
 			int tmp = 0;
 
 			// This trick ensures that we get the data properly even if it doesn't start from first few rows
+			// @Dune-jr 2019-11-23: not sure whether that's needed anymore
 			for(int i = 0; i < 10 || i < rows; i++) 
 			{
 				row = sheet.getRow(i);
@@ -547,20 +550,19 @@ public class DataLoadDiasend extends DataLoadBase
 				}
 			}
 
+			boolean headersInitialized = false;
 			for(int r = 0; r < rows; r++) 
 			{
 				row = sheet.getRow(r);
-
-				if (r+1 == m_CGMRowDataHeaders)
-				{
-					DBResultEntryDiasend.initializeCGMHeaders(row);
-				}
-				else if (r+1 >= m_CGMRowDataStart)
+				if(row == null)
+					continue;
+				if (!headersInitialized)
+					headersInitialized = DBResultEntryDiasend.initializeCGMHeaders(row);
+				else
 				{
 					DBResultEntryDiasend res = new DBResultEntryDiasend(row);
-						rawEntryResultsFromDB.add(res);
-//						m_Logger.log(Level.FINEST, "<"+this.getClass().getName()+">" + "Result added for " + res.toString());
-						m_Logger.log(Level.FINEST, "<DataLoadDiasend>" + "Result added for " + res.toString());
+					rawEntryResultsFromDB.add(res);
+					m_Logger.log(Level.FINEST, "<"+this.getClass().getName()+">" + "Result added for " + res.toString());
 				}
 			}
 		} 
