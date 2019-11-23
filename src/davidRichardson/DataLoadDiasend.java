@@ -40,11 +40,6 @@ public class DataLoadDiasend extends DataLoadBase
 
 	final static int m_InsulinRowDataHeaders = 1;
 	final static int m_InsulinRowDataStart   = 2;
-	
-	final static int m_CGMRowDataHeaders = 2;
-	final static int m_CGMRowDataStart   = 3;
-	// final static int m_CGMRowDataHeaders = 5;
-	// final static int m_CGMRowDataStart   = 6;
 		
 	final static String m_SettingsBasalStartString      = "Basal profiles";
 	final static String m_SettingsIntervalString        = "Interval";
