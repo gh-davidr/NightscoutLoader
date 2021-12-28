@@ -1,8 +1,4 @@
-<<<<<<< HEAD:src/main/java/entity/DBResultDiasend.java
 package entity;
-=======
-package davidRichardson;
->>>>>>> master:src/davidRichardson/DBResultDiasend.java
 
 import java.util.Date;
 import java.util.Locale;
@@ -18,12 +14,9 @@ import java.text.SimpleDateFormat;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 
-<<<<<<< HEAD:src/main/java/entity/DBResultDiasend.java
 import control.MyLogger;
 import loader.DataLoadDiasend;
 
-=======
->>>>>>> master:src/davidRichardson/DBResultDiasend.java
 
 public class DBResultDiasend extends DBResult 
 {
@@ -45,11 +38,7 @@ public class DBResultDiasend extends DBResult
 				"mmol/L mg/dl", // We can see either string come through
 		};
 	static private int m_GlucoseTimeIndex = 0;
-<<<<<<< HEAD:src/main/java/entity/DBResultDiasend.java
 	static private int m_GlucoseBGIndex = 1;
-=======
-	static private int m_GlucoseBGIndex = 0;
->>>>>>> master:src/davidRichardson/DBResultDiasend.java
 
 	// Collection of items to handle the Insulin tab
 	static private boolean m_InsulinIndexesInitialized = false; 
@@ -66,10 +55,7 @@ public class DBResultDiasend extends DBResult
 				"Notes",
 				"Total daily dose",
 				"Total daily basal",
-<<<<<<< HEAD:src/main/java/entity/DBResultDiasend.java
 				"Serial number",
-=======
->>>>>>> master:src/davidRichardson/DBResultDiasend.java
 		};
 	static private int m_InsulinTimeIndex = 0;
 	static private int m_InsulinBasalAmountIndex = 0;
@@ -232,20 +218,12 @@ public class DBResultDiasend extends DBResult
 			// owned by the POI Excel reader.
 			// Therefore clone at the lowest level here.
 			//result = cell.getNumericCellValue();
-<<<<<<< HEAD:src/main/java/entity/DBResultDiasend.java
 			result = Double.valueOf(cell.getNumericCellValue());
-=======
-			result = new Double(cell.getNumericCellValue());
->>>>>>> master:src/davidRichardson/DBResultDiasend.java
 		}
 		else
 		{
 			// Ensure result gets allocated even if cell is blank
-<<<<<<< HEAD:src/main/java/entity/DBResultDiasend.java
 			result = Double.valueOf(0);
-=======
-			result = new Double(0);
->>>>>>> master:src/davidRichardson/DBResultDiasend.java
 		}
 		return result;
 	}
@@ -354,17 +332,12 @@ public class DBResultDiasend extends DBResult
 					if (bolImmAmtDbl != null)
 					{
 						this.m_Notes += "Immediate Volume = " + bolImmAmtDbl.toString();
-<<<<<<< HEAD:src/main/java/entity/DBResultDiasend.java
 				//		this.m_Result = bolImmAmtDbl.toString();//CP sets insulin to Combo's "immediate"
 						this.m_Result = bolAmtDbl.toString();  // 28 Oct 2021 now just use the regular bolus volume as that's far more consistent
-=======
-						this.m_Result = bolImmAmtDbl.toString();//CP sets insulin to Combo's "immediate"
->>>>>>> master:src/davidRichardson/DBResultDiasend.java
 					}
 					// Add the amount of extended bolus to notes
 					if (bolExtAmtDbl != null)
 					{
-<<<<<<< HEAD:src/main/java/entity/DBResultDiasend.java
 						// 23 Dec 2021
 						// If this is just a square wave then set the extended amount since it comes in as zero
 						if (bolExtAmtDbl.equals(0.0))
@@ -372,8 +345,6 @@ public class DBResultDiasend extends DBResult
 							bolExtAmtDbl = bolAmtDbl;
 						}
 						
-=======
->>>>>>> master:src/davidRichardson/DBResultDiasend.java
 						this.m_ExtendedAmount = bolExtAmtDbl.toString();
 						this.m_Notes += (this.m_Notes.length() > 0 ? " " : "") + "Extended Volume = " + bolExtAmtDbl.toString();
 					}
