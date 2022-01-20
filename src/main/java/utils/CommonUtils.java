@@ -59,6 +59,7 @@ public class CommonUtils
 	private static String m_RegexpDatePatternArray[][] = {
 			{"^([0-9]){4,4}-([0-9]){2,2}-([0-9]){2,2}T([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}.([0-9]){3,3}Z$",  "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"},
 			{"^([0-9]){4,4}-([0-9]){2,2}-([0-9]){2,2}T([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}.([0-9]){2,2}Z$",  "yyyy-MM-dd'T'HH:mm:ss.SS'Z'"},
+			{"^([0-9]){4,4}-([0-9]){2,2}-([0-9]){2,2}T([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}.([0-9]){1,1}Z$",  "yyyy-MM-dd'T'HH:mm:ss.S'Z'"},
 			{"^([0-9]){2,2}/([a-zA-Z]){3,3}/([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",             "dd/MMM/yyyy HH:mm:ss"},
 			{"^([0-9]){2,2}-([a-zA-Z]){3,3}-([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",             "dd-MMM-yyyy HH:mm:ss"},
 			{"^([0-9]){2,2}/([0-9]){2,2}/([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",                "dd/MM/yyyy HH:mm:ss"},
@@ -286,6 +287,18 @@ public class CommonUtils
 		Calendar c = Calendar.getInstance();
 		c.setTime(dt);
 		c.add(Calendar.DATE, numDays); // Add one day
+		result = c.getTime();
+
+		return result;
+	}
+
+	public static Date addMinsToDate(Date dt, int numMins)
+	{
+		Date result = new Date(0);
+
+		Calendar c = Calendar.getInstance();
+		c.setTime(dt);
+		c.add(Calendar.MINUTE, numMins); // Add one day
 		result = c.getTime();
 
 		return result;

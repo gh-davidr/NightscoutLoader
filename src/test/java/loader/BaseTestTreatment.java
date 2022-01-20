@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,22 +17,41 @@ import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
-
+import control.MyLogger;
 import control.PrefsNightScoutLoader;
 import entity.DBResult;
+import entity.DBResultEntry;
 
 @RunWith(MockitoJUnitRunner.class)
 public abstract class BaseTestTreatment {
 
 	protected static Double DOUBLE_THRESHOLD = 0.001;
 
+	public BaseTestTreatment() {
+		try {
+			MyLogger.setup(true);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	protected abstract Object[][]       getExpectedTestResults();
 	protected abstract String           getResourceFileName();
 	protected abstract DataLoadFile     getDataLoadFile();
 	protected abstract SimpleDateFormat getSimpleDateFormat();
 	protected abstract String           getDateFormat();
 
-
+	public ArrayList <DBResult>         getDBResultArrayList()
+	{
+		return getDataLoadFile().getResultTreatments();
+	}
+	
+	public ArrayList <DBResultEntry>    getDBResultEntryArrayList()
+	{
+		return getDataLoadFile().getRawEntryResultsFromDB();
+	}
+	
 	public void performTestLoad()
 	{
 		doDataLoad();
@@ -53,12 +73,6 @@ public abstract class BaseTestTreatment {
 		// Disable inferring any temp basals
 		PrefsNightScoutLoader.getInstance().setM_InferTempBasals(false);
 
-//		long maxDiffBetweenSameMealEvent  = 
-//				// Get Preference Value now
-//				PrefsNightScoutLoader.getInstance().getM_MaxMinsBetweenSameMealEvent();
-//		long maxDiffBetweenSameCorrection = 
-//				// Get Preference Value now
-//				PrefsNightScoutLoader.getInstance().getM_MaxMinsBetweenSameCorrectionEvent();
 
 		URL url = this.getClass().getClassLoader().getResource(getResourceFileName());
 		Assertions.assertTrue(url != null);
@@ -88,7 +102,6 @@ public abstract class BaseTestTreatment {
 		// are filtered out.
 
 		DataLoadFile dataLoadDiasend = getDataLoadFile();
-//		for (DBResult res : dataLoadDiasend.getResultTreatments())
 		HashMap<Long, DBResult> map = dataLoadDiasend.getResultTreatmentHashMap();
         Set<Map.Entry<Long, DBResult>> entrySet = map.entrySet();
 
@@ -125,8 +138,6 @@ public abstract class BaseTestTreatment {
 		return result;
 	}
 
-
-	
 	private void assertionTests(DataLoadFile dataLoadDiasend) throws ParseException
 	{
 		Assertions.assertTrue(dataLoadDiasend != null);
@@ -146,12 +157,6 @@ public abstract class BaseTestTreatment {
 
 
 			Date  date = getSimpleDateFormat().parse(dateString);
-
-			// Better way of date parsing Java 8 -- but need to use this technique in loader
-			//			DateTimeFormatter formatter = DateTimeFormatter.ofPattern(getDateFormat());
-			//			LocalDateTime parseDate = LocalDateTime.parse(dateString, formatter);
-			//			long ldtEpoch = parseDate.toEpochSecond(ZoneOffset.UTC);
-
 			DBResult result = dataLoadDiasend.getResultTreatmentHashMap().get(date.getTime());
 			//			DBResult result = dataLoadDiasend.getResultTreatmentHashMap().get(ldtEpoch * 1000);
 			if (result != null)
@@ -188,7 +193,6 @@ public abstract class BaseTestTreatment {
 				// Only allow dupes to be not found
 				Assertions.assertTrue(mergedBoolean);
 			}
-			//			System.out.println("Checked row " + c + (result == null ? " Result Treatment not located for " + dateString  : ""));
 		}
 
 	}
