@@ -243,6 +243,70 @@ public class DBResult extends DBResultCore
 		"","","","","",
 		"","","","",
 		"", }};
+	
+	
+	// For JUnit Testing
+	public static DBResult cloneDBResult(DBResult res, String timeString)
+	{
+		DBResult result = new DBResult(); 
+		
+		try {
+			result.m_Time = CommonUtils.convertNSZDateString(timeString);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			result.m_Time = new Date(0);
+		}
+		result.m_EpochMillies = result.m_Time.getTime();
+		
+		result.m_Year              = res.m_Year;             
+		result.m_Month             = res.m_Month;           
+		result.m_Day               = res.m_Day;            
+		result.m_DayName           = res.m_DayName;       
+//		result.m_Time              = res.m_Time;           
+		result.m_TimeSlot          = res.m_TimeSlot;       
+		result.m_Result            = res.m_Result;         
+		result.m_ExtendedAmount    = res.m_ExtendedAmount; 
+		result.m_ResultType        = res.m_ResultType;     
+		result.m_MealType          = res.m_MealType;       
+		result.m_Duration          = res.m_Duration;       
+		result.m_Notes             = res.m_Notes;          
+		result.m_Enteredinsulin    = res.m_Enteredinsulin; 
+
+		// Treatment Data for Care Portal
+		result.m_ID                = res.m_ID;              
+		result.m_CP_EventType      = res.m_CP_EventType;    
+		result.m_CP_Glucose        = res.m_CP_Glucose;      
+		result.m_CP_Carbs          = res.m_CP_Carbs;        
+		result.m_CP_Insulin        = res.m_CP_Insulin;      
+		result.m_CP_CarbsTime      = res.m_CP_CarbsTime;    
+		result.m_CP_Duration       = res.m_CP_Duration;     
+		result.m_CP_Percent        = res.m_CP_Percent;      
+		result.m_CP_BasalValue     = res.m_CP_BasalValue;   
+		result.m_CP_Notes          = res.m_CP_Notes;        
+		result.m_CP_EnteredBy      = res.m_CP_EnteredBy;    
+		result.m_CP_EventTime      = timeString; // res.m_CP_EventTime;    
+		result.m_CP_SplitNow       = res.m_CP_SplitNow;	    
+		result.m_CP_SplitExt       = res.m_CP_SplitExt;	    
+		result.m_CP_Enteredinsulin = res.m_CP_Enteredinsulin;
+		result.m_CP_Relative       = res.m_CP_Relative;	    
+		// Useful value for comparator
+//		result.m_EpochMillies      = res.m_EpochMillies;
+		result.m_DataSource        = res.m_DataSource;   
+
+		// Derived fields useful for display
+		result.m_TreatmentDayName  = res.m_TreatmentDayName; 
+		result.m_TreatmentTime     = res.m_TreatmentTime;    
+		result.m_TreatmentDate     = res.m_TreatmentDate;   
+
+		// Flags to keep track of what we've seen
+		result.m_BG                = res.m_BG;          
+		result.m_Carb              = res.m_Carb;        
+		result.m_Ins               = res.m_Ins;         
+		result.m_Corr              = res.m_Corr;
+		result.m_TmpBasal          = res.m_TmpBasal;
+
+		return result;
+	}
 
 	// Work out which time the result falls into
 	public TimeSlot getDBResultTimeSlot()

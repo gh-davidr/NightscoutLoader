@@ -224,7 +224,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 		}
 		else
 		{
-			m_CountMeterCGMEntriesLoaded = m_MeterArrayListDBResultEntries.size();
+			m_CountMeterCGMEntriesLoaded = m_MeterArrayListDBResultEntries == null ? 0 : m_MeterArrayListDBResultEntries.size();
 		}
 
 		updateAuditHistory();
@@ -458,19 +458,19 @@ public class ThreadDetermineSaveDifferences implements Runnable
 		
 		// All treatment results from Meter/Pump
 //		m_MeterArrayListDBResultsSet.addAll(m_MeterLoadThread.getM_DataLoader().getResultsTreatments());
-		m_MeterArrayListDBResultsSet.addAll(m_MeterArrayListDBResults);
+		if (m_MeterArrayListDBResults != null) m_MeterArrayListDBResultsSet.addAll(m_MeterArrayListDBResults);
 		
 		// All treatment results from NightScout
 //		m_NightScoutArrayListDBResultsSet.addAll(m_NightscoutLoadThread.getM_DataLoader().getResultsTreatments());	
-		m_NightScoutArrayListDBResultsSet.addAll(m_NightScoutArrayListDBResults);	
+		if (m_NightScoutArrayListDBResults != null) m_NightScoutArrayListDBResultsSet.addAll(m_NightScoutArrayListDBResults);	
 		
 		// All entries (cgm) results from Meter/Pump
 //		m_MeterArrayListDBResultEntriesSet.addAll(m_MeterLoadThread.getM_DataLoader().getRawEntryResultsFromDB());
-		m_MeterArrayListDBResultEntriesSet.addAll(m_MeterArrayListDBResultEntries);
+		if (m_MeterArrayListDBResultEntries != null) m_MeterArrayListDBResultEntriesSet.addAll(m_MeterArrayListDBResultEntries);
 		
 		// All entries (cgm) results from NightScout
 //		m_NightScoutArrayListDBResultEntriesSet.addAll(m_NightscoutEntriesLoadThread.getM_DataLoader().getRawEntryResultsFromDB());
-		m_NightScoutArrayListDBResultEntriesSet.addAll(m_NightScoutArrayListDBResultEntries);		
+		if (m_NightScoutArrayListDBResultEntries != null) m_NightScoutArrayListDBResultEntriesSet.addAll(m_NightScoutArrayListDBResultEntries);		
 	}
 	
 	public void determineDifferences()
@@ -681,7 +681,8 @@ public class ThreadDetermineSaveDifferences implements Runnable
 
 	}
 
-	private void updateAuditHistory()
+	// Was (& should be) private, but made public so we can mock for Junit testing
+	public void updateAuditHistory()
 	{
 		// Need to know all parameters to create an AuditLog
 		// Then use AuditHistory to store result
@@ -701,7 +702,8 @@ public class ThreadDetermineSaveDifferences implements Runnable
 		}
 	}
 
-	private void loadAuditHistory()
+	// Was (& should be) private, but made public so we can mock for Junit testing
+	public void loadAuditHistory()
 	{
 		try 
 		{
@@ -987,4 +989,188 @@ public class ThreadDetermineSaveDifferences implements Runnable
 	public void setM_LoadRunning(Boolean m_LoadRunning) {
 		this.m_LoadRunning = m_LoadRunning;
 	}
+
+	/**
+	 * @return the mLogger
+	 */
+	public static synchronized Logger getmLogger() {
+		return m_Logger;
+	}
+
+	/**
+	 * @return the m_LoadThread
+	 */
+	public synchronized Thread getM_LoadThread() {
+		return m_LoadThread;
+	}
+
+	/**
+	 * @return the m_NightscoutLoadThread
+	 */
+	public synchronized ThreadDataLoad getM_NightscoutLoadThread() {
+		return m_NightscoutLoadThread;
+	}
+
+	/**
+	 * @return the m_NightscoutEntriesLoadThread
+	 */
+	public synchronized ThreadDataLoad getM_NightscoutEntriesLoadThread() {
+		return m_NightscoutEntriesLoadThread;
+	}
+
+	/**
+	 * @return the m_MeterLoadThread
+	 */
+	public synchronized ThreadDataLoad getM_MeterLoadThread() {
+		return m_MeterLoadThread;
+	}
+
+	/**
+	 * @return the m_DeviceUsed
+	 */
+	public synchronized String getM_DeviceUsed() {
+		return m_DeviceUsed;
+	}
+
+	/**
+	 * @return the m_FileName
+	 */
+	public synchronized String getM_FileName() {
+		return m_FileName;
+	}
+
+	/**
+	 * @return the m_DateRange
+	 */
+	public synchronized String getM_DateRange() {
+		return m_DateRange;
+	}
+
+	/**
+	 * @return the m_CompleteHandler
+	 */
+	public synchronized DataLoadCompleteHander getM_CompleteHandler() {
+		return m_CompleteHandler;
+	}
+
+	/**
+	 * @return the m_DataLoadNightScout
+	 */
+	public synchronized DataLoadNightScoutTreatments getM_DataLoadNightScout() {
+		return m_DataLoadNightScout;
+	}
+
+	/**
+	 * @return the m_MeterArrayListDBResults
+	 */
+	public synchronized ArrayList<DBResult> getM_MeterArrayListDBResults() {
+		return m_MeterArrayListDBResults;
+	}
+
+	/**
+	 * @return the m_NightScoutArrayListDBResults
+	 */
+	public synchronized ArrayList<DBResult> getM_NightScoutArrayListDBResults() {
+		return m_NightScoutArrayListDBResults;
+	}
+
+	/**
+	 * @return the m_MeterArrayListDBResultEntries
+	 */
+	public synchronized ArrayList<DBResultEntry> getM_MeterArrayListDBResultEntries() {
+		return m_MeterArrayListDBResultEntries;
+	}
+
+	/**
+	 * @return the m_NightScoutArrayListDBResultEntries
+	 */
+	public synchronized ArrayList<DBResultEntry> getM_NightScoutArrayListDBResultEntries() {
+		return m_NightScoutArrayListDBResultEntries;
+	}
+
+	/**
+	 * @return the m_MeterArrayListDBResultsSet
+	 */
+	public synchronized Set<DBResult> getM_MeterArrayListDBResultsSet() {
+		return m_MeterArrayListDBResultsSet;
+	}
+
+	/**
+	 * @return the m_MeterArrayListProximityDBResultsSet
+	 */
+	public synchronized Set<DBResult> getM_MeterArrayListProximityDBResultsSet() {
+		return m_MeterArrayListProximityDBResultsSet;
+	}
+
+	/**
+	 * @return the m_ExistingNightScoutProximityDBResultsSet
+	 */
+	public synchronized Set<DBResult> getM_ExistingNightScoutProximityDBResultsSet() {
+		return m_ExistingNightScoutProximityDBResultsSet;
+	}
+
+	/**
+	 * @return the m_NightScoutArrayListDBResultsSet
+	 */
+	public synchronized Set<DBResult> getM_NightScoutArrayListDBResultsSet() {
+		return m_NightScoutArrayListDBResultsSet;
+	}
+
+	/**
+	 * @return the m_MeterArrayListDBResultEntriesSet
+	 */
+	public synchronized Set<DBResultEntry> getM_MeterArrayListDBResultEntriesSet() {
+		return m_MeterArrayListDBResultEntriesSet;
+	}
+
+	/**
+	 * @return the m_MeterArrayListProximityDBResultEntriesSet
+	 */
+	public synchronized Set<DBResultEntry> getM_MeterArrayListProximityDBResultEntriesSet() {
+		return m_MeterArrayListProximityDBResultEntriesSet;
+	}
+
+	/**
+	 * @return the m_ExistingNightScoutProximityDBResultEntriesSet
+	 */
+	public synchronized Set<DBResultEntry> getM_ExistingNightScoutProximityDBResultEntriesSet() {
+		return m_ExistingNightScoutProximityDBResultEntriesSet;
+	}
+
+	/**
+	 * @return the m_NightScoutArrayListDBResultEntriesSet
+	 */
+	public synchronized Set<DBResultEntry> getM_NightScoutArrayListDBResultEntriesSet() {
+		return m_NightScoutArrayListDBResultEntriesSet;
+	}
+
+	/**
+	 * @return the m_FirstPassIntersection
+	 */
+	public synchronized Set<DBResult> getM_FirstPassIntersection() {
+		return m_FirstPassIntersection;
+	}
+
+	/**
+	 * @return the m_SecondPassIntersection
+	 */
+	public synchronized Set<DBResult> getM_SecondPassIntersection() {
+		return m_SecondPassIntersection;
+	}
+
+	/**
+	 * @return the m_FirstPassEntryIntersection
+	 */
+	public synchronized Set<DBResultEntry> getM_FirstPassEntryIntersection() {
+		return m_FirstPassEntryIntersection;
+	}
+
+	/**
+	 * @return the m_SecondPassEntryIntersection
+	 */
+	public synchronized Set<DBResultEntry> getM_SecondPassEntryIntersection() {
+		return m_SecondPassEntryIntersection;
+	}
+	
+	
 }

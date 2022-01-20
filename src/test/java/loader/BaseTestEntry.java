@@ -11,17 +11,31 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import control.MyLogger;
 import control.PrefsNightScoutLoader;
+import entity.DBResult;
 import entity.DBResultEntry;
 
 @RunWith(MockitoJUnitRunner.class)
 public abstract class BaseTestEntry {
 
 	protected static Double DOUBLE_THRESHOLD = 0.001;
+	
+	public BaseTestEntry() {
+		try {
+			MyLogger.setup(true);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
 
 	protected abstract Object[][]       getExpectedTestResults();
 	protected abstract String           getResourceFileName();
@@ -29,6 +43,15 @@ public abstract class BaseTestEntry {
 	protected abstract SimpleDateFormat getSimpleDateFormat();
 	protected abstract String           getDateFormat();
 	
+	public ArrayList <DBResult>         getDBResultArrayList()
+	{
+		return getDataLoadFile().getResultTreatments();
+	}
+	
+	public ArrayList <DBResultEntry>    getDBResultEntryArrayList()
+	{
+		return getDataLoadFile().getRawEntryResultsFromDB();
+	}
 
 	public void performTestLoad()
 	{
@@ -51,13 +74,6 @@ public abstract class BaseTestEntry {
 
 		// Disable inferring any temp basals
 		PrefsNightScoutLoader.getInstance().setM_InferTempBasals(false);
-
-//		long maxDiffBetweenSameMealEvent  = 
-//				// Get Preference Value now
-//				PrefsNightScoutLoader.getInstance().getM_MaxMinsBetweenSameMealEvent();
-//		long maxDiffBetweenSameCorrection = 
-//				// Get Preference Value now
-//				PrefsNightScoutLoader.getInstance().getM_MaxMinsBetweenSameCorrectionEvent();
 
 		URL url = this.getClass().getClassLoader().getResource(getResourceFileName());
 		Assertions.assertTrue(url != null);
@@ -92,31 +108,11 @@ public abstract class BaseTestEntry {
 
 			//			Integer indexInteger = (Integer) treatmentObject[i++];
 			String dateString = (String) treatmentObject[i++];
-//			Date  date = getSimpleDateFormat().parse(dateString);
 			
 			// Better way of date parsing Java 8
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern(getDateFormat());
 			LocalDateTime parseDate = LocalDateTime.parse(dateString, formatter);
 			long ldtEpoch = parseDate.toEpochSecond(ZoneOffset.UTC);
-
-//			Date date = Date.from(parseDate.atZone(ZoneId.systemDefault()).toInstant());
-//			
-//	        ZonedDateTime zonedDateTime = parseDate.atZone(ZoneId.systemDefault());
-//			Date date2 = Date.from(zonedDateTime.toInstant());
-//
-//			long d1Epoch  = date.getTime();
-//			long d2Epoch  = date2.getTime();
-//			
-//			
-//			LocalDateTime parseDate2 = LocalDateTime.parse("28/03/2021 02:17", formatter);
-//			long ldt2Epoch = parseDate2.toEpochSecond(ZoneOffset.UTC);
-//			Date date3 = Date.from(parseDate2.atZone(ZoneId.ofOffset("UTC", ZoneOffset.UTC)).toInstant());
-//			long d3Epoch  = date3.getTime();
-//
-//			Date date_a1 = new Date(ldtEpoch * 1000);
-//
-//			Date date_a2 = new Date(ldt2Epoch * 1000);
-
 
 			Double  bgDouble = (Double)treatmentObject[i++];
 			String dupeString = (String)treatmentObject[i++];
@@ -131,10 +127,6 @@ public abstract class BaseTestEntry {
 				if (dupeString.equals("NO"))
 					assertEquals(result.getM_BG(), bgDouble, "BG Differs" + messgString);
 			}
-//			System.out.println("Checked row " + c 
-//					+ (result == null ? " CGM Result Entry not located for " + dateString  : "")
-//					+ (dupeString.equals("YES") ? " Duplicate BG so first ones ignored" : "")
-//					);
 		}
 
 	}
