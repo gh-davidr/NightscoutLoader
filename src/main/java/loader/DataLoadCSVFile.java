@@ -13,7 +13,6 @@ import java.util.logging.Logger;
 import control.MyLogger;
 import entity.DBResult;
 import entity.DBResultEntry;
-import entity.DBResultEntryDiasend;
 
 //public abstract class DataLoadCSVFile extends DataLoadBase 
 public abstract class DataLoadCSVFile extends DataLoadFile

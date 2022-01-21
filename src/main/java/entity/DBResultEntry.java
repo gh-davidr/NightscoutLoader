@@ -109,15 +109,50 @@ public class DBResultEntry extends DBResultCore
 		m_Date          = CommonUtils.getFieldDouble(rs, "date");
 		m_Noise         = CommonUtils.getFieldInt(rs, "noise");
 
+		Long millisLong = Long.valueOf(m_Date.longValue());
+		m_UTCDate = new Date(millisLong);
+
+		// Don't reparse the date.  m_Date already holds UTC time so use that to
+		// get UTC Date and epoch millis
+//		try {			
+//			m_UTCDate = CommonUtils.convertNSZDateString(m_DateString);
+//		} catch (ParseException e) {
+//			// TODO Auto-generated catch block
+//			m_UTCDate = new Date(0);
+//		}
+
+		m_EpochMillies = Long.valueOf(m_Date.longValue());
+
+	}
+
+
+	// Used for Junit testing new proximity logic
+	public DBResultEntry(DBResultEntry other, String m_DateString)
+	{
+		super();
+		this.m_ID = other.m_ID;
+		this.m_Unfiltered = other.m_Unfiltered;
+		this.m_Filtered = other.m_Filtered;
+		this.m_Direction = other.m_Direction;
+		this.m_Device = other.m_Device;
+		this.m_RSSI = other.m_RSSI;
+		//		this.m_SGV = m_SGV;
+		setM_SGV(other.m_SGV);
+		this.m_DateString = m_DateString;
+		this.m_Type = other.m_Type;
+		this.m_Noise = other.m_Noise;
+
 		try {
 			m_UTCDate = CommonUtils.convertNSZDateString(m_DateString);
+			m_Date =  Double.valueOf(m_UTCDate.getTime());
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			m_UTCDate = new Date(0);
 		}
-	
 		m_EpochMillies = m_UTCDate.getTime();
+		m_Hour = CommonUtils.get24Hour(m_UTCDate);
 
+		setM_BG(m_SGV / 18.0);
 	}
 
 
