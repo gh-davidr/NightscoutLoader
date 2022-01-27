@@ -28,7 +28,7 @@ public class Version
 		m_ContactUs  = new String();
 		m_GoogleDriveHelpURI = new String();
 
-		m_Version    = "V4.0";
+		m_Version    = "V4.1";
 		m_Author     = "David Richardson (+ other contributors)";
 		m_ContactUs  = "NightscoutLoader@gmail.com";
 		//		m_GoogleDriveHelpURI = "https://drive.google.com/open?id=0BxlKJmCnE32_cEZMbmk4TTlZRUk";
@@ -136,9 +136,10 @@ public class Version
 		m_AboutText += "               Address Diasend change to export file\r\n";
 		m_AboutText += "               Now support Freestyle Libreview Export\r\n";
 		m_AboutText += "               Incorporate the better Diasend parsing design from Dune-Jr\r\n";
-		
+		m_AboutText += " 4.1       Minor fixes in area of mongo connection and parsing - \r\n";
+
 		m_AboutText += "\r\n\r\n";
-		m_AboutText += "Written by " + m_Author + " - January 2016 through July 2019\r\n";
+		m_AboutText += "Written by " + m_Author + " - January 2016 through January 2022\r\n";
 	}
 
 	/**

@@ -326,16 +326,6 @@ public class ThreadDetermineSaveDifferences implements Runnable
 		// Now elinate all NS results that differ to the meter/pump results leaving possible duplicates only.
 		m_FirstPassIntersection.retainAll(nsFirstPassHashSet);
 
-
-		// For Debug
-		// 09 Oct 2016
-		for (DBResult a : m_FirstPassIntersection)
-		{
-			System.out.println(a.toString());
-			System.out.println(a.getIdentity());
-		}
-
-
 		// Clear both
 		DBResult.setM_ProximityCheckSecondPass(false);
 		DBResult.setM_ProximityCheck(false);

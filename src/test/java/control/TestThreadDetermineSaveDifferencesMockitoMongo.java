@@ -36,8 +36,8 @@ import loader.TestLibreView_Batch8;
 import loader.TestLibreView_Batch9;
 import utils.CommonUtils;
 
-// But there's no "save" tests
-public class TestThreadDetermineSaveDifferences
+// But there ARE "save" tests
+public class TestThreadDetermineSaveDifferencesMockitoMongo
 {
 	private DataLoadNightScoutTreatments m_DataLoadNightScoutTreatments = mock(DataLoadNightScoutTreatments.class);
 
@@ -57,13 +57,18 @@ public class TestThreadDetermineSaveDifferences
 	private int  m_HowManyResultEntriesToBePossDupe    = 1;
 	private int  m_PossDupeMinAdjustment               = 3;   // 3 Minute change to Possible Dupe changes.
 
-	public TestThreadDetermineSaveDifferences() {
+	public TestThreadDetermineSaveDifferencesMockitoMongo() {
 		setup();
 	}
 
 	@Test
 	public void testReplicateTreatments()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
+
 		TestDiasendTreatmentBGMergedToInsCarb testTestDiasendTreatmentBGMergedToInsCarb = new TestDiasendTreatmentBGMergedToInsCarb();
 		testTestDiasendTreatmentBGMergedToInsCarb.doDataLoad();
 		initializeMock(testTestDiasendTreatmentBGMergedToInsCarb);
@@ -76,6 +81,11 @@ public class TestThreadDetermineSaveDifferences
 	@Test
 	public void testReplicateEntries()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
+
 		TestLibreView_Batch1                  testTestLibreView_Batch1 = new TestLibreView_Batch1();
 		testTestLibreView_Batch1.doDataLoad();
 		ArrayList<DBResultEntry> result = replicateNSEntries(testTestLibreView_Batch1.getDBResultEntryArrayList());
@@ -87,42 +97,70 @@ public class TestThreadDetermineSaveDifferences
 	@Test
 	public void testBGMergedToInsCarbTreatment()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runTreatmentComparison(new TestDiasendTreatmentBGMergedToInsCarb());
 	}
 
 	@Test
 	public void testInsCarbNotMergedTreatment()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runTreatmentComparison(new TestDiasendTreatmentInsCarbNotMerged());
 	}
 
 	@Test
 	public void testLibreEntries_Batch1()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runEntriesComparison(new TestLibreView_Batch1());
 	}
 
 	@Test
 	public void testLibreEntries_Batch2()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runEntriesComparison(new TestLibreView_Batch2());
 	}
 
 	@Test
 	public void testLibreEntries_Batch3()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runEntriesComparison(new TestLibreView_Batch3());
 	}
 
 	@Test
 	public void testLibreEntries_Batch4()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runEntriesComparison(new TestLibreView_Batch4());
 	}
 
 	@Test
 	public void testLibreEntries_Batch5()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runEntriesComparison(new TestLibreView_Batch5());
 	}
 
@@ -130,6 +168,10 @@ public class TestThreadDetermineSaveDifferences
 	@Test
 	public void testLibreEntries_Batch6()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runEntriesComparison(new TestLibreView_Batch6());
 	}
 
@@ -137,6 +179,10 @@ public class TestThreadDetermineSaveDifferences
 	@Test
 	public void testLibreEntries_Batch7()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runEntriesComparison(new TestLibreView_Batch7());
 	}
 
@@ -144,6 +190,10 @@ public class TestThreadDetermineSaveDifferences
 	@Test
 	public void testLibreEntries_Batch8()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runEntriesComparison(new TestLibreView_Batch8());
 	}
 
@@ -151,6 +201,10 @@ public class TestThreadDetermineSaveDifferences
 	@Test
 	public void testLibreEntries_Batch9()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runEntriesComparison(new TestLibreView_Batch9());
 	}
 
@@ -158,6 +212,10 @@ public class TestThreadDetermineSaveDifferences
 	@Test
 	public void testLibreEntries_Batch10()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runEntriesComparison(new TestLibreView_Batch10());
 	}
 
@@ -165,6 +223,10 @@ public class TestThreadDetermineSaveDifferences
 	@Test
 	public void testLibreEntries_Batch11()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runEntriesComparison(new TestLibreView_Batch11());
 	}
 
@@ -172,6 +234,10 @@ public class TestThreadDetermineSaveDifferences
 	@Test
 	public void testLibreEntries_Batch12()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		runEntriesComparison(new TestLibreView_Batch12());
 	}
 
@@ -237,18 +303,18 @@ public class TestThreadDetermineSaveDifferences
 
 		String assertTextString = "(Proximity Check: " + proximityCheckType + ", Proximity Minutes: " + proximityMinutes + ")";
 
-		
+
 		if (differencesTreatmentsSet.size() != this.m_MeterResultTreatmentsRemoved.size() +
-				this.m_MeterResultEntriesChanged.size())
+				this.m_MeterResultTreatmentsChanged.size())
 		{
 			summariseSet(differencesTreatmentsSet, "Differences returned back");
 			summariseList(m_MeterResultTreatmentsRemoved, "Meter Treatments Removed");
 			summariseMap(m_MeterResultTreatmentsChanged, "Meter Treatments Changed");
 			summariseSet(nsProximalTreatmentsSet, "NS Proximal Treatments");
-//			summariseMap(simulatedNSTreatmentsHashMap, "NS Simulated Treatments");
+			//			summariseMap(simulatedNSTreatmentsHashMap, "NS Simulated Treatments");
 		}
-		
-//		Assertions.assertEquals(differencesTreatmentsSet.size(), this.m_MeterResultTreatmentsRemoved.size());
+
+		//		Assertions.assertEquals(differencesTreatmentsSet.size(), this.m_MeterResultTreatmentsRemoved.size());
 		Assertions.assertEquals(
 				differencesTreatmentsSet.size(), 
 				this.m_MeterResultTreatmentsRemoved.size() +
@@ -261,7 +327,7 @@ public class TestThreadDetermineSaveDifferences
 		if (mtProximalTreatmentsSet.size() > 0) Assertions.assertEquals(mtProximalTreatmentsSet.size(), this.m_MeterResultTreatmentsChanged.size(), assertTextString + " Changed=Meter Proximal Count");
 
 		m_MeterResultTreatmentsRemoved.forEach(r -> Assertions.assertTrue(differencesTreatmentsSet.contains(r), assertTextString + " Differences include removed entry: " + r.toString()));
-//		if (nsProximalTreatmentsSet.size() > 0)  m_MeterResultTreatmentsChanged.entrySet().forEach(r -> Assertions.assertTrue(nsProximalTreatmentsSet.contains(r.getValue()), assertTextString + " Differences include NS Proximal entry: " + " ID: (" + r.getValue().getId() + ") " + r.getValue().toString()));
+		//		if (nsProximalTreatmentsSet.size() > 0)  m_MeterResultTreatmentsChanged.entrySet().forEach(r -> Assertions.assertTrue(nsProximalTreatmentsSet.contains(r.getValue()), assertTextString + " Differences include NS Proximal entry: " + " ID: (" + r.getValue().getId() + ") " + r.getValue().toString()));
 		if (mtProximalTreatmentsSet.size() > 0)  m_NSResultTreatmentsChanged.entrySet().forEach(r -> Assertions.assertTrue(simulatedNSTreatmentsHashMap.get(r.getKey()) != null, assertTextString + " Differences include Meter Proximal entry: " + " ID: (" + r.getValue().getId() + ") " + r.getValue().toString()));
 
 	}
@@ -340,7 +406,7 @@ public class TestThreadDetermineSaveDifferences
 
 		String assertTextString = "(Proximity Check: " + proximityCheckType + ", Proximity Minutes: " + proximityMinutes + ")";
 
-//		Assertions.assertEquals(differencesEntriesSet.size(), this.m_MeterResultEntriesRemoved.size(), "");
+		//		Assertions.assertEquals(differencesEntriesSet.size(), this.m_MeterResultEntriesRemoved.size(), "");
 		Assertions.assertEquals(
 				differencesEntriesSet.size(), 
 				this.m_MeterResultEntriesRemoved.size() +
@@ -352,7 +418,7 @@ public class TestThreadDetermineSaveDifferences
 		if (mtProximalEntriesSet.size() > 0) Assertions.assertEquals(mtProximalEntriesSet.size(), this.m_MeterResultEntriesChanged.size(), assertTextString + " Changed=Meter Proximal Count");
 
 		m_MeterResultEntriesRemoved.forEach(r -> Assertions.assertTrue(differencesEntriesSet.contains(r), assertTextString + " Differences include removed entry: " + r.toString()));
-//		if (nsProximalEntriesSet.size() > 0)  m_MeterResultEntriesChanged.entrySet().forEach(r -> Assertions.assertTrue(nsProximalEntriesSet.contains(r.getValue()), assertTextString + " Differences include NS Proximal entry: " + r.toString()));
+		//		if (nsProximalEntriesSet.size() > 0)  m_MeterResultEntriesChanged.entrySet().forEach(r -> Assertions.assertTrue(nsProximalEntriesSet.contains(r.getValue()), assertTextString + " Differences include NS Proximal entry: " + r.toString()));
 		if (mtProximalEntriesSet.size() > 0)  m_NSResultEntriesChanged.entrySet().forEach(r -> Assertions.assertTrue(simulatedNSEntriesHashMap.get(r.getKey()) != null, assertTextString + " Differences include Meter Proximal entry: " + r.toString()));
 	}
 
@@ -410,10 +476,10 @@ public class TestThreadDetermineSaveDifferences
 					m_NSResultTreatmentsChanged.put(upd.getM_EpochMillies(), upd);
 				}
 			}
-			
-			this.summariseList(m_MeterResultTreatmentsRemoved, "replicateNSTreatments - REMOVED");
-			this.summariseMap(m_MeterResultTreatmentsChanged, "replicateNSTreatments - CHANGED - ORIGINAL MILLIS");
-			this.summariseMap(m_NSResultTreatmentsChanged, "replicateNSTreatments - CHANGED - UPDATED MILLIS");
+
+			//			this.summariseList(m_MeterResultTreatmentsRemoved, "replicateNSTreatments - REMOVED");
+			//			this.summariseMap(m_MeterResultTreatmentsChanged, "replicateNSTreatments - CHANGED - ORIGINAL MILLIS");
+			//			this.summariseMap(m_NSResultTreatmentsChanged, "replicateNSTreatments - CHANGED - UPDATED MILLIS");
 		}
 
 		return result;
@@ -501,6 +567,11 @@ public class TestThreadDetermineSaveDifferences
 	private void setup()
 	{
 		try {
+
+			// Set log level to 10 (warning).  Other new option is 20 (severe)
+			// This quietens down the output significantly
+			PrefsNightScoutLoader.getInstance().setM_LogLevel(10);
+
 			MyLogger.setup(true);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

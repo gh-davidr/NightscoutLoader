@@ -758,12 +758,20 @@ public class TestDiasendTreatmentBGMergedToInsCarb extends BaseTestTreatment {
 	@Test
 	public void doTestLoad()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		performTestLoad();
 	}
 	
 	@Test
 	public void doTestCount()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		doDataLoad();
 		
 		int dlEntries = this.countDataLoadEntries(true);

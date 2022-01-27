@@ -181,14 +181,14 @@ public abstract class BaseTestTreatment {
 			else {
 				Boolean mergedBoolean = dupeString.equals("YES");
 				
-				System.out.println(
-						(mergedBoolean ? "As expected, " : "As NOT expected, ")
-						+ "unable to find " 
-						+ " Date: " + dateString
-						+ " BG: " + bgDouble
-						+ " Ins: " + insDouble
-						+ " Carbs: " + carbDouble
-						+ " Dupe: " + dupeString);
+//				System.out.println(
+//						(mergedBoolean ? "As expected, " : "As NOT expected, ")
+//						+ "unable to find " 
+//						+ " Date: " + dateString
+//						+ " BG: " + bgDouble
+//						+ " Ins: " + insDouble
+//						+ " Carbs: " + carbDouble
+//						+ " Dupe: " + dupeString);
 				
 				// Only allow dupes to be not found
 				Assertions.assertTrue(mergedBoolean);

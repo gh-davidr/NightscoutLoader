@@ -447,7 +447,7 @@ public class DBResult extends DBResultCore
 
 	public static String getCP_EventTimeFormat()
 	{
-		final String result =  "yyyy-MM-dd'T'HH:mm:ss.S'Z'";
+		final String result =  "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 		return result;
 	}
 

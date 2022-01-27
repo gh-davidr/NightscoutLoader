@@ -153,7 +153,7 @@ public class DBResultNightScout extends DBResult
 				m_CP_CarbsTime  = CommonUtils.getFieldDouble(rs, "preBolus");
 				m_CP_Duration   = CommonUtils.getFieldDouble(rs, "duration");    // Temp Basal
 				m_CP_Percent    = CommonUtils.getFieldDouble(rs, "percent");     // Temp Basal
-				m_CP_BasalValue = CommonUtils.getFieldDouble(rs, "profile");  // Temp Basal //AndroidAPS appears to use this field for Profile Name, not BasalValue
+				m_CP_BasalValue = CommonUtils.getFieldDouble(rs, "profile", false);  // Temp Basal //AndroidAPS appears to use this field for Profile Name, not BasalValue
 				if (m_CP_EventType.equals("Temp Basal")) {
 					Double absolute = CommonUtils.getFieldDouble(rs, "absolute");
 					if (absolute != null)

@@ -6,6 +6,8 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 //import java.util.Calendar;
@@ -51,7 +53,7 @@ public class CommonUtils
 	private static HashMap<String, SimpleDateFormat> DATE_FORMAT_HASHMAP = new HashMap<String, SimpleDateFormat>();
 
 	// Similar idea but for inferring from dates supplied
-//	private static HashMap<Pattern, String> REGEXP_FORMAT_HASHMAP = new HashMap<Pattern, String>();
+	//	private static HashMap<Pattern, String> REGEXP_FORMAT_HASHMAP = new HashMap<Pattern, String>();
 
 
 	// 2-d Array holding Regexp Patterns as a key and corresponding SimpleDateFormat formats as value
@@ -64,9 +66,12 @@ public class CommonUtils
 			{"^([0-9]){2,2}-([a-zA-Z]){3,3}-([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",             "dd-MMM-yyyy HH:mm:ss"},
 			{"^([0-9]){2,2}/([0-9]){2,2}/([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",                "dd/MM/yyyy HH:mm:ss"},
 			{"^([0-9]){2,2}-([0-9]){2,2}-([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",                "dd-MM-yyyy HH:mm:ss"},
+			{"^([0-9]){2,2}/([0-9]){2,2}/([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}$",                             "dd/MM/yyyy HH:mm"},
+			{"^([0-9]){2,2}-([0-9]){2,2}-([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}$",                             "dd-MM-yyyy HH:mm"},
 			{"^([0-9]){4,4}-([0-9]){2,2}-([0-9]){2,2}T([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",                "yyyy-MM-dd HH:mm:ss"},
 			{"^([0-9]){4,4}/([0-9]){2,2}/([0-9]){2,2}T([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",                "yyyy/MM/dd HH:mm:ss"},
 	};
+
 
 	private static ArrayList<DatePatternFormat> m_DatePatternFormatList = new ArrayList<DatePatternFormat>();
 	private static DatePatternFormat[]          m_DatePatternFormatArray = new DatePatternFormat[m_RegexpDatePatternArray.length];
@@ -74,8 +79,8 @@ public class CommonUtils
 	private static Boolean                      m_DatePatternFormatArrayInitializedBoolean = false;
 
 	// Try and optimise performance during date format inference and reduce some iterations when same date format gets used.
-//	private static Pattern lAST_USED_PATTERN = null;
-//	private static String  lAST_USED_PATTERN_FORMAT = null;
+	//	private static Pattern lAST_USED_PATTERN = null;
+	//	private static String  lAST_USED_PATTERN_FORMAT = null;
 
 
 	// Used for some tests
@@ -180,9 +185,36 @@ public class CommonUtils
 	}
 
 
-
 	// Used for Diasend temp basal identifications
 	public static boolean isTimeAfter(String time, Date dateTime) throws ParseException
+	{
+		boolean result = false;
+		Date compDate = applyTimeToDate(time, dateTime);
+
+		result = compDate.after(dateTime) ? true : false;
+
+		return result;
+	}
+
+
+	public static Date applyTimeToDate(String time, Date date)
+	{
+		Date resultDate = null;
+
+		final DateFormat df  = CommonUtils.getSimpleDateFormat("dd/MM/yyyy");  // new SimpleDateFormat("dd/MM/yyyy");
+		String timeOnDate  = new String(df.format(date)) +  " " + time;
+
+		try {
+			resultDate = convertNSZDateString(timeOnDate);
+		} catch (ParseException e) {
+			m_Logger.log(Level.WARNING, "applyTimeToDate Caught exception parsing date " + timeOnDate);
+		}
+
+		return resultDate;
+	}
+
+	// Used for Diasend temp basal identifications
+	public static boolean isTimeAfter_old(String time, Date dateTime) throws ParseException
 	{
 		boolean result = false;
 
@@ -218,6 +250,40 @@ public class CommonUtils
 
 		// Convert dateTime into a known string
 		final DateFormat df  = CommonUtils.getSimpleDateFormat("dd/MM/yyyy");  // new SimpleDateFormat("dd/MM/yyyy");
+		String startTimeOnDate  = new String(df.format(dateTime)) +  " " + startTime;
+		String endTimeOnDate    = new String(df.format(dateTime)) +  " " + endTime;
+
+		Date startCompDate = null;
+		Date endCompDate   = null;
+
+		try {
+			startCompDate = convertNSZDateString(startTimeOnDate);
+		} catch (ParseException e) {
+			m_Logger.log(Level.WARNING, "applyTimeToDate Caught exception parsing date " + startTimeOnDate);
+		}
+		try {
+			endCompDate = convertNSZDateString(endTimeOnDate);
+		} catch (ParseException e) {
+			m_Logger.log(Level.WARNING, "applyTimeToDate Caught exception parsing date " + endTimeOnDate);
+		}
+
+
+		result = ((startCompDate.before(dateTime) || startCompDate.equals(dateTime)) &&
+				(endCompDate.after(dateTime)))
+				? true : false;
+
+		return result;
+	}
+
+
+	// Used for Analyzer bedtime checks
+	// Between means start <= time < end
+	public static boolean isTimeBetween_old(String startTime, String endTime, Date dateTime) throws ParseException
+	{
+		boolean result = false;
+
+		// Convert dateTime into a known string
+		final DateFormat df  = CommonUtils.getSimpleDateFormat("dd/MM/yyyy");  // new SimpleDateFormat("dd/MM/yyyy");
 		final DateFormat dtf = CommonUtils.getSimpleDateFormat("dd/MM/yyyy HH:mm");  // new SimpleDateFormat("dd/MM/yyyy HH:mm");
 
 		String dateTimeStr = new String(dtf.format(dateTime));
@@ -235,6 +301,7 @@ public class CommonUtils
 
 		return result;
 	}
+
 
 	public static String safeIfNull(String par)
 	{
@@ -473,7 +540,7 @@ public class CommonUtils
 		return result;
 	}
 
-	
+
 	public static String getIDStr(DBObject rs, String fieldName)
 	{
 		String result = new String();
@@ -531,8 +598,8 @@ public class CommonUtils
 		}
 		return result;		
 	}
-	
-	
+
+
 	public static String getIDStr(Document rs, String fieldName)
 	{
 		String result = new String();
@@ -555,6 +622,21 @@ public class CommonUtils
 
 	public static Double getFieldDouble(Document rs, String fieldName)
 	{
+		return getFieldDouble(rs, fieldName, true);
+	}
+
+	public static int getFieldInt(Document rs, String fieldName)
+	{
+		return getFieldInt(rs, fieldName, true);
+	}
+
+	public static long getFieldLong(Document rs, String fieldName)
+	{
+		return getFieldLong(rs, fieldName, true);
+	}
+
+	public static Double getFieldDouble(Document rs, String fieldName, Boolean warn)
+	{
 		Double result = null;
 		if (rs.containsKey(fieldName) && rs.get(fieldName).toString().length() > 0)
 		{
@@ -564,31 +646,51 @@ public class CommonUtils
 			}
 			catch(Exception e)
 			{
-				m_Logger.log(Level.WARNING, "DBResultNightScout Caught exception parsing field " + fieldName + " number "+e.toString() + rs.toString());
+				if (warn)
+					m_Logger.log(Level.WARNING, "DBResultNightScout Caught exception parsing Double field " + fieldName + " number "+e.toString() + rs.toString());
 			}
 		}
 		return result;		
 	}
 
-	public static int getFieldInt(Document rs, String fieldName)
+	public static int getFieldInt(Document rs, String fieldName, Boolean warn)
 	{
 		int result = 0;
 		if (rs.containsKey(fieldName) && rs.get(fieldName).toString().length() > 0)
-		{
-			result = (int)rs.get(fieldName);
+		{	
+			try
+			{
+				Integer resInteger = Integer.valueOf(((Number)rs.get(fieldName)).intValue());
+				result = resInteger.intValue();
+			}
+			catch(Exception e)
+			{
+				if (warn)
+					m_Logger.log(Level.WARNING, "DBResultNightScout Caught exception parsing Integer field " + fieldName + " number "+e.toString() + rs.toString());
+			}
 		}
 		return result;		
 	}
 
-	public static long getFieldLong(Document rs, String fieldName)
+	public static long getFieldLong(Document rs, String fieldName, Boolean warn)
 	{
 		long result = 0;
 		if (rs.containsKey(fieldName) && rs.get(fieldName).toString().length() > 0)
 		{
-			result = (long)rs.get(fieldName);
+			try
+			{
+				Long resLong = Long.valueOf(((Number)rs.get(fieldName)).longValue());
+				result = resLong.longValue();
+			}
+			catch(Exception e)
+			{
+				if (warn)
+					m_Logger.log(Level.WARNING, "DBResultNightScout Caught exception parsing Long field " + fieldName + " number "+e.toString() + rs.toString());
+			}
 		}
 		return result;		
 	}
+
 
 	public static Document getFieldDocument(Document rs, String fieldName)
 	{
@@ -682,14 +784,14 @@ public class CommonUtils
 		// Need to keep this thread safe
 		synchronized(m_LockSDF)
 		{
-//			final DateFormat nsformat   = CommonUtils.getSimpleDateFormat(format);  // new SimpleDateFormat(format, Locale.ENGLISH);
+			//			final DateFormat nsformat   = CommonUtils.getSimpleDateFormat(format);  // new SimpleDateFormat(format, Locale.ENGLISH);
 			if (dateStr.length() > 0)
 			{
 				//			System.out.println("David DateStr(" + dateStr + ") Format(" + format + ")");
 
 				try
 				{
-					
+
 					// ---------------------------------------------------------------------------------------
 					// 29 Oct 2021
 					//
@@ -714,19 +816,29 @@ public class CommonUtils
 					// Now is the time and move to a better way of parsing dates
 					//
 					// ---------------------------------------------------------------------------------------
-					
-//					result = nsformat.parse(dateStr.toUpperCase()); 
-					
-					
+
+					//					result = nsformat.parse(dateStr.toUpperCase()); 
+
+
 					// This seems to offer better results...
-					DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
+					//					DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
+					DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+							// case insensitive to parse JAN and FEB
+							.parseCaseInsensitive()
+							// add pattern
+							.appendPattern(format)
+							// create formatter (use English Locale to parse month names)
+							.toFormatter(Locale.ENGLISH);
 					LocalDateTime parseDate = LocalDateTime.parse(dateStr, formatter);
 					result = Date.from(parseDate.atZone(ZoneId.systemDefault()).toInstant());
 
-					
+
 				}
 				catch (NumberFormatException e) {
 					m_Logger.log(Level.SEVERE, "Caught Number format exception : " + e + " for dateStr: " + dateStr + " using format: " + format);
+				}
+				catch (DateTimeParseException e) {
+					m_Logger.log(Level.SEVERE, "Caught DateTimeParse exception : " + e + " for dateStr: " + dateStr + " using format: " + format);
 				}
 			}
 			m_LockSDF.notifyAll();
@@ -734,7 +846,7 @@ public class CommonUtils
 
 		return result;
 	}
-	
+
 	public static LocalDateTime convertDateTimeString(String dateStr, String format) throws ParseException
 	{
 		LocalDateTime result = null;
@@ -743,89 +855,89 @@ public class CommonUtils
 		return result;
 	}
 
-//	public static Date parseFileDateTime(String date)
-//	{
-//		Date result = new Date(0);
-//		// Combined Date Time
-//
-//		// Need to keep this thread safe
-//		synchronized(m_LockSDF)
-//		{
-//
-//			final String defSlashFormat = new String("dd/MM/yy HH:mm");
-//			String prefDateFormat       = PrefsNightScoutLoader.getInstance().getM_InputDateFormat();
-//			final DateFormat slashformat = CommonUtils.getSimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat));
-//			// DateFormat slashformat      = new SimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat), Locale.ENGLISH);
-//
-//			try
-//			{
-//				result = slashformat.parse(date);
-//			}
-//			catch (ParseException e) 
-//			{
-//				m_Logger.log(Level.SEVERE, "<CommonUtils>" + "parseFileDate - Unexpected error parsing date: " + date);
-//			}
-//			m_LockSDF.notifyAll();
-//		}
-//
-//		return result;
-//	}
-//
-//	public  static Date parseDate(String date)
-//	{
-//		Date result = new Date(0);
-//
-//		// Combined Date Time
-//		final DateFormat slashformat = CommonUtils.getSimpleDateFormat("dd/MM/yyyy");
-//		// DateFormat slashformat = new SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH);
-//
-//		try
-//		{
-//			result = slashformat.parse(date);
-//		}
-//		catch (ParseException e) 
-//		{
-//			m_Logger.log(Level.SEVERE, "<CommonUtils>" + "parseDate - Unexpected error parsing date: " + date);
-//		}
-//
-//
-//		return result;
-//	}
-//
-//	public static Date parseFromDate(String field)
-//	{
-//		Date result = new Date(0);
-//
-//		// field is in the form 2dd/mm/yyyy to dd/mm/yyyy"
-//		Pattern fromDatePattern = Pattern.compile("([0-9/]*) to");
-//		Matcher fromDateMatcher = fromDatePattern.matcher(field);
-//
-//		if (fromDateMatcher.find())
-//		{
-//			String matchedString = fromDateMatcher.group(0);
-//			String date = new String(matchedString.substring(0, matchedString.length() - 3));
-//			result = parseDate(date);
-//		}
-//
-//		return result;
-//	}
-//	public static Date parseToDate(String field)
-//	{
-//		Date result = new Date(0);
-//
-//		// field is in the form 2dd/mm/yyyy to dd/mm/yyyy"
-//		Pattern fromDatePattern = Pattern.compile("to ([0-9/]*)");
-//		Matcher fromDateMatcher = fromDatePattern.matcher(field);
-//
-//		if (fromDateMatcher.find())
-//		{
-//			String matchedString = fromDateMatcher.group(0);
-//			String date = new String(matchedString.substring(3, matchedString.length()));
-//			result = parseDate(date);
-//		}
-//
-//		return result;
-//	}
+	//	public static Date parseFileDateTime(String date)
+	//	{
+	//		Date result = new Date(0);
+	//		// Combined Date Time
+	//
+	//		// Need to keep this thread safe
+	//		synchronized(m_LockSDF)
+	//		{
+	//
+	//			final String defSlashFormat = new String("dd/MM/yy HH:mm");
+	//			String prefDateFormat       = PrefsNightScoutLoader.getInstance().getM_InputDateFormat();
+	//			final DateFormat slashformat = CommonUtils.getSimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat));
+	//			// DateFormat slashformat      = new SimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat), Locale.ENGLISH);
+	//
+	//			try
+	//			{
+	//				result = slashformat.parse(date);
+	//			}
+	//			catch (ParseException e) 
+	//			{
+	//				m_Logger.log(Level.SEVERE, "<CommonUtils>" + "parseFileDate - Unexpected error parsing date: " + date);
+	//			}
+	//			m_LockSDF.notifyAll();
+	//		}
+	//
+	//		return result;
+	//	}
+	//
+	//	public  static Date parseDate(String date)
+	//	{
+	//		Date result = new Date(0);
+	//
+	//		// Combined Date Time
+	//		final DateFormat slashformat = CommonUtils.getSimpleDateFormat("dd/MM/yyyy");
+	//		// DateFormat slashformat = new SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH);
+	//
+	//		try
+	//		{
+	//			result = slashformat.parse(date);
+	//		}
+	//		catch (ParseException e) 
+	//		{
+	//			m_Logger.log(Level.SEVERE, "<CommonUtils>" + "parseDate - Unexpected error parsing date: " + date);
+	//		}
+	//
+	//
+	//		return result;
+	//	}
+	//
+	//	public static Date parseFromDate(String field)
+	//	{
+	//		Date result = new Date(0);
+	//
+	//		// field is in the form 2dd/mm/yyyy to dd/mm/yyyy"
+	//		Pattern fromDatePattern = Pattern.compile("([0-9/]*) to");
+	//		Matcher fromDateMatcher = fromDatePattern.matcher(field);
+	//
+	//		if (fromDateMatcher.find())
+	//		{
+	//			String matchedString = fromDateMatcher.group(0);
+	//			String date = new String(matchedString.substring(0, matchedString.length() - 3));
+	//			result = parseDate(date);
+	//		}
+	//
+	//		return result;
+	//	}
+	//	public static Date parseToDate(String field)
+	//	{
+	//		Date result = new Date(0);
+	//
+	//		// field is in the form 2dd/mm/yyyy to dd/mm/yyyy"
+	//		Pattern fromDatePattern = Pattern.compile("to ([0-9/]*)");
+	//		Matcher fromDateMatcher = fromDatePattern.matcher(field);
+	//
+	//		if (fromDateMatcher.find())
+	//		{
+	//			String matchedString = fromDateMatcher.group(0);
+	//			String date = new String(matchedString.substring(3, matchedString.length()));
+	//			result = parseDate(date);
+	//		}
+	//
+	//		return result;
+	//	}
 
 	public static String  getStringCellValue(HSSFRow row, int index)
 	{
