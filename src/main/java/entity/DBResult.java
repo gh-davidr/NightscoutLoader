@@ -250,7 +250,7 @@ public class DBResult extends DBResultCore
 		DBResult result = new DBResult(); 
 		
 		try {
-			result.m_Time = CommonUtils.convertNSZDateString(timeString);
+			result.m_Time = CommonUtils.convertDateString(timeString);
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			result.m_Time = new Date(0);
@@ -370,7 +370,7 @@ public class DBResult extends DBResultCore
 		boolean result = false;
 		String mealSlotStartDate = new String(m_TreatmentDate + " " + mealSlotStartTime);
 		try {
-			Date mealSlotStart = CommonUtils.convertDateString(mealSlotStartDate, "dd-MMM-yyyy HH:mm:ss");
+			Date mealSlotStart = CommonUtils.convertDateString(mealSlotStartDate);
 			int startComp = mealSlotStart.compareTo(m_Time);
 
 			// Check if start <= time
@@ -393,7 +393,7 @@ public class DBResult extends DBResultCore
 		boolean result = false;
 		String mealSlotEndDate   = new String(m_TreatmentDate + " " + mealSlotEndTime);
 		try {
-			Date mealSlotEnd   = CommonUtils.convertDateString(mealSlotEndDate,   "dd-MMM-yyyy HH:mm:ss");
+			Date mealSlotEnd   = CommonUtils.convertDateString(mealSlotEndDate);
 
 			int endComp   = mealSlotEnd.compareTo(m_Time);
 
@@ -421,8 +421,8 @@ public class DBResult extends DBResultCore
 
 			//			System.out.println("David Start(" + mealSlotStartDate + ") End(" + mealSlotEndDate + ") Format(" + "dd-MMM-yyyy HH:mm:ss)");
 
-			Date mealSlotStart = CommonUtils.convertDateString(mealSlotStartDate, "dd-MMM-yyyy HH:mm:ss");
-			Date mealSlotEnd   = CommonUtils.convertDateString(mealSlotEndDate,   "dd-MMM-yyyy HH:mm:ss");
+			Date mealSlotStart = CommonUtils.convertDateString(mealSlotStartDate);
+			Date mealSlotEnd   = CommonUtils.convertDateString(mealSlotEndDate);
 
 			int startComp = mealSlotStart.compareTo(m_Time);
 			int endComp   = mealSlotEnd.compareTo(m_Time);

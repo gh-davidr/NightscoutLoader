@@ -1304,7 +1304,7 @@ public class Analyzer extends DataExportExcel
 			DBResult latest = resultList.get(0);
 
 			try {
-				result = CommonUtils.convertDateString(latest.getM_CP_EventTime(), DBResult.getCP_EventTimeFormat());
+				result = CommonUtils.convertDateString(latest.getM_CP_EventTime());
 			} catch (ParseException e) 
 			{
 				m_Logger.log(Level.SEVERE, "<getLastDateFromDBResults>" + ". Unexpected Exception converting date. " + e.getMessage());
@@ -1327,7 +1327,7 @@ public class Analyzer extends DataExportExcel
 			DBResult latest = resultList.get(0);
 
 			try {
-				result = CommonUtils.convertDateString(latest.getM_CP_EventTime(), DBResult.getCP_EventTimeFormat());
+				result = CommonUtils.convertDateString(latest.getM_CP_EventTime());
 			} catch (ParseException e) 
 			{
 				m_Logger.log(Level.SEVERE, "<getFirstDateFromDBResults>" + ". Unexpected Exception converting date. " + e.getMessage());

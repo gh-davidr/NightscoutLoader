@@ -548,7 +548,7 @@ public class TestThreadDetermineSaveDifferencesMockitoMongo
 
 		try 
 		{
-			Date date = CommonUtils.convertNSZDateString(origDateString);
+			Date date = CommonUtils.convertDateString(origDateString);
 			date = CommonUtils.addMinsToDate(date, m_PossDupeMinAdjustment);
 			resultString = CommonUtils.convertNSZDateString(date);
 		} catch (ParseException e) {

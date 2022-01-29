@@ -69,7 +69,7 @@ public class DataLoadLibreView extends DataLoadCSVFile
 		Date result = null;
 
 		try {
-			result = CommonUtils.convertDateString(date, "dd-MM-yyyy HH:mm");
+			result = CommonUtils.convertDateString(date);
 		} catch (ParseException e1) {
 			m_Logger.log(Level.SEVERE, "<DataLoadLibreView> " + "parseFileDate - Unexpected error parsing date: " + date);
 			
@@ -82,7 +82,7 @@ public class DataLoadLibreView extends DataLoadCSVFile
 		LocalDateTime result = null;
 
 		try {
-			result = CommonUtils.convertDateTimeString(date, "dd-MM-yyyy HH:mm");
+			result = CommonUtils.convertLocalDateTimeString(date);
 		} catch (ParseException e1) {
 			m_Logger.log(Level.SEVERE, "<DataLoadLibreView> " + "parseFileLocalDateTime - Unexpected error parsing date: " + date);
 			

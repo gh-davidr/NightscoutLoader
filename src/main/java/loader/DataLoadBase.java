@@ -132,7 +132,7 @@ public abstract class DataLoadBase
 					// If the basal rate change was on the hour, then assume that it's a basal rate
 					// If the basal rate change was off the hour, then assume it's a temp basal.
 					Date basalTime = new Date(res.getM_EpochMillies());
-					int minutes = CommonUtils.getMinutesFromDate(basalTime);
+					int minutes = CommonUtils.getMinuteFromDate(basalTime);
 
 					if (minutes == 0)
 					{

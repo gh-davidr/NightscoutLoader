@@ -51,7 +51,7 @@ public class DBResultNightScout extends DBResult
 
 				// David 14 Apr 2016
 				String timeStr  = CommonUtils.getFieldStr(rs, "Time");
-				Date time       = CommonUtils.convertNSDateString(timeStr);
+				Date time       = CommonUtils.convertDateString(timeStr);
 
 				m_EpochMillies = time.getTime();
 			}
@@ -91,7 +91,7 @@ public class DBResultNightScout extends DBResult
 
 				// Nightscout times are in UTC.
 				// Need to convert them to local time.
-				Date utcTime    = CommonUtils.convertNSZDateString(CommonUtils.getFieldStr(rs, "created_at"));
+				Date utcTime    = CommonUtils.convertDateString(CommonUtils.getFieldStr(rs, "created_at"));
 				Date time       = new Date(CommonUtils.toLocalTime(utcTime.getTime(), CommonUtils.locTZ));
 				m_Time          = time;
 				m_CP_EventTime  = CommonUtils.convertNSZDateString(m_Time);
@@ -137,7 +137,7 @@ public class DBResultNightScout extends DBResult
 
 				// David 14 Apr 2016
 				String timeStr  = CommonUtils.getFieldStr(rs, "Time");
-				Date time       = CommonUtils.convertNSDateString(timeStr);
+				Date time       = CommonUtils.convertDateString(timeStr);
 
 				m_EpochMillies = time.getTime();
 			}
@@ -177,7 +177,7 @@ public class DBResultNightScout extends DBResult
 
 				// Nightscout times are in UTC.
 				// Need to convert them to local time.
-				Date utcTime    = CommonUtils.convertNSZDateString(CommonUtils.getFieldStr(rs, "created_at"));
+				Date utcTime    = CommonUtils.convertDateString(CommonUtils.getFieldStr(rs, "created_at"));
 				Date time       = new Date(CommonUtils.toLocalTime(utcTime.getTime(), CommonUtils.locTZ));
 				m_Time          = time;
 				m_CP_EventTime  = CommonUtils.convertNSZDateString(m_Time);

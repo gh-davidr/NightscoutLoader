@@ -62,16 +62,30 @@ public class CommonUtils
 			{"^([0-9]){4,4}-([0-9]){2,2}-([0-9]){2,2}T([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}.([0-9]){3,3}Z$",  "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"},
 			{"^([0-9]){4,4}-([0-9]){2,2}-([0-9]){2,2}T([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}.([0-9]){2,2}Z$",  "yyyy-MM-dd'T'HH:mm:ss.SS'Z'"},
 			{"^([0-9]){4,4}-([0-9]){2,2}-([0-9]){2,2}T([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}.([0-9]){1,1}Z$",  "yyyy-MM-dd'T'HH:mm:ss.S'Z'"},
-			{"^([0-9]){2,2}/([a-zA-Z]){3,3}/([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",             "dd/MMM/yyyy HH:mm:ss"},
+			
+			{"^([0-9]){4,4}-([a-zA-Z]){3,3}-([0-9]){2,2} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",             "yyyy-MMM-dd HH:mm:ss"},
+			{"^([0-9]){4,4}-([a-zA-Z]){3,3}-([0-9]){2,2} ([0-9]){2,2}:([0-9]){2,2}$",                          "yyyy-MMM-dd HH:mm"},
+			{"^([0-9]){4,4}-([0-9]){2,2}-([0-9]){2,2} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",                "yyyy-MM-dd HH:mm:ss"},
+			{"^([0-9]){4,4}-([0-9]){2,2}-([0-9]){2,2} ([0-9]){2,2}:([0-9]){2,2}$",                             "yyyy-MM-dd HH:mm"},
+			
 			{"^([0-9]){2,2}-([a-zA-Z]){3,3}-([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",             "dd-MMM-yyyy HH:mm:ss"},
-			{"^([0-9]){2,2}/([0-9]){2,2}/([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",                "dd/MM/yyyy HH:mm:ss"},
+			{"^([0-9]){2,2}-([a-zA-Z]){3,3}-([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}$",                          "dd-MMM-yyyy HH:mm"},
 			{"^([0-9]){2,2}-([0-9]){2,2}-([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",                "dd-MM-yyyy HH:mm:ss"},
-			{"^([0-9]){2,2}/([0-9]){2,2}/([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}$",                             "dd/MM/yyyy HH:mm"},
 			{"^([0-9]){2,2}-([0-9]){2,2}-([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}$",                             "dd-MM-yyyy HH:mm"},
-			{"^([0-9]){4,4}-([0-9]){2,2}-([0-9]){2,2}T([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",                "yyyy-MM-dd HH:mm:ss"},
-			{"^([0-9]){4,4}/([0-9]){2,2}/([0-9]){2,2}T([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",                "yyyy/MM/dd HH:mm:ss"},
+			
+			{"^([0-9]){4,4}/([a-zA-Z]){3,3}/([0-9]){2,2} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",             "yyyy/MMM/dd HH:mm:ss"},
+			{"^([0-9]){4,4}/([a-zA-Z]){3,3}/([0-9]){2,2} ([0-9]){2,2}:([0-9]){2,2}$",                          "yyyy/MMM/dd HH:mm"},
+			{"^([0-9]){4,4}/([0-9]){2,2}/([0-9]){2,2} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",                "yyyy/MM/dd HH:mm:ss"},
+			{"^([0-9]){4,4}/([0-9]){2,2}/([0-9]){2,2} ([0-9]){2,2}:([0-9]){2,2}$",                             "yyyy/MM/dd HH:mm"},
+			
+			{"^([0-9]){2,2}/([a-zA-Z]){3,3}/([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",             "dd/MMM/yyyy HH:mm:ss"},
+			{"^([0-9]){2,2}/([a-zA-Z]){3,3}/([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}$",                          "dd/MMM/yyyy HH:mm"},
+			{"^([0-9]){2,2}/([0-9]){2,2}/([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}:([0-9]){2,2}$",                "dd/MM/yyyy HH:mm:ss"},
+			{"^([0-9]){2,2}/([0-9]){2,2}/([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}$",                             "dd/MM/yyyy HH:mm"},
+			
+			// CellNovo
+			{"^([a-zA-Z]){6,9} ([0-9]){2,2} ([a-zA-Z]){3,3} ([0-9]){4,4} ([0-9]){2,2}:([0-9]){2,2}",            "EEEE dd MMM yyyy HH:mm"},
 	};
-
 
 	private static ArrayList<DatePatternFormat> m_DatePatternFormatList = new ArrayList<DatePatternFormat>();
 	private static DatePatternFormat[]          m_DatePatternFormatArray = new DatePatternFormat[m_RegexpDatePatternArray.length];
@@ -205,33 +219,12 @@ public class CommonUtils
 		String timeOnDate  = new String(df.format(date)) +  " " + time;
 
 		try {
-			resultDate = convertNSZDateString(timeOnDate);
+			resultDate = convertDateString(timeOnDate);
 		} catch (ParseException e) {
 			m_Logger.log(Level.WARNING, "applyTimeToDate Caught exception parsing date " + timeOnDate);
 		}
 
 		return resultDate;
-	}
-
-	// Used for Diasend temp basal identifications
-	public static boolean isTimeAfter_old(String time, Date dateTime) throws ParseException
-	{
-		boolean result = false;
-
-		// Convert dateTime into a known string
-		final DateFormat df  = CommonUtils.getSimpleDateFormat("dd/MM/yyyy");  // new SimpleDateFormat("dd/MM/yyyy");
-		final DateFormat dtf = CommonUtils.getSimpleDateFormat("dd/MM/yyyy HH:mm");  // new SimpleDateFormat("dd/MM/yyyy HH:mm");
-
-		String dateTimeStr = new String(dtf.format(dateTime));
-		// Now append space & time ;-)
-		String timeOnDate  = new String(df.format(dateTime)) +  " " + time;
-
-		Date baseDate = convertDateString(dateTimeStr, "dd/MM/yyyy HH:mm");
-		Date compDate = convertDateString(timeOnDate,  "dd/MM/yyyy HH:mm");
-
-		result = compDate.after(baseDate) ? true : false;
-
-		return result;
 	}
 
 	// Used for Diasend temp basal identifications
@@ -257,12 +250,12 @@ public class CommonUtils
 		Date endCompDate   = null;
 
 		try {
-			startCompDate = convertNSZDateString(startTimeOnDate);
+			startCompDate = convertDateString(startTimeOnDate);
 		} catch (ParseException e) {
 			m_Logger.log(Level.WARNING, "applyTimeToDate Caught exception parsing date " + startTimeOnDate);
 		}
 		try {
-			endCompDate = convertNSZDateString(endTimeOnDate);
+			endCompDate = convertDateString(endTimeOnDate);
 		} catch (ParseException e) {
 			m_Logger.log(Level.WARNING, "applyTimeToDate Caught exception parsing date " + endTimeOnDate);
 		}
@@ -274,34 +267,6 @@ public class CommonUtils
 
 		return result;
 	}
-
-
-	// Used for Analyzer bedtime checks
-	// Between means start <= time < end
-	public static boolean isTimeBetween_old(String startTime, String endTime, Date dateTime) throws ParseException
-	{
-		boolean result = false;
-
-		// Convert dateTime into a known string
-		final DateFormat df  = CommonUtils.getSimpleDateFormat("dd/MM/yyyy");  // new SimpleDateFormat("dd/MM/yyyy");
-		final DateFormat dtf = CommonUtils.getSimpleDateFormat("dd/MM/yyyy HH:mm");  // new SimpleDateFormat("dd/MM/yyyy HH:mm");
-
-		String dateTimeStr = new String(dtf.format(dateTime));
-		// Now append space & time ;-)
-		String startTimeOnDate  = new String(df.format(dateTime)) +  " " + startTime;
-		String endTimeOnDate    = new String(df.format(dateTime)) +  " " + endTime;
-
-		Date baseDate = convertDateString(dateTimeStr, "dd/MM/yyyy HH:mm");
-		Date startCompDate = convertDateString(startTimeOnDate,  "dd/MM/yyyy HH:mm");
-		Date endCompDate   = convertDateString(endTimeOnDate,  "dd/MM/yyyy HH:mm");
-
-		result = ((startCompDate.before(baseDate) || startCompDate.equals(baseDate)) &&
-				(endCompDate.after(baseDate)))
-				? true : false;
-
-		return result;
-	}
-
 
 	public static String safeIfNull(String par)
 	{
@@ -399,7 +364,47 @@ public class CommonUtils
 		return result;
 	}
 
-	public static int getMinutesFromDate(Date dt)
+	public static int getYearFromDate(Date dt)
+	{
+		int result = 0;
+
+		Calendar cal = Calendar.getInstance();       // get calendar instance
+		cal.setTime(dt);                             // set cal to date
+
+		result = cal.get(Calendar.YEAR);
+		return result;
+	}
+	public static int getMonthFromDate(Date dt)
+	{
+		int result = 0;
+
+		Calendar cal = Calendar.getInstance();       // get calendar instance
+		cal.setTime(dt);                             // set cal to date
+
+		result = cal.get(Calendar.MONTH) + 1;
+		return result;
+	}
+	public static int getDateFromDate(Date dt)
+	{
+		int result = 0;
+
+		Calendar cal = Calendar.getInstance();       // get calendar instance
+		cal.setTime(dt);                             // set cal to date
+
+		result = cal.get(Calendar.DAY_OF_MONTH);
+		return result;
+	}
+	public static int getHourFromDate(Date dt)
+	{
+		int result = 0;
+
+		Calendar cal = Calendar.getInstance();       // get calendar instance
+		cal.setTime(dt);                             // set cal to date
+
+		result = cal.get(Calendar.HOUR_OF_DAY);
+		return result;
+	}
+	public static int getMinuteFromDate(Date dt)
 	{
 		int result = 0;
 
@@ -407,6 +412,26 @@ public class CommonUtils
 		cal.setTime(dt);                             // set cal to date
 
 		result = cal.get(Calendar.MINUTE);
+		return result;
+	}
+	public static int getSecondFromDate(Date dt)
+	{
+		int result = 0;
+
+		Calendar cal = Calendar.getInstance();       // get calendar instance
+		cal.setTime(dt);                             // set cal to date
+
+		result = cal.get(Calendar.SECOND);
+		return result;
+	}
+	public static int getMilliSecondFromDate(Date dt)
+	{
+		int result = 0;
+
+		Calendar cal = Calendar.getInstance();       // get calendar instance
+		cal.setTime(dt);                             // set cal to date
+
+		result = cal.get(Calendar.MILLISECOND);
 		return result;
 	}
 
@@ -509,7 +534,7 @@ public class CommonUtils
 			String str = new String((String)rs.get(fieldName));
 			try
 			{
-				result = convertNSZDateString(str);
+				result = convertDateString(str);
 			} 
 			catch (ParseException e) 
 			{
@@ -703,81 +728,20 @@ public class CommonUtils
 	}
 
 
-	public static Date convertNSZDateString(String dateStr) throws ParseException
+	public static Date convertDateString(String dateStr) throws ParseException
 	{ 
-		Date result = convertDateString(dateStr, getDateFormat(dateStr));
+		Date result = convertDateStringWithFormat(dateStr, getDateFormat(dateStr));
 
 		return result;
 	}
-	public static LocalDateTime convertNSZDateTimeString(String dateStr) throws ParseException
+	public static LocalDateTime convertLocalDateTimeString(String dateStr) throws ParseException
 	{ 
-		LocalDateTime result = convertDateTimeString(dateStr, getDateFormat(dateStr));
+		LocalDateTime result = convertLocalDateTimeStringWithFormat(dateStr, getDateFormat(dateStr));
 
 		return result;
 	}
 
-	public static Date convertNSZDateString_b4Aug2021(String dateStr) throws ParseException
-	{ 
-		final String z     = new String("Z");
-		final String t     = new String("T");
-		final String pls   = new String("+");
-		final String am    = new String("am");
-		final String pm    = new String("pm");
-		final String slash = new String("/");
-		final String dot   = new String(".");
-
-		final String happ  = new String("0000");
-
-		if (dateStr.contains(z) && dateStr.contains(t) && dateStr.contains(dot))
-		{
-			Date result = convertDateString(dateStr, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-			return result;
-		}
-		// Some Nightscout dates are missing the milliseconds
-		else if (dateStr.contains(z) && dateStr.contains(t))
-		{
-			Date result = convertDateString(dateStr, "yyyy-MM-dd'T'HH:mm:ss'Z'");
-			return result;
-		}
-		else if (dateStr.contains(pls))
-		{
-			// HappApp seems to use a different notation here
-
-			/*			Pattern happAppPattern = Pattern.compile("([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]+0000)");
-			Matcher happAppMatcher = happAppPattern.matcher(dateStr);
-
-			if (happAppMatcher.find())*/
-			if (dateStr.contains(happ) && !dateStr.contains(dot))
-			{
-				Date result = convertDateString(dateStr, "yyyy-MM-dd'T'HH:mm'+0000'");
-				return result;
-			}
-			else
-			{
-				Date result = convertDateString(dateStr, "yyyy-MM-dd'T'HH:mm:ss.SSS'+000'");
-				return result;
-			}
-		}
-		else if (dateStr.contains(slash) && (dateStr.contains(am) || dateStr.contains(pm)))
-		{
-			Date result = convertDateString(dateStr, "dd/MM/yyyy HH:mm:ss aa");
-			return result;			
-		}
-		else
-		{
-			Date result = convertDateString(dateStr, "yyyy-MM-dd'T'HH:mm:ss.SSS");
-			return result;
-		}
-	}
-
-
-	public static Date convertNSDateString(String dateStr) throws ParseException
-	{
-		Date result = convertDateString(dateStr, "yyyy-MM-dd HH:mm:ss.S");
-		return result;
-	}
-
-	public static Date convertDateString(String dateStr, String format) throws ParseException
+	private static Date convertDateStringWithFormat(String dateStr, String format) throws ParseException
 	{
 		Date result = new Date(0);
 
@@ -847,97 +811,13 @@ public class CommonUtils
 		return result;
 	}
 
-	public static LocalDateTime convertDateTimeString(String dateStr, String format) throws ParseException
+	public static LocalDateTime convertLocalDateTimeStringWithFormat(String dateStr, String format) throws ParseException
 	{
 		LocalDateTime result = null;
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
 		result = LocalDateTime.parse(dateStr, formatter);
 		return result;
 	}
-
-	//	public static Date parseFileDateTime(String date)
-	//	{
-	//		Date result = new Date(0);
-	//		// Combined Date Time
-	//
-	//		// Need to keep this thread safe
-	//		synchronized(m_LockSDF)
-	//		{
-	//
-	//			final String defSlashFormat = new String("dd/MM/yy HH:mm");
-	//			String prefDateFormat       = PrefsNightScoutLoader.getInstance().getM_InputDateFormat();
-	//			final DateFormat slashformat = CommonUtils.getSimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat));
-	//			// DateFormat slashformat      = new SimpleDateFormat((prefDateFormat.contains("/")  ?  prefDateFormat : defSlashFormat), Locale.ENGLISH);
-	//
-	//			try
-	//			{
-	//				result = slashformat.parse(date);
-	//			}
-	//			catch (ParseException e) 
-	//			{
-	//				m_Logger.log(Level.SEVERE, "<CommonUtils>" + "parseFileDate - Unexpected error parsing date: " + date);
-	//			}
-	//			m_LockSDF.notifyAll();
-	//		}
-	//
-	//		return result;
-	//	}
-	//
-	//	public  static Date parseDate(String date)
-	//	{
-	//		Date result = new Date(0);
-	//
-	//		// Combined Date Time
-	//		final DateFormat slashformat = CommonUtils.getSimpleDateFormat("dd/MM/yyyy");
-	//		// DateFormat slashformat = new SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH);
-	//
-	//		try
-	//		{
-	//			result = slashformat.parse(date);
-	//		}
-	//		catch (ParseException e) 
-	//		{
-	//			m_Logger.log(Level.SEVERE, "<CommonUtils>" + "parseDate - Unexpected error parsing date: " + date);
-	//		}
-	//
-	//
-	//		return result;
-	//	}
-	//
-	//	public static Date parseFromDate(String field)
-	//	{
-	//		Date result = new Date(0);
-	//
-	//		// field is in the form 2dd/mm/yyyy to dd/mm/yyyy"
-	//		Pattern fromDatePattern = Pattern.compile("([0-9/]*) to");
-	//		Matcher fromDateMatcher = fromDatePattern.matcher(field);
-	//
-	//		if (fromDateMatcher.find())
-	//		{
-	//			String matchedString = fromDateMatcher.group(0);
-	//			String date = new String(matchedString.substring(0, matchedString.length() - 3));
-	//			result = parseDate(date);
-	//		}
-	//
-	//		return result;
-	//	}
-	//	public static Date parseToDate(String field)
-	//	{
-	//		Date result = new Date(0);
-	//
-	//		// field is in the form 2dd/mm/yyyy to dd/mm/yyyy"
-	//		Pattern fromDatePattern = Pattern.compile("to ([0-9/]*)");
-	//		Matcher fromDateMatcher = fromDatePattern.matcher(field);
-	//
-	//		if (fromDateMatcher.find())
-	//		{
-	//			String matchedString = fromDateMatcher.group(0);
-	//			String date = new String(matchedString.substring(3, matchedString.length()));
-	//			result = parseDate(date);
-	//		}
-	//
-	//		return result;
-	//	}
 
 	public static String  getStringCellValue(HSSFRow row, int index)
 	{
@@ -1076,6 +956,4 @@ public class CommonUtils
 		}
 
 	}
-
-
 }

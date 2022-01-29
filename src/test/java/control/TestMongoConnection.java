@@ -12,9 +12,6 @@ import com.mongodb.MongoTimeoutException;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 
-import control.MyLogger;
-import control.PrefsNightScoutLoader;
-
 public class TestMongoConnection {
 
 	private static String m_ValidMongoURIString = null;
@@ -90,6 +87,8 @@ public class TestMongoConnection {
 							+ " but got " 
 							+ (connectionSuccessBoolean == true ? "successful connection " : "failed connection")
 					);
+			
+			mongo.close();
 		}
 		else
 		{

@@ -123,7 +123,10 @@ public abstract class BaseTestEntry {
 				Assertions.assertTrue(result != null);
 
 				if (dupeString.equals("NO"))
-					assertEquals(result.getM_BG(), bgDouble, "BG Differs" + messgString);
+					assertEquals(result.getM_BG(), bgDouble, 
+							"BG Differs" + messgString
+							+ " Result BG: " + result.getM_BG()
+							+ " Treatment BG: " + bgDouble);
 			}
 
 		}

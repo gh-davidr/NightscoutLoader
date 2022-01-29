@@ -129,7 +129,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 			String dateRange)
 	{
 		m_LoadRunning = false;
-		if (m_NightscoutLoadThread != null)  m_LoadThread  = new Thread(this);
+		m_LoadThread  = new Thread(this);
 		m_DataLoadNightScout                 = dataLoadNightScout;
 		m_MeterArrayListDBResults            = meterArrayListDBResults;
 		m_NightScoutArrayListDBResults       = nightScoutArrayListDBResults;
