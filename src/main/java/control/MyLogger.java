@@ -270,6 +270,10 @@ public class MyLogger
 		case 1 : m_Logger.setLevel(Level.FINE);   break;  // Detailed
 		case 2 : m_Logger.setLevel(Level.FINER);  break;  // More Detailed		
 		case 3 : m_Logger.setLevel(Level.FINEST); break;  // Most Detailed
+		
+		// Allows us to reduce the mvn build output
+		case 10: m_Logger.setLevel(Level.WARNING); break;
+		case 20: m_Logger.setLevel(Level.SEVERE); break;
 
 		default: m_Logger.setLevel(Level.INFO);   break;
 		}

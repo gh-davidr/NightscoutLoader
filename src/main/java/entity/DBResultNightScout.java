@@ -51,7 +51,7 @@ public class DBResultNightScout extends DBResult
 
 				// David 14 Apr 2016
 				String timeStr  = CommonUtils.getFieldStr(rs, "Time");
-				Date time       = CommonUtils.convertNSDateString(timeStr);
+				Date time       = CommonUtils.convertDateString(timeStr);
 
 				m_EpochMillies = time.getTime();
 			}
@@ -91,7 +91,7 @@ public class DBResultNightScout extends DBResult
 
 				// Nightscout times are in UTC.
 				// Need to convert them to local time.
-				Date utcTime    = CommonUtils.convertNSZDateString(CommonUtils.getFieldStr(rs, "created_at"));
+				Date utcTime    = CommonUtils.convertDateString(CommonUtils.getFieldStr(rs, "created_at"));
 				Date time       = new Date(CommonUtils.toLocalTime(utcTime.getTime(), CommonUtils.locTZ));
 				m_Time          = time;
 				m_CP_EventTime  = CommonUtils.convertNSZDateString(m_Time);
@@ -137,7 +137,7 @@ public class DBResultNightScout extends DBResult
 
 				// David 14 Apr 2016
 				String timeStr  = CommonUtils.getFieldStr(rs, "Time");
-				Date time       = CommonUtils.convertNSDateString(timeStr);
+				Date time       = CommonUtils.convertDateString(timeStr);
 
 				m_EpochMillies = time.getTime();
 			}
@@ -153,7 +153,7 @@ public class DBResultNightScout extends DBResult
 				m_CP_CarbsTime  = CommonUtils.getFieldDouble(rs, "preBolus");
 				m_CP_Duration   = CommonUtils.getFieldDouble(rs, "duration");    // Temp Basal
 				m_CP_Percent    = CommonUtils.getFieldDouble(rs, "percent");     // Temp Basal
-				m_CP_BasalValue = CommonUtils.getFieldDouble(rs, "profile");  // Temp Basal //AndroidAPS appears to use this field for Profile Name, not BasalValue
+				m_CP_BasalValue = CommonUtils.getFieldDouble(rs, "profile", false);  // Temp Basal //AndroidAPS appears to use this field for Profile Name, not BasalValue
 				if (m_CP_EventType.equals("Temp Basal")) {
 					Double absolute = CommonUtils.getFieldDouble(rs, "absolute");
 					if (absolute != null)
@@ -177,7 +177,7 @@ public class DBResultNightScout extends DBResult
 
 				// Nightscout times are in UTC.
 				// Need to convert them to local time.
-				Date utcTime    = CommonUtils.convertNSZDateString(CommonUtils.getFieldStr(rs, "created_at"));
+				Date utcTime    = CommonUtils.convertDateString(CommonUtils.getFieldStr(rs, "created_at"));
 				Date time       = new Date(CommonUtils.toLocalTime(utcTime.getTime(), CommonUtils.locTZ));
 				m_Time          = time;
 				m_CP_EventTime  = CommonUtils.convertNSZDateString(m_Time);

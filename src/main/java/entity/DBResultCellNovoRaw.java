@@ -135,7 +135,7 @@ public class DBResultCellNovoRaw extends DBResult
 		{	
 			String dateTime = date + " " + String.format("%02d", hour) + ":" + String.format("%02d", mins);
 
-			result = CommonUtils.convertDateString(dateTime, format);
+			result = CommonUtils.convertDateString(dateTime);
 		}
 		catch (ParseException e) 
 		{

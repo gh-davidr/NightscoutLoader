@@ -2205,6 +2205,10 @@ public class TestDiasendEntry extends BaseTestEntry
 	@Test
 	public void doTestLoad()
 	{
+		String nameofCurrMethod = new Throwable()
+				.getStackTrace()[0]
+						.getMethodName();
+				System.out.println("[INFO] *** TEST *** " + this.getClass().getSimpleName() + "." + nameofCurrMethod);
 		performTestLoad();
 	}
 	

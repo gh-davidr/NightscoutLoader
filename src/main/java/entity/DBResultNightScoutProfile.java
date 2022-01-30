@@ -60,7 +60,7 @@ public class DBResultNightScoutProfile
 
 				// Nightscout times are in UTC.
 				// Need to convert them to local time.
-				Date utcTime      = CommonUtils.convertNSZDateString(CommonUtils.getFieldStr(rs, "created_at"));
+				Date utcTime      = CommonUtils.convertDateString(CommonUtils.getFieldStr(rs, "created_at"));
 				m_CreatedAt       = new Date(CommonUtils.toLocalTime(utcTime.getTime(), CommonUtils.locTZ));
 
 				
@@ -74,7 +74,7 @@ public class DBResultNightScoutProfile
 
 				// Nightscout times are in UTC.
 				// Need to convert them to local time.
-				utcTime          = CommonUtils.convertNSZDateString(CommonUtils.getFieldStr(defaultDoc, "startDate"));
+				utcTime          = CommonUtils.convertDateString(CommonUtils.getFieldStr(defaultDoc, "startDate"));
 				m_StartDate      = new Date(CommonUtils.toLocalTime(utcTime.getTime(), CommonUtils.locTZ));
 				m_Unit           = CommonUtils.getFieldStr(defaultDoc, "timezone");
 				

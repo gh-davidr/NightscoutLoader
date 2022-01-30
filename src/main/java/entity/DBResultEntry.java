@@ -81,7 +81,7 @@ public class DBResultEntry extends DBResultCore
 		this.m_Date = m_Date;
 		this.m_Noise = m_Noise;
 
-		m_UTCDate = CommonUtils.convertNSZDateString(m_DateString);
+		m_UTCDate = CommonUtils.convertDateString(m_DateString);
 		m_EpochMillies = m_UTCDate.getTime();
 		m_Hour = CommonUtils.get24Hour(m_UTCDate);
 		
@@ -143,7 +143,7 @@ public class DBResultEntry extends DBResultCore
 		this.m_Noise = other.m_Noise;
 
 		try {
-			m_UTCDate = CommonUtils.convertNSZDateString(m_DateString);
+			m_UTCDate = CommonUtils.convertDateString(m_DateString);
 			m_Date =  Double.valueOf(m_UTCDate.getTime());
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block

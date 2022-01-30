@@ -16,7 +16,7 @@ public class ThreadMongoDBAlerterEntries extends ThreadMongoDBAlerter
 
 		if (result != null)
 		{
-			m_CurrentResultAt = CommonUtils.convertNSZDateString(result);
+			m_CurrentResultAt = CommonUtils.convertDateString(result);
 		}
 	}
 

@@ -129,7 +129,7 @@ public class ThreadDetermineSaveDifferences implements Runnable
 			String dateRange)
 	{
 		m_LoadRunning = false;
-		if (m_NightscoutLoadThread != null)  m_LoadThread  = new Thread(this);
+		m_LoadThread  = new Thread(this);
 		m_DataLoadNightScout                 = dataLoadNightScout;
 		m_MeterArrayListDBResults            = meterArrayListDBResults;
 		m_NightScoutArrayListDBResults       = nightScoutArrayListDBResults;
@@ -325,16 +325,6 @@ public class ThreadDetermineSaveDifferences implements Runnable
 		m_FirstPassIntersection          = new HashSet<DBResult>(compareList);
 		// Now elinate all NS results that differ to the meter/pump results leaving possible duplicates only.
 		m_FirstPassIntersection.retainAll(nsFirstPassHashSet);
-
-
-		// For Debug
-		// 09 Oct 2016
-		for (DBResult a : m_FirstPassIntersection)
-		{
-			System.out.println(a.toString());
-			System.out.println(a.getIdentity());
-		}
-
 
 		// Clear both
 		DBResult.setM_ProximityCheckSecondPass(false);
