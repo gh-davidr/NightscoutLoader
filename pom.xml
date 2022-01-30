@@ -49,11 +49,11 @@
 			<version>3.13</version>
 		</dependency>
 
-		<!-- https://mvnrepository.com/artifact/org.mongodb/mongodb-driver -->
+		<!-- https://mvnrepository.com/artifact/org.mongodb/mongo-java-driver -->
 		<dependency>
-			<groupId>org.mongodb</groupId>
-			<artifactId>mongodb-driver</artifactId>
-			<version>3.11.1</version>
+		    <groupId>org.mongodb</groupId>
+		    <artifactId>mongo-java-driver</artifactId>
+		    <version>3.12.10</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/com.jcraft/jsch -->
@@ -141,16 +141,6 @@
 		</pluginManagement>
 
 		<plugins>
-
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.3</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>

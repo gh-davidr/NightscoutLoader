@@ -92,7 +92,7 @@ public class DBResultRoche extends DBResult
 				m_Day        = Integer.parseInt(recordSet[m_DayIndex]);
 				m_DayName    = recordSet[m_DayNameIndex];
 				//m_Time       = parseFileDate(recordSet[m_TimeIndex]); 
-				m_Time       = CommonUtils.convertDateString(recordSet[m_TimeIndex], "yyyy-MM-dd HH:mm:ss");
+				m_Time       = CommonUtils.convertDateString(recordSet[m_TimeIndex]);
 				m_TimeSlot   = recordSet[m_TimeSlotIndex];
 				m_Result     = recordSet[m_ResultIndex];
 				m_ResultType = recordSet[m_ResultTypeIndex];

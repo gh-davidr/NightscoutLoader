@@ -365,9 +365,9 @@ class AnalyzerTrendResult
 
 		try 
 		{
-			dt1 = CommonUtils.convertDateString(getM_AnalyzerSingleResult1().getM_DBResult().getM_CP_EventTime(), DBResult.getCP_EventTimeFormat());
-			dt2 = CommonUtils.convertDateString(analyzerSingleResult2.getM_DBResult().getM_CP_EventTime(), DBResult.getCP_EventTimeFormat());
-
+			dt1 = CommonUtils.convertDateString(getM_AnalyzerSingleResult1().getM_DBResult().getM_CP_EventTime());
+			dt2 = CommonUtils.convertDateString(analyzerSingleResult2.getM_DBResult().getM_CP_EventTime());
+			
 			//m_Logger.log(Level.FINE, "<"+this.getClass().getName()+"> checkForResult " + " Comparing dt1 " + dt1 + " with dt2 " + dt2);
 
 		} 

@@ -80,6 +80,14 @@ public abstract class DataLoadNightScout extends DataLoadBase {
 			result += "  " + s + "\n";
 		}
 
+		if (colls.size() == 0)
+		{
+			// Print out all the collections in the users database
+			for (String s : nsMongoDB.getM_MongoDatabase().listCollectionNames()) {
+				result += "  " + s + "\n";
+			}
+		}
+
 		nsMongoDB.close();
 
 		result += "\n\nSUCCESS\n";
@@ -88,6 +96,31 @@ public abstract class DataLoadNightScout extends DataLoadBase {
 		return result;
 	}
 
+	// Check DB connection for where we have server name & db name
+	public String testDBConnection(NightscoutMongoDB nsMongoDB) throws UnknownHostException {
+		String result = new String();
+
+		// Print out all the collections in the users database
+		Set<String> colls = nsMongoDB.getM_Db().getCollectionNames();
+		for (String s : colls) {
+			result += "  " + s + "\n";
+		}
+
+		if (colls.size() == 0)
+		{
+			// Print out all the collections in the users database
+			for (String s : nsMongoDB.getM_MongoDatabase().listCollectionNames()) {
+				result += "  " + s + "\n";
+			}
+		}
+
+		result += "\n\nSUCCESS\n";
+		m_ServerState = MongoDBServerStateEnum.accessible;
+
+		return result;
+	}
+
+	
 	/*
 	 * // From abstract parent public void loadDBResults() throws
 	 * UnknownHostException, SQLException, ClassNotFoundException, IOException {
@@ -98,13 +131,16 @@ public abstract class DataLoadNightScout extends DataLoadBase {
 		if (m_ServerState == MongoDBServerStateEnum.unknown && m_FailedTests <= m_FailedTestLimit) {
 			m_Logger.log(Level.FINE, "Checking - " + m_FailedTests + ".  Limit is " + m_FailedTestLimit);
 
+			final String mongoHost = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoServer();
+			// final int mongoPort =
+			// NightLoaderPreferences.getInstance().getM_NightscoutMongoPort();
+			final String mongoDB = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB();
+			// final String mongoColl =
+			// PrefsNightScoutLoader.getInstance().getM_NightscoutMongoCollection();
+
+			NightscoutMongoDB nsMongoDB = new NightscoutMongoDB(mongoHost, mongoDB);
+
 			try {
-				final String mongoHost = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoServer();
-				// final int mongoPort =
-				// NightLoaderPreferences.getInstance().getM_NightscoutMongoPort();
-				final String mongoDB = PrefsNightScoutLoader.getInstance().getM_NightscoutMongoDB();
-				// final String mongoColl =
-				// PrefsNightScoutLoader.getInstance().getM_NightscoutMongoCollection();
 
 				if (mongoHost.equals("")) {
 					m_Logger.log(Level.INFO,
@@ -114,17 +150,31 @@ public abstract class DataLoadNightScout extends DataLoadBase {
 					m_Logger.log(Level.INFO, getRequestType() + "Attempting to connect to Mongo at '" + mongoHost
 							+ "'  (May take a few seconds to detect failure)");
 
-					testDBConnection(mongoHost, mongoDB);
+					testDBConnection(nsMongoDB);
+					nsMongoDB.close();
 
 					m_Logger.log(Level.INFO, getRequestType() + "Mongo connection success!");
 					m_ServerState = MongoDBServerStateEnum.accessible;
 
 				}
-			} catch (Exception e) {
-				m_Logger.log(Level.INFO, getRequestType() + "Mongo connection failed.  Please review options.");
+			} catch (Exception e) 
+			{	
+				if (!nsMongoDB.getM_TLSValidBoolean())
+				{
+					m_Logger.log(Level.INFO, getRequestType() +  "Mongo DB Connection cannot be made probably because TLS JVM option is not set.");
+				}
+				else
+				{
+					m_Logger.log(Level.INFO, getRequestType() + "Mongo DB Connection cannot be made.  "
+							+ "Please check the URI: " + mongoHost + " "
+							+ "and the DB: " + mongoDB + " "
+							+ "are both correct.");
+				}
+				
 				m_ServerState = MongoDBServerStateEnum.not_accessible;
 				incrementTestCount();
 			}
+			
 		}
 	}
 
@@ -254,7 +304,7 @@ public abstract class DataLoadNightScout extends DataLoadBase {
 		testMongo();
 
 		if (m_ServerState == MongoDBServerStateEnum.accessible) {
-			
+
 			NightscoutMongoDB nsMongoDB = new NightscoutMongoDB();
 			DBCollection coll = nsMongoDB.getTreatmentsV2xCollection();
 

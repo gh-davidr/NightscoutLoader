@@ -11,10 +11,10 @@ import loader.DataLoadBase;
 public class ThreadDataLoad implements Runnable 
 {
 	private static final Logger m_Logger = Logger.getLogger( MyLogger.class.getName() );
-	
+
 	// Separate thread for data loads
 	private Thread                   m_LoadThread;
-	
+
 	private String                   m_ThreadNameString;
 
 	/**
@@ -33,11 +33,11 @@ public class ThreadDataLoad implements Runnable
 
 	// Data Loader used by thread
 	private DataLoadBase             m_DataLoader;
-	
+
 	private Boolean                  m_LoadRunning;
-//	static Object                    m_Lock = new Object();
+	//	static Object                    m_Lock = new Object();
 	private Object                   m_Lock;
-	
+
 	// Thread Synchronization
 	public void waitUntilFree()
 	{
@@ -61,7 +61,7 @@ public class ThreadDataLoad implements Runnable
 	}
 	// Handler to notify when load completes
 	DataLoadCompleteHandler           m_CompleteHandler;
-	
+
 	// Thread Handler for resynchronization
 	public static abstract class DataLoadCompleteHandler 
 	{
@@ -72,13 +72,13 @@ public class ThreadDataLoad implements Runnable
 		}
 		public abstract void dataLoadComplete(Object obj, String message);
 		public abstract void exceptionRaised(String message);
-		
+
 		public Object getM_Object()
 		{
 			return m_Object;
 		}
 	}
-	
+
 	public ThreadDataLoad(DataLoadBase dataLoader, String threadName)
 	{
 		m_LoadRunning     = true;  // Initialise the thread in running state
@@ -86,17 +86,17 @@ public class ThreadDataLoad implements Runnable
 		m_DataLoader      = dataLoader;
 		m_CompleteHandler = null;
 		m_ThreadNameString = threadName;
-		
+
 		// Thread synchronization
 		m_Lock            = new Object();
 	}
-	
+
 	public void loadDBResults(DataLoadCompleteHandler completeHandler)
 	{
 		m_CompleteHandler = completeHandler;
 		m_LoadThread.start();
 	}
-	
+
 	public void run() 
 	{
 		m_LoadRunning = true;		
@@ -106,7 +106,8 @@ public class ThreadDataLoad implements Runnable
 			try 
 			{
 				m_DataLoader.loadDBResults();
-				m_Logger.log(Level.INFO, "Thread Name '" + m_ThreadNameString + "' has loaded : " + m_DataLoader.getRawEntryResultsFromDB().size());
+				m_Logger.log(Level.INFO, "Thread Name '" + m_ThreadNameString + "' has loaded : " + 
+						m_DataLoader.getRawEntryResultsFromDB().size() + " rows");
 			}
 
 			catch (ClassNotFoundException | SQLException | IOException e) 
@@ -119,9 +120,9 @@ public class ThreadDataLoad implements Runnable
 			}
 			m_LoadRunning = false;
 			m_Lock.notifyAll();
-			
+
 			// Kill the thread
-//			m_LoadThread.interrupt();
+			//			m_LoadThread.interrupt();
 		}
 	}
 
