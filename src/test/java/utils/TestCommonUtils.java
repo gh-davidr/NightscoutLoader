@@ -267,6 +267,7 @@ public class TestCommonUtils {
 	public void performanceTests()
 	{
 		int numTests = 1000000;
+		double durFactor = 1.5;
 
 		Date hashDateStart = new Date();
 		Date hashDateEnd = multipleHashDateConversionDuration((String)TESTED_DATES[0][0], numTests);
@@ -278,6 +279,23 @@ public class TestCommonUtils {
 
 		System.out.println(numTests + " repetitive HASH Date tests took " + hashDateDur + " milliseconds.");
 		System.out.println(numTests + " repetitive Simple Date tests took " + simpleDateDur + " milliseconds.");
+		
+		
+		// Let's add an assertion that the hash date conversion is no worse that 10% extra of the time for simple conversions
+		long simpleDateDurPermittedLonger = Double.valueOf(simpleDateDur * durFactor).longValue();
+		
+		Assertions.assertTrue(hashDateDur < simpleDateDurPermittedLonger, 
+				"Having compared "
+				+ numTests 
+				+ " repetitions of both hash date string conversions vs fixed format ... "
+				+ " we expected that the hashDateDuration is no more than "
+				+ durFactor
+				+ " (which is "
+				+ simpleDateDurPermittedLonger
+				+ " milliseconds)"
+				+ " times worse in time."
+				+ "  However, this is sadly not found to be the case"
+				);
 	}
 
 	private Date multipleHashDateConversionDuration(String dateString, int numTests)
